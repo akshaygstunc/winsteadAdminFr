@@ -4,8 +4,11 @@ import { useState } from "react";
 import { FaTimes } from "react-icons/fa";
 
 export default function InquiryModal({ data, onClose }: any) {
-  const [notes, setNotes] = useState("");
-
+const [notes, setNotes] = useState(data.notes || "");
+const handleSave = () => {
+  console.log("Saved Notes:", notes);
+  onClose();
+};
   return (
     <div className="fixed inset-0 bg-black/60 flex justify-center items-center z-50">
 
@@ -38,9 +41,9 @@ export default function InquiryModal({ data, onClose }: any) {
         {/* ACTION */}
         <div className="flex justify-end gap-3 mt-4">
           <button onClick={onClose}>Close</button>
-          <button className="bg-[#C8A96A] px-4 py-2 rounded-xl text-black">
-            Save Notes
-          </button>
+         <button onClick={handleSave} className="bg-[#C8A96A] px-4 py-2 rounded-xl text-black">
+  Save Notes
+</button>
         </div>
       </div>
     </div>

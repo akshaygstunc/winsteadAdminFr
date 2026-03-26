@@ -56,7 +56,9 @@ const [openMedia, setOpenMedia] = useState(false);
             <option>Active</option>
             <option>Inactive</option>
           </select>
-
+<button onClick={() => setOpenMedia(true)} className="input">
+  Select Banner Image
+</button>
           {/* FEATURED */}
           <label className="flex items-center gap-2 text-sm">
             <input type="checkbox" />

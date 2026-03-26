@@ -1,6 +1,7 @@
 "use client";
 
-import StaticPageForm from "../../components/cms/static/StaticPageForm";
+import StaticPageForm from "@/components/cms/static/StaticPageForm";
+
 
 export default function StaticPages() {
   return (

@@ -7,7 +7,8 @@ export default function ProjectFormModal({ onClose }: any) {
   const [amenities, setAmenities] = useState<string[]>([]);
   const [tags, setTags] = useState<string[]>([]);
   const [gallery, setGallery] = useState<any[]>([]);
-
+const [brochure, setBrochure] = useState<any>(null);
+const [floorPlan, setFloorPlan] = useState<any>(null);
   const addAmenity = (value: string) => {
     setAmenities([...amenities, value]);
   };
@@ -94,6 +95,45 @@ export default function ProjectFormModal({ onClose }: any) {
             <option>Sold</option>
             <option>Coming Soon</option>
           </select>
+
+          {/* FILE UPLOADS */}
+<div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
+
+  {/* BROCHURE */}
+  <div>
+    <label className="text-sm text-gray-400">Upload Brochure (PDF)</label>
+    <input
+      type="file"
+      accept=".pdf"
+      onChange={(e: any) => setBrochure(e.target.files[0])}
+      className="input mt-1"
+    />
+
+    {brochure && (
+      <p className="text-xs text-green-400 mt-1">
+        {brochure.name}
+      </p>
+    )}
+  </div>
+
+  {/* FLOOR PLAN */}
+  <div>
+    <label className="text-sm text-gray-400">Upload Floor Plan</label>
+    <input
+      type="file"
+      accept="image/*"
+      onChange={(e: any) => setFloorPlan(e.target.files[0])}
+      className="input mt-1"
+    />
+
+    {floorPlan && (
+      <p className="text-xs text-green-400 mt-1">
+        {floorPlan.name}
+      </p>
+    )}
+  </div>
+
+</div>
 
           {/* GALLERY */}
           <div className="md:col-span-2">

@@ -26,8 +26,12 @@ export default function BlogFormModal({ onClose }: any) {
           />
 
           {/* CATEGORY */}
-          <input placeholder="Category" className="input" />
-
+<select className="input">
+  <option>Select Category</option>
+  <option>Real Estate</option>
+  <option>Luxury Living</option>
+  <option>Investment</option>
+</select>
           {/* IMAGE */}
           <button
             onClick={() => setOpenMedia(true)}

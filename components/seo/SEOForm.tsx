@@ -26,6 +26,8 @@ export default function SEOForm() {
         <option>Homepage</option>
         <option>Vendors</option>
         <option>Projects</option>
+        <option>Static Pages</option>
+  <option>Blog</option>
       </select>
 
       {/* META */}

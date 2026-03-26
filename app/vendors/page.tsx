@@ -71,6 +71,7 @@ export default function VendorsPage() {
           category={category}
           status={status}
         />
+        
 
         {/* MODAL */}
         {open && <VendorFormModal onClose={() => setOpen(false)} />}
