@@ -1,0 +1,69 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+body {
+  background-color: #0B0B0C;
+  color: white;
+}
+.input {
+  @apply w-full bg-white/10 border border-white/10 px-4 py-2 rounded;
+}
+.input {
+  background: #0f0f0f;
+  border: 1px solid #1A1A1A;
+  padding: 10px;
+  border-radius: 10px;
+  color: white;
+  font-size: 14px;
+  outline: none;
+  width: 100%;
+}
+
+.input:focus {
+  border-color: #C8A96A;
+}
+.tag {
+  background: #C8A96A20;
+  color: #C8A96A;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+}
+.card {
+  background: #111111;
+  border: 1px solid #1A1A1A;
+  padding: 20px;
+  border-radius: 16px;
+}
+
+.section-title {
+  font-size: 16px;
+  margin-bottom: 12px;
+}
+
+.btn-primary {
+  background: #C8A96A;
+  color: black;
+  padding: 8px 16px;
+  border-radius: 10px;
+}
