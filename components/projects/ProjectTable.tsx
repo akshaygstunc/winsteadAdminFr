@@ -1,21 +1,25 @@
 "use client";
 
-import { useState } from "react";
 import { FaEdit, FaTrash } from "react-icons/fa";
+import { useEffect, useState } from "react";
+import ProjectFormModal from "./ProjectFormModal";
+import { deleteProject, getProjects } from "@/services/projects.service";
 
-const data = [
-  {
-    id: 1,
-    name: "Palm Residency",
-    vendor: "Luxury Estates",
-    price: "₹2Cr - ₹5Cr",
-    status: "Available",
-    image: "https://via.placeholder.com/60",
-  },
-];
 
 export default function ProjectTable({ search }: any) {
   const [page, setPage] = useState(1);
+  const [data, setData] = useState([]);
+const [meta, setMeta] = useState({});
+const [selectedProject, setSelectedProject] = useState(null);
+const fetchData = async () => {
+  const res = await getProjects({ page, limit, search });
+  setData(res.data);
+  setMeta(res.meta);
+};
+
+useEffect(() => {
+  fetchData();
+}, [page, search]);
   const limit = 5;
 
   const filtered = data.filter((p) =>
@@ -50,7 +54,7 @@ export default function ProjectTable({ search }: any) {
                   <span>{p.name}</span>
                 </td>
 
-                <td className="p-4 text-gray-400">{p.vendor}</td>
+                <td className="p-4 text-gray-400">{p.vendorId?.name}</td>
                 <td className="p-4 text-center">{p.price}</td>
 
                 <td className="p-4 text-center">
@@ -60,8 +64,8 @@ export default function ProjectTable({ search }: any) {
                 </td>
 
                 <td className="p-4 flex justify-end gap-3">
-                  <FaEdit className="cursor-pointer" />
-                  <FaTrash className="cursor-pointer text-red-400" />
+                  <FaEdit className="cursor-pointer" onClick={() => setSelectedProject(p)} />
+                  <FaTrash onClick={() => deleteProject(p._id).then(fetchData)} className="cursor-pointer text-red-400" />
                 </td>
               </tr>
             ))}
@@ -74,6 +78,12 @@ export default function ProjectTable({ search }: any) {
         <button onClick={() => setPage(page - 1)}>Prev</button>
         <button onClick={() => setPage(page + 1)}>Next</button>
       </div>
+      {selectedProject && (
+  <ProjectFormModal
+    project={selectedProject}
+    onClose={() => setSelectedProject(null)}
+  />
+)}
     </div>
   );
 }

@@ -1,34 +1,47 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import InquiryModal from "./InquiryModal";
-
-const data = [
-  {
-    id: 1,
-    name: "Rahul Sharma",
-    contact: "9876543210",
-    project: "Palm Residency",
-    vendor: "Luxury Estates",
-    status: "new",
-  },
-];
+import { getInquiries, updateInquiry } from "@/services/inquiry.service";
 
 export default function InquiryTable({ search, status }: any) {
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<any>(null);
+  const [data, setData] = useState<any[]>([]);
+  const [meta, setMeta] = useState<any>({});
 
   const limit = 5;
 
-  const filtered = data.filter((i) => {
-    return (
-      i.name.toLowerCase().includes(search.toLowerCase()) &&
-      (status === "all" || i.status === status)
-    );
-  });
+  // ✅ FETCH DATA
+  const fetchData = async () => {
+    try {
+      const res = await getInquiries({
+        page,
+        limit,
+        search,
+        status: status === "all" ? undefined : status,
+      });
 
-  const totalPages = Math.ceil(filtered.length / limit);
-  const paginated = filtered.slice((page - 1) * limit, page * limit);
+      setData(res.data);
+      setMeta(res.meta);
+    } catch (err) {
+      console.error("Inquiry fetch error:", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, [page, search, status]);
+
+  // ✅ STATUS UPDATE
+  const handleStatusChange = async (id: string, value: string) => {
+    try {
+      await updateInquiry(id, { status: value });
+      fetchData();
+    } catch (err) {
+      console.error("Status update error:", err);
+    }
+  };
 
   return (
     <div className="space-y-4">
@@ -48,17 +61,24 @@ export default function InquiryTable({ search, status }: any) {
           </thead>
 
           <tbody>
-            {paginated.map((i) => (
-              <tr key={i.id} className="border-b border-[#1A1A1A]">
+            {data.map((i) => (
+              <tr key={i._id} className="border-b border-[#1A1A1A]">
                 <td className="p-4">{i.name}</td>
-                <td className="p-4 text-center">{i.contact}</td>
-                <td className="p-4 text-center">{i.project}</td>
-                <td className="p-4 text-center">{i.vendor}</td>
+                <td className="p-4 text-center">{i.phone}</td>
+                <td className="p-4 text-center">
+                  {i.projectId?.name || "-"}
+                </td>
+                <td className="p-4 text-center">
+                  {i.vendorId?.name || "-"}
+                </td>
 
                 {/* STATUS */}
                 <td className="p-4 text-center">
                   <select
-                    defaultValue={i.status}
+                    value={i.status}
+                    onChange={(e) =>
+                      handleStatusChange(i._id, e.target.value)
+                    }
                     className="bg-[#0f0f0f] border border-[#1A1A1A] rounded px-2 py-1 text-xs"
                   >
                     <option value="new">New</option>
@@ -84,13 +104,32 @@ export default function InquiryTable({ search, status }: any) {
 
       {/* PAGINATION */}
       <div className="flex justify-between">
-        <button onClick={() => setPage(page - 1)}>Prev</button>
-        <button onClick={() => setPage(page + 1)}>Next</button>
+        <button
+          disabled={page === 1}
+          onClick={() => setPage(page - 1)}
+        >
+          Prev
+        </button>
+
+        <span className="text-sm">
+          Page {meta.page || 1} / {meta.totalPages || 1}
+        </span>
+
+        <button
+          disabled={page === meta.totalPages}
+          onClick={() => setPage(page + 1)}
+        >
+          Next
+        </button>
       </div>
 
       {/* MODAL */}
       {selected && (
-        <InquiryModal data={selected} onClose={() => setSelected(null)} />
+        <InquiryModal
+          data={selected}
+          onClose={() => setSelected(null)}
+          refresh={fetchData}
+        />
       )}
     </div>
   );

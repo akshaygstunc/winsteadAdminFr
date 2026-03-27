@@ -4,7 +4,7 @@ import { useState } from "react";
 
 export default function CategoryManager() {
   const [categories, setCategories] = useState([
-    { name: "Ultra Luxury", color: "#C8A96A" },
+    { name: "Ultra Luxury", badgeColor: "#C8A96A" },
   ]);
 
   return (
@@ -24,10 +24,10 @@ export default function CategoryManager() {
 
           <input
             type="color"
-            value={c.color}
+            value={c.badgeColor}
             onChange={(e) => {
               const updated = [...categories];
-              updated[i].color = e.target.value;
+              updated[i].badgeColor = e.target.value;
               setCategories(updated);
             }}
           />
@@ -36,7 +36,7 @@ export default function CategoryManager() {
 
       <button
         onClick={() =>
-          setCategories([...categories, { name: "", color: "#ffffff" }])
+          setCategories([...categories, { name: "", badgeColor: "#ffffff" }])
         }
         className="btn-primary"
       >

@@ -2,12 +2,21 @@
 
 import { useState } from "react";
 import { FaTimes } from "react-icons/fa";
+import { updateInquiry } from "@/services/inquiry.service";
 
 export default function InquiryModal({ data, onClose }: any) {
 const [notes, setNotes] = useState(data.notes || "");
-const handleSave = () => {
-  console.log("Saved Notes:", notes);
-  onClose();
+
+const handleSave = async () => {
+  try {
+    await updateInquiry(data._id, {
+      internalNotes: notes,
+    });
+
+    onClose();
+  } catch (err) {
+    console.error("Save notes error:", err);
+  }
 };
   return (
     <div className="fixed inset-0 bg-black/60 flex justify-center items-center z-50">

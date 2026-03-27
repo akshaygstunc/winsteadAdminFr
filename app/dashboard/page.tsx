@@ -1,5 +1,6 @@
 import StatsCard from "@/components/ui/StatsCard";
 import RecentActivity from "../../components/dashboard/RecentActivity";
+import ProjectAnalytics from "@/components/projects/ProjectAnalytics";
 
 export default function DashboardPage() {
   return (
@@ -52,7 +53,7 @@ export default function DashboardPage() {
           </div>
 
         </div>
-
+<ProjectAnalytics />
       </div>
     // </AdminLayout>
   );
