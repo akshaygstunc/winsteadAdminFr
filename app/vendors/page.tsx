@@ -1,36 +1,117 @@
 "use client";
 
-import AdminLayout from "@/components/layout/LayoutWrapper";
 import VendorTable from "../../components/vendors/VendorTable";
 import VendorFormModal from "../../components/vendors/VendorFormModal";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { FaPlus } from "react-icons/fa";
-import { useEffect } from "react";
-import { getCategoryDropdown } from "@/services/category.service";
+import { getCategories } from "@/services/category.service";
+
+type VendorStatus = "active" | "inactive";
+
+interface VendorSeo {
+  metaTitle: string;
+  metaDescription: string;
+  metaKeywords: string[];
+}
+
+interface VendorFormData {
+  _id?: string;
+  name: string;
+  logo: string;
+  bannerImage: string;
+  description: string;
+  contactName: string;
+  email: string;
+  phone: string;
+  address: string;
+  categoryId: string;
+  isFeatured: boolean;
+  status: VendorStatus;
+  seo: VendorSeo;
+}
+
+interface CategoryOption {
+  _id: string;
+  name: string;
+}
+
+const initialVendorForm: VendorFormData = {
+  name: "",
+  logo: "",
+  bannerImage: "",
+  description: "",
+  contactName: "",
+  email: "",
+  phone: "",
+  address: "",
+  categoryId: "",
+  isFeatured: false,
+  status: "active",
+  seo: {
+    metaTitle: "",
+    metaDescription: "",
+    metaKeywords: [],
+  },
+};
+
 export default function VendorsPage() {
   const [open, setOpen] = useState(false);
-  const [categories, setCategories] = useState<any[]>([]);
+  const [categories, setCategories] = useState<CategoryOption[]>([]);
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("all");
   const [status, setStatus] = useState("all");
+
+  const [selectedVendor, setSelectedVendor] =
+    useState<VendorFormData>(initialVendorForm);
+
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const res = await getCategoryDropdown({
-          type: "vendor",
-        });
-        setCategories(res.data);
+        const res = await getCategories({ page: 1, limit: 100 });
+        setCategories(res?.data?.filter((item: any) => item.type === "vendor") || []);
       } catch (err) {
-        console.error(err);
+        console.error("Failed to fetch categories:", err);
       }
     };
 
     fetchCategories();
   }, []);
+
+  const handleAddVendor = () => {
+    setSelectedVendor(initialVendorForm);
+    setOpen(true);
+  };
+
+  const handleEditVendor = (vendor: VendorFormData) => {
+    setSelectedVendor({
+      _id: vendor._id,
+      name: vendor.name || "",
+      logo: vendor.logo || "",
+      bannerImage: vendor.bannerImage || "",
+      description: vendor.description || "",
+      contactName: vendor.contactName || "",
+      email: vendor.email || "",
+      phone: vendor.phone || "",
+      address: vendor.address || "",
+      categoryId: vendor.categoryId || "",
+      isFeatured: Boolean(vendor.isFeatured),
+      status: vendor.status || "active",
+      seo: {
+        metaTitle: vendor.seo?.metaTitle || "",
+        metaDescription: vendor.seo?.metaDescription || "",
+        metaKeywords: vendor.seo?.metaKeywords || [],
+      },
+    });
+    setOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setOpen(false);
+    setSelectedVendor(initialVendorForm);
+  };
+
   return (
-    // <AdminLayout>
     <div className="space-y-6">
-      {/* HEADER */}
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-semibold">Vendors</h1>
@@ -40,14 +121,13 @@ export default function VendorsPage() {
         </div>
 
         <button
-          onClick={() => setOpen(true)}
+          onClick={handleAddVendor}
           className="flex items-center gap-2 bg-[#C8A96A] text-black px-4 py-2 rounded-xl text-sm"
         >
           <FaPlus /> Add Vendor
         </button>
       </div>
 
-      {/* SEARCH + FILTER */}
       <div className="flex flex-col md:flex-row gap-4">
         <input
           placeholder="Search vendor..."
@@ -62,7 +142,6 @@ export default function VendorsPage() {
           className="input md:w-[200px]"
         >
           <option value="all">All Categories</option>
-
           {categories.map((c) => (
             <option key={c._id} value={c._id}>
               {c.name}
@@ -81,12 +160,21 @@ export default function VendorsPage() {
         </select>
       </div>
 
-      {/* TABLE */}
-      <VendorTable search={search} category={category} status={status} />
+      <VendorTable
+        search={search}
+        category={category}
+        status={status}
+        onEdit={handleEditVendor}
+      />
 
-      {/* MODAL */}
-      {open && <VendorFormModal onClose={() => setOpen(false)} />}
+      {open && (
+        <VendorFormModal
+          onClose={handleCloseModal}
+          categories={categories}
+          initialData={selectedVendor}
+          isEdit={Boolean(selectedVendor?._id)}
+        />
+      )}
     </div>
-    // </AdminLayout>
   );
 }

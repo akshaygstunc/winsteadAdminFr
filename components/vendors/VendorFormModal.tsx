@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 "use client";
 
 import { FaTimes } from "react-icons/fa";
@@ -13,7 +14,7 @@ export default function VendorFormModal({ onClose, vendor }: any) {
     description: "",
     contact: "",
     category: "",
-    status: "Active",
+    status: "active",
     featured: false,
   });
  const [categories, setCategories] = useState<any[]>([]);
@@ -152,8 +153,8 @@ export default function VendorFormModal({ onClose, vendor }: any) {
             }
             className="input"
           >
-            <option value="ACTIVE">Active</option>
-            <option value="INACTIVE">Inactive</option>
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
           </select>
            {/* FEATURED */}
           <label className="flex items-center gap-2 text-sm">

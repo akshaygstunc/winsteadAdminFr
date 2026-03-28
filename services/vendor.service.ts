@@ -1,3 +1,4 @@
+import instance from "@/utils/axios";
 import axios from "@/utils/axios";
 
 const BASE_URL = "/vendors";
@@ -11,19 +12,19 @@ export const getVendors = async (params?: {
   status?: string;
   featured?: string;
 }) => {
-  const res = await axios.get(BASE_URL, { params });
+  const res = await axios.get("vendors", { params });
   return res.data;
 };
 
 // ✅ CREATE
 export const createVendor = async (data: any) => {
-  const res = await axios.post(BASE_URL, data);
+  const res = await instance.post("vendors", data);
   return res.data;
 };
 
 // ✅ UPDATE
 export const updateVendor = async (id: string, data: any) => {
-  const res = await axios.patch(`${BASE_URL}/${id}`, data);
+  const res = await instance.patch(`${BASE_URL}/${id}`, data);
   return res.data;
 };
 

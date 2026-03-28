@@ -30,7 +30,11 @@ export default function VendorTable({ search, category, status }: any) {
   };
 
   useEffect(() => {
-    fetchData();
+    const interval = setInterval(() => {
+      fetchData();
+    }, 2000);
+
+    return () => clearInterval(interval); // 🔥 IMPORTANT cleanup
   }, [page, search, status]);
 
   const handleDelete = async (id: string) => {
@@ -79,7 +83,7 @@ export default function VendorTable({ search, category, status }: any) {
                 <td className="p-4 text-center">
                   <span
                     className={`px-3 py-1 rounded-full text-xs ${
-                      vendor.status === "ACTIVE"
+                      vendor.status === "active"
                         ? "bg-green-500/20 text-green-400"
                         : "bg-red-500/20 text-red-400"
                     }`}
@@ -97,10 +101,7 @@ export default function VendorTable({ search, category, status }: any) {
                     onClick={() => setSelectedVendor(vendor)}
                     className="cursor-pointer"
                   />
-                  <FaTrash
-                    onClick={() => handleDelete(vendor._id)}
-                    className="cursor-pointer text-red-400"
-                  />
+
                 </td>
               </tr>
             ))}

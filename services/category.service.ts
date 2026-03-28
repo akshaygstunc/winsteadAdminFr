@@ -1,3 +1,4 @@
+import instance from "@/utils/axios";
 import axios from "@/utils/axios";
 
 const BASE_URL = "/categories";
@@ -10,7 +11,8 @@ export const getCategories = async (params?: {
   type?: string;
   status?: string;
 }) => {
-  const res = await axios.get(BASE_URL, { params });
+  console.log("Fetching categories with params:", params);
+  const res = await instance.get("categories", { params });
   return res.data;
 };
 
@@ -22,7 +24,7 @@ export const createCategory = async (data: {
   displayOrder?: number;
   status?: string;
 }) => {
-  const res = await axios.post(BASE_URL, data);
+  const res = await instance.post("categories", data);
   return res.data;
 };
 
@@ -35,22 +37,20 @@ export const updateCategory = async (
     badgeColor?: string;
     displayOrder?: number;
     status?: string;
-  }
+  },
 ) => {
-  const res = await axios.patch(`${BASE_URL}/${id}`, data);
+  const res = await instance.patch(`categories/${id}`, data);
   return res.data;
 };
 
 // ✅ DELETE CATEGORY
 export const deleteCategory = async (id: string) => {
-  const res = await axios.delete(`${BASE_URL}/${id}`);
+  const res = await instance.delete(`${BASE_URL}/${id}`);
   return res.data;
 };
 
 // ✅ GET DROPDOWN LIST
-export const getCategoryDropdown = async (params?: {
-  type?: string;
-}) => {
-  const res = await axios.get(`${BASE_URL}/dropdown/list`, { params });
+export const getCategoryDropdown = async (params?: { type?: string }) => {
+  const res = await instance.get(`${BASE_URL}/dropdown/list`, { params });
   return res.data;
 };
