@@ -7,16 +7,30 @@ import {
   updateCategory,
 } from "@/services/category.service";
 import { useQuery } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 
 type CategoryType = "project" | "vendor";
 type CategoryStatus = "active" | "inactive";
+type CategoryLevel = "category" | "subcategory";
+type ViewTab = "category" | "subcategory";
 
 interface CategoryItem {
-  id: number;
+  _id: string;
   name: string;
   type: CategoryType;
+  catType: CategoryLevel;
+  parentId?: string | { _id: string; name: string } | null;
+  badgeColor: string;
+  displayOrder: number;
+  status: CategoryStatus;
+}
+
+interface CategoryFormData {
+  name: string;
+  type: CategoryType;
+  catType: CategoryLevel;
+  parentId: string;
   badgeColor: string;
   displayOrder: number;
   status: CategoryStatus;
@@ -24,13 +38,15 @@ interface CategoryItem {
 
 export default function CategoryManager() {
   const [mounted, setMounted] = useState(false);
-  const [activeTab, setActiveTab] = useState<CategoryType>("project");
+  const [activeTab, setActiveTab] = useState<ViewTab>("category");
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingCategoryId, setEditingCategoryId] = useState<string | null>("");
+  const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
 
-  const [formData, setFormData] = useState<Omit<CategoryItem, "id">>({
+  const [formData, setFormData] = useState<CategoryFormData>({
     name: "",
     type: "project",
+    catType: "category",
+    parentId: "",
     badgeColor: "#C8A96A",
     displayOrder: 1,
     status: "active",
@@ -47,40 +63,29 @@ export default function CategoryManager() {
   } = useQuery({
     queryKey: ["categories", { page: 1, limit: 100 }],
     queryFn: () => getCategories({ page: 1, limit: 100 }),
-    refetchInterval: 2000, // Refetch every 60 seconds for real-time updates
   });
 
-  const categoryList = Array.isArray(categories) ? categories : categories?.data || [];
+  const categoryList: CategoryItem[] = Array.isArray(categories)
+    ? categories
+    : categories?.data || [];
 
-  const createCat = async () => {
-    try {
-      await createCategory(formData);
-      toast.success("Category created successfully");
-      await refetch();
-    } catch (err) {
-      console.log(err);
-      toast.error("Failed to create category");
-    }
-  };
+  const parentCategories = useMemo(() => {
+    return categoryList.filter(
+      (item) => item.catType === "category" && item.type === formData.type
+    );
+  }, [categoryList, formData.type]);
 
-  const editCat = async () => {
-    if (!editingCategoryId) return;
-
-    try {
-      await updateCategory(editingCategoryId, formData);
-      toast.success("Category updated successfully");
-      await refetch();
-    } catch (err) {
-      console.log(err);
-      toast.error("Failed to update category");
-    }
-  };
+  const filteredCategories = useMemo(() => {
+    return categoryList.filter((item) => item.catType === activeTab);
+  }, [categoryList, activeTab]);
 
   const resetForm = () => {
     setFormData({
       name: "",
-      type: activeTab,
-      badgeColor: activeTab === "project" ? "#C8A96A" : "#f59e0b",
+      type: "project",
+      catType: activeTab,
+      parentId: "",
+      badgeColor: "#C8A96A",
       displayOrder: 1,
       status: "active",
     });
@@ -89,12 +94,14 @@ export default function CategoryManager() {
 
   const openAddModal = () => {
     const nextOrder =
-      categoryList.filter((item: CategoryItem) => item.type === activeTab).length + 1;
+      categoryList.filter((item) => item.catType === activeTab).length + 1;
 
     setFormData({
       name: "",
-      type: activeTab,
-      badgeColor: activeTab === "project" ? "#C8A96A" : "#f59e0b",
+      type: "project",
+      catType: activeTab,
+      parentId: "",
+      badgeColor: "#C8A96A",
       displayOrder: nextOrder,
       status: "active",
     });
@@ -107,6 +114,11 @@ export default function CategoryManager() {
     setFormData({
       name: category.name,
       type: category.type,
+      catType: category.catType,
+      parentId:
+        typeof category.parentId === "object"
+          ? category.parentId?._id || ""
+          : category.parentId || "",
       badgeColor: category.badgeColor,
       displayOrder: category.displayOrder,
       status: category.status,
@@ -126,66 +138,81 @@ export default function CategoryManager() {
       toast.error("Category name is required");
       return;
     }
+
+    if (formData.catType === "subcategory" && !formData.parentId) {
+      toast.error("Parent category is required for subcategory");
+      return;
+    }
+
+    const payload = {
+      name: formData.name,
+      type: formData.type,
+      catType: formData.catType,
+      parentId:
+        formData.catType === "subcategory" ? formData.parentId : null,
+      badgeColor: formData.badgeColor,
+      displayOrder: formData.displayOrder,
+      status: formData.status,
+    };
+
     try {
       if (editingCategoryId) {
-        await updateCategory(editingCategoryId, formData);
+        await updateCategory(editingCategoryId, payload);
+        toast.success("Category updated successfully");
       } else {
-        await createCat();
+        await createCategory(payload);
+        toast.success("Category created successfully");
       }
 
+      await refetch();
       setIsModalOpen(false);
       resetForm();
-      toast.success(`Category  ${editingCategoryId ? "updated" : "created"} successfully`);
     } catch (err) {
       console.log(err);
       toast.error("An error occurred while saving the category");
-    };
-  }
+    }
+  };
+
   if (!mounted) return null;
   if (isLoading) return <div className="text-white">Loading...</div>;
 
-  const vendorCategories = categoryList.filter(
-    (item: CategoryItem) => item.type === "vendor"
-  );
-  const projectCategories = categoryList.filter(
-    (item: CategoryItem) => item.type === "project"
-  );
-  const filteredCategories =
-    activeTab === "project" ? projectCategories : vendorCategories;
-
   return (
     <div className="card space-y-6 p-6 bg-black text-white rounded-2xl">
+      {/* TOP TABS */}
       <div className="flex gap-4 border-b border-white/40 pb-5">
         <button
           type="button"
-          onClick={() => setActiveTab("project")}
-          className={`px-6 py-3 rounded-xl text-sm md:text-base font-medium transition ${activeTab === "project"
+          onClick={() => setActiveTab("category")}
+          className={`px-6 py-3 rounded-xl text-sm md:text-base font-medium transition ${activeTab === "category"
             ? "bg-[#C8A96A] text-black"
             : "bg-zinc-100 text-zinc-700"
             }`}
         >
-          Project Categories
+          Categories
         </button>
 
         <button
           type="button"
-          onClick={() => setActiveTab("vendor")}
-          className={`px-6 py-3 rounded-xl text-sm md:text-base font-medium transition ${activeTab === "vendor"
+          onClick={() => setActiveTab("subcategory")}
+          className={`px-6 py-3 rounded-xl text-sm md:text-base font-medium transition ${activeTab === "subcategory"
             ? "bg-[#C8A96A] text-black"
             : "bg-zinc-100 text-zinc-700"
             }`}
         >
-          Vendor Categories
+          Subcategories
         </button>
       </div>
 
+      {/* TABLE */}
       <div className="border border-white rounded-[24px] overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[900px] text-left">
+          <table className="w-full min-w-[1100px] text-left">
             <thead className="border-b border-white/20">
               <tr className="text-white">
                 <th className="px-6 py-4 font-medium">Name</th>
-                <th className="px-6 py-4 font-medium">Type</th>
+                <th className="px-6 py-4 font-medium">Business Type</th>
+                <th className="px-6 py-4 font-medium">Category Type</th>
+                <th className="px-6 py-4 font-medium">Parent Category</th>
                 <th className="px-6 py-4 font-medium">Badge Color</th>
                 <th className="px-6 py-4 font-medium">Display Order</th>
                 <th className="px-6 py-4 font-medium">Status</th>
@@ -195,13 +222,19 @@ export default function CategoryManager() {
 
             <tbody>
               {filteredCategories.length > 0 ? (
-                filteredCategories.map((category: CategoryItem) => (
+                filteredCategories.map((category) => (
                   <tr
-                    key={category.id}
+                    key={category._id}
                     className="border-b border-white/10 last:border-b-0"
                   >
                     <td className="px-6 py-4">{category.name}</td>
                     <td className="px-6 py-4 capitalize">{category.type}</td>
+                    <td className="px-6 py-4 capitalize">{category.catType}</td>
+                    <td className="px-6 py-4">
+                      {typeof category.parentId === "object"
+                        ? category.parentId?.name || "-"
+                        : "-"}
+                    </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         <span
@@ -226,8 +259,11 @@ export default function CategoryManager() {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={6} className="px-6 py-8 text-center text-white/60">
-                    No categories found.
+                    <td
+                      colSpan={8}
+                      className="px-6 py-8 text-center text-white/60"
+                    >
+                      No {activeTab === "category" ? "categories" : "subcategories"} found.
                   </td>
                 </tr>
               )}
@@ -236,20 +272,22 @@ export default function CategoryManager() {
         </div>
       </div>
 
+      {/* ADD BUTTON */}
       <button
         type="button"
         onClick={openAddModal}
         className="w-fit bg-[#C8A96A] hover:opacity-90 text-black px-6 py-4 rounded-2xl text-lg font-medium transition"
       >
-        Add Category
+        Add {activeTab === "category" ? "Category" : "Subcategory"}
       </button>
 
+      {/* MODAL */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4">
-          <div className="w-full max-w-2xl rounded-2xl border border-white/20 bg-black p-6 text-white shadow-2xl">
+          <div className="w-full max-w-3xl rounded-2xl border border-white/20 bg-black p-6 text-white shadow-2xl">
             <div className="mb-6 flex items-center justify-between">
               <h2 className="text-2xl font-semibold">
-                {editingCategoryId ? "Edit Category" : "Add Category"}
+                {editingCategoryId ? "Edit Item" : "Add Item"}
               </h2>
               <button
                 type="button"
@@ -270,18 +308,19 @@ export default function CategoryManager() {
                     setFormData((prev) => ({ ...prev, name: e.target.value }))
                   }
                   className="w-full rounded-2xl border border-white/10 bg-black px-4 py-4 outline-none"
-                  placeholder="Enter category name"
+                  placeholder="Enter name"
                 />
               </div>
 
               <div>
-                <label className="mb-2 block text-lg">Category Type</label>
+                <label className="mb-2 block text-lg">Business Type</label>
                 <select
                   value={formData.type}
                   onChange={(e) =>
                     setFormData((prev) => ({
                       ...prev,
                       type: e.target.value as CategoryType,
+                      parentId: "",
                     }))
                   }
                   className="w-full rounded-2xl border border-white/10 bg-black px-4 py-4 outline-none"
@@ -290,6 +329,47 @@ export default function CategoryManager() {
                   <option value="vendor">Vendor</option>
                 </select>
               </div>
+
+              <div>
+                <label className="mb-2 block text-lg">CatType</label>
+                <select
+                  value={formData.catType}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      catType: e.target.value as CategoryLevel,
+                      parentId: "",
+                    }))
+                  }
+                  className="w-full rounded-2xl border border-white/10 bg-black px-4 py-4 outline-none"
+                >
+                  <option value="category">Category</option>
+                  <option value="subcategory">Subcategory</option>
+                </select>
+              </div>
+
+              {formData.catType === "subcategory" && (
+                <div>
+                  <label className="mb-2 block text-lg">Parent Category</label>
+                  <select
+                    value={formData.parentId}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        parentId: e.target.value,
+                      }))
+                    }
+                    className="w-full rounded-2xl border border-white/10 bg-black px-4 py-4 outline-none"
+                  >
+                    <option value="">Select Parent Category</option>
+                    {parentCategories.map((item) => (
+                      <option key={item._id} value={item._id}>
+                        {item.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
 
               <div>
                 <label className="mb-2 block text-lg">Badge Color</label>
@@ -354,7 +434,7 @@ export default function CategoryManager() {
                 onClick={handleSave}
                 className="rounded-2xl bg-[#C8A96A] px-5 py-3 font-medium text-black"
               >
-                {editingCategoryId ? "Update Category" : "Save Category"}
+                {editingCategoryId ? "Update" : "Save"}
               </button>
             </div>
           </div>
