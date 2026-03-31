@@ -12,9 +12,9 @@ const getJson = async (res: Response) => {
 
 export async function getPageContentByKey(pageKey: PageKey): Promise<any> {
   try {
-    const res = await instance.get("/page-contents", { params: { pageKey } });
-
-    return res.data;
+    const res = await instance.get(`/page-contents/${pageKey}`);
+    console.log("Page content response:", res.data.data);
+    return res?.data?.data;
   } catch (error) {
     console.error(`Failed to load page content for ${pageKey}`, error);
     return null;
