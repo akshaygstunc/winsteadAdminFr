@@ -35,7 +35,7 @@ export default function LoginPage() {
       localStorage.setItem("user", JSON.stringify(res.user));
 
       // ✅ ROLE CHECK (VERY IMPORTANT)
-      if (res.user.role !== "admin" && res.user.role !== "subadmin") {
+      if (res.user?.role !== "admin" && res.user?.role !== "subadmin") {
         setError("You are not authorized as admin");
         localStorage.removeItem("token");
         localStorage.removeItem("user");
@@ -43,7 +43,7 @@ export default function LoginPage() {
       }
 
       // ✅ Redirect (NO reload)
-      router.push("/");
+      router.push("/dashboard");
 
     } catch (err: any) {
       setError(err.response?.data?.message || "Login failed");

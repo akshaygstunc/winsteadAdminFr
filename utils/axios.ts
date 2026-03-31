@@ -1,16 +1,18 @@
 import axios from "axios";
 
-const instance = axios.create({
-  baseURL: "http://localhost:4000/api",
+export const instance = axios.create({
+  baseURL: "https://winsteadglobal.com/api/",
 });
 
 instance.interceptors.request.use((config) => {
-  const token = localStorage.getItem("token");
+  if (typeof window !== "undefined") {
+    const token = localStorage.getItem("token");
 
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
   }
-
+console.log(instance.defaults.baseURL);
   return config;
 });
 

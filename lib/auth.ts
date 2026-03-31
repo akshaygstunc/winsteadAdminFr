@@ -1,6 +1,6 @@
 export const loginService = async (email: string, password: string) => {
   // mock auth (later replace with API)
-  if (email === "admin@mail.com") {
+  if (email === "admin@winstead.com") {
     return {
       name: "Admin",
       role: "admin",

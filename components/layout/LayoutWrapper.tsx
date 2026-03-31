@@ -3,7 +3,7 @@
 import { usePathname } from "next/navigation";
 import Sidebar from "./Sidebar";
 import Header from "./Header";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query"; "@tanstack/react-query"
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query"; 
 export default function LayoutWrapper({
   children,
 }: {
