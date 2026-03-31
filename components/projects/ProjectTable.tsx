@@ -4,26 +4,26 @@ import { FaEdit, FaTrash } from "react-icons/fa";
 import { useEffect, useState } from "react";
 import ProjectFormModal from "./ProjectFormModal";
 import { deleteProject, getProjects } from "@/services/projects.service";
-
+import { useRouter } from "next/navigation";
 
 export default function ProjectTable({ search }: any) {
   const [page, setPage] = useState(1);
   const [data, setData] = useState([]);
-const [meta, setMeta] = useState({});
-const [selectedProject, setSelectedProject] = useState(null);
-const fetchData = async () => {
-  const res = await getProjects({ page, limit, search });
-  setData(res.data);
-  setMeta(res.meta);
-};
-
-useEffect(() => {
-  fetchData();
-}, [page, search]);
+  const [meta, setMeta] = useState({});
+  const [selectedProject, setSelectedProject] = useState(null);
+  const fetchData = async () => {
+    const res = await getProjects({ page, limit, search });
+    setData(res.data);
+    setMeta(res.meta);
+  };
+  const router = useRouter();
+  useEffect(() => {
+    fetchData();
+  }, [page, search]);
   const limit = 5;
 
   const filtered = data.filter((p) =>
-    p.name.toLowerCase().includes(search.toLowerCase())
+    p.name.toLowerCase().includes(search.toLowerCase()),
   );
 
   const totalPages = Math.ceil(filtered.length / limit);
@@ -31,7 +31,6 @@ useEffect(() => {
 
   return (
     <div className="space-y-4">
-
       <div className="bg-[#111111] rounded-2xl border border-[#1A1A1A] overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="border-b border-[#1A1A1A] text-gray-400">
@@ -47,11 +46,15 @@ useEffect(() => {
           <tbody>
             {paginated.map((p) => (
               <tr key={p.id} className="border-b border-[#1A1A1A]">
-                
                 {/* IMAGE + NAME */}
                 <td className="p-4 flex items-center gap-3">
                   <img src={p.image} className="w-12 h-12 rounded-lg" />
-                  <span>{p.name}</span>
+                  <span
+                    onClick={() => router.push(`/projects/${p._id}`)}
+                    className="cursor-pointer hover:underline"
+                  >
+                    {p.name}
+                  </span>
                 </td>
 
                 <td className="p-4 text-gray-400">{p.vendorId?.name}</td>
@@ -64,8 +67,14 @@ useEffect(() => {
                 </td>
 
                 <td className="p-4 flex justify-end gap-3">
-                  <FaEdit className="cursor-pointer" onClick={() => setSelectedProject(p)} />
-                  <FaTrash onClick={() => deleteProject(p._id).then(fetchData)} className="cursor-pointer text-red-400" />
+                  <FaEdit
+                    className="cursor-pointer"
+                    onClick={() => setSelectedProject(p)}
+                  />
+                  <FaTrash
+                    onClick={() => deleteProject(p._id).then(fetchData)}
+                    className="cursor-pointer text-red-400"
+                  />
                 </td>
               </tr>
             ))}
@@ -79,11 +88,11 @@ useEffect(() => {
         <button onClick={() => setPage(page + 1)}>Next</button>
       </div>
       {selectedProject && (
-  <ProjectFormModal
-    project={selectedProject}
-    onClose={() => setSelectedProject(null)}
-  />
-)}
+        <ProjectFormModal
+          project={selectedProject}
+          onClose={() => setSelectedProject(null)}
+        />
+      )}
     </div>
   );
 }

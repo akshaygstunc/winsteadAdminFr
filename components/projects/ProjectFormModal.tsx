@@ -6,7 +6,13 @@ import { FaTimes, FaPlus, FaTrash } from "react-icons/fa";
 import toast from "react-hot-toast";
 import { getVendors } from "@/services/vendor.service";
 import { getCategoryDropdown } from "@/services/category.service";
-import { createProject, updateProject, uploadBrochure, uploadDeveloperLogo, uploadFloorPlan } from "@/services/projects.service";
+import {
+  createProject,
+  updateProject,
+  uploadBrochure,
+  uploadDeveloperLogo,
+  uploadFloorPlan,
+} from "@/services/projects.service";
 import { uploadFile } from "@/services/upload.service";
 
 const TextEditor = dynamic(() => import("@/components/common/TextEditor"), {
@@ -142,14 +148,14 @@ export default function ProjectFormModal({
 
   const handleUpload = async (file: File, folder: string) => {
     let res;
-    if (folder == 'brochure') {
-      res = await uploadBrochure(file)
-    } else if (folder == 'floor-plan') {
-      res = await uploadFloorPlan(file)
-    } else if (folder == 'developer-logo') {
-      res = await uploadDeveloperLogo(file)
+    if (folder == "brochure") {
+      res = await uploadBrochure(file);
+    } else if (folder == "floor-plan") {
+      res = await uploadFloorPlan(file);
+    } else if (folder == "developer-logo") {
+      res = await uploadDeveloperLogo(file);
     } else {
-      res = await uploadFile(file)
+      res = await uploadFile(file);
     }
     return res?.data?.url || res?.url || res;
   };
@@ -223,7 +229,7 @@ export default function ProjectFormModal({
   const uploadFloorPlanItemFile = async (
     index: number,
     key: "image" | "brochure",
-    file: File | null
+    file: File | null,
   ) => {
     if (!file) return;
 
@@ -233,14 +239,14 @@ export default function ProjectFormModal({
       setForm((prev) => ({
         ...prev,
         floorPlans: prev.floorPlans.map((item, i) =>
-          i === index ? { ...item, [key]: url || "" } : item
+          i === index ? { ...item, [key]: url || "" } : item,
         ),
       }));
 
       toast.success(
         key === "image"
           ? "Floor plan image uploaded"
-          : "Floor plan brochure uploaded"
+          : "Floor plan brochure uploaded",
       );
     } catch (err) {
       console.error(`Floor plan ${key} upload failed:`, err);
@@ -250,7 +256,7 @@ export default function ProjectFormModal({
 
   const addStringValue = (
     value: string,
-    key: "type" | "subType" | "highlights" | "tags" | "locationHighlights"
+    key: "type" | "subType" | "highlights" | "tags" | "locationHighlights",
   ) => {
     const trimmed = value.trim();
     if (!trimmed) return;
@@ -263,7 +269,7 @@ export default function ProjectFormModal({
 
   const removeStringValue = (
     index: number,
-    key: "type" | "subType" | "highlights" | "tags" | "locationHighlights"
+    key: "type" | "subType" | "highlights" | "tags" | "locationHighlights",
   ) => {
     setForm((prev) => ({
       ...prev,
@@ -308,11 +314,15 @@ export default function ProjectFormModal({
     }));
   };
 
-  const updateAmenity = (index: number, key: keyof AmenityItem, value: string) => {
+  const updateAmenity = (
+    index: number,
+    key: keyof AmenityItem,
+    value: string,
+  ) => {
     setForm((prev) => ({
       ...prev,
       amenities: prev.amenities.map((item, i) =>
-        i === index ? { ...item, [key]: value } : item
+        i === index ? { ...item, [key]: value } : item,
       ),
     }));
   };
@@ -334,12 +344,12 @@ export default function ProjectFormModal({
   const updateProjectFact = (
     index: number,
     key: keyof ProjectFactItem,
-    value: string
+    value: string,
   ) => {
     setForm((prev) => ({
       ...prev,
       projectFacts: prev.projectFacts.map((item, i) =>
-        i === index ? { ...item, [key]: value } : item
+        i === index ? { ...item, [key]: value } : item,
       ),
     }));
   };
@@ -373,12 +383,12 @@ export default function ProjectFormModal({
   const updateFloorPlanItem = (
     index: number,
     key: keyof FloorPlanItem,
-    value: any
+    value: any,
   ) => {
     setForm((prev) => ({
       ...prev,
       floorPlans: prev.floorPlans.map((item, i) =>
-        i === index ? { ...item, [key]: value } : item
+        i === index ? { ...item, [key]: value } : item,
       ),
     }));
   };
@@ -418,7 +428,8 @@ export default function ProjectFormModal({
           type: "project",
         });
         const subcat = res.data.filter(
-          (cat) => cat.catType == "subcategory" && cat.parentId == form.categoryId
+          (cat) =>
+            cat.catType == "subcategory" && cat.parentId == form.categoryId,
         );
         setSubCategories(subcat);
       } catch (err) {
@@ -488,16 +499,36 @@ export default function ProjectFormModal({
     });
   }, [project]);
 
+  const uploadAmenityIcon = async (index: number, file: File | null) => {
+    if (!file) return;
+
+    try {
+      const url = await handleUpload(file);
+
+      setForm((prev) => ({
+        ...prev,
+        amenities: prev.amenities.map((item, i) =>
+          i === index ? { ...item, icon: url } : item,
+        ),
+      }));
+
+      toast.success("Amenity icon uploaded");
+    } catch (err) {
+      console.error(err);
+      toast.error("Icon upload failed");
+    }
+  };
+
   const handleSave = async () => {
     try {
       const uploadedGalleryUrls = await Promise.all(
         galleryFiles
           .filter((file) => file instanceof File)
-          .map((file) => handleUpload(file))
+          .map((file) => handleUpload(file)),
       );
 
       const existingGalleryUrls = (form.gallery || []).filter(
-        (item) => typeof item === "string"
+        (item) => typeof item === "string",
       );
 
       const payload = {
@@ -535,7 +566,7 @@ export default function ProjectFormModal({
         amenities: form.amenities.filter((item) => item.title?.trim()),
         tags: form.tags,
         projectFacts: form.projectFacts.filter(
-          (item) => item.label?.trim() && item.value?.trim()
+          (item) => item.label?.trim() && item.value?.trim(),
         ),
 
         gallery: [...existingGalleryUrls, ...uploadedGalleryUrls],
@@ -582,10 +613,7 @@ export default function ProjectFormModal({
     }
   };
 
-  const renderTags = (
-    items: string[],
-    onRemove: (index: number) => void
-  ) => (
+  const renderTags = (items: string[], onRemove: (index: number) => void) => (
     <div className="flex flex-wrap gap-2 mt-2">
       {items.map((item, index) => (
         <span
@@ -741,7 +769,9 @@ export default function ProjectFormModal({
               <select
                 className="input"
                 value={form.status}
-                onChange={(e) => setField("status", e.target.value as ProjectStatus)}
+                onChange={(e) =>
+                  setField("status", e.target.value as ProjectStatus)
+                }
               >
                 <option value="available">Available</option>
                 <option value="sold">Sold</option>
@@ -773,7 +803,9 @@ export default function ProjectFormModal({
                 }}
                 className="input"
               />
-              {renderTags(form.type, (index) => removeStringValue(index, "type"))}
+              {renderTags(form.type, (index) =>
+                removeStringValue(index, "type"),
+              )}
             </div>
 
             <div>
@@ -790,7 +822,9 @@ export default function ProjectFormModal({
                 }}
                 className="input"
               />
-              {renderTags(form.subType, (index) => removeStringValue(index, "subType"))}
+              {renderTags(form.subType, (index) =>
+                removeStringValue(index, "subType"),
+              )}
             </div>
 
             <div>
@@ -808,7 +842,7 @@ export default function ProjectFormModal({
                 className="input"
               />
               {renderTags(form.highlights, (index) =>
-                removeStringValue(index, "highlights")
+                removeStringValue(index, "highlights"),
               )}
             </div>
 
@@ -826,7 +860,9 @@ export default function ProjectFormModal({
                 }}
                 className="input"
               />
-              {renderTags(form.tags, (index) => removeStringValue(index, "tags"))}
+              {renderTags(form.tags, (index) =>
+                removeStringValue(index, "tags"),
+              )}
             </div>
 
             <div>
@@ -837,14 +873,17 @@ export default function ProjectFormModal({
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
                     e.preventDefault();
-                    addStringValue(locationHighlightInput, "locationHighlights");
+                    addStringValue(
+                      locationHighlightInput,
+                      "locationHighlights",
+                    );
                     setLocationHighlightInput("");
                   }
                 }}
                 className="input"
               />
               {renderTags(form.locationHighlights, (index) =>
-                removeStringValue(index, "locationHighlights")
+                removeStringValue(index, "locationHighlights"),
               )}
             </div>
           </div>
@@ -852,10 +891,14 @@ export default function ProjectFormModal({
           {/* RIGHT COLUMN */}
           <div className="space-y-6">
             <div>
-              <label className="text-sm text-gray-400">Developer Description</label>
+              <label className="text-sm text-gray-400">
+                Developer Description
+              </label>
               <TextEditor
                 value={form.developerDescription}
-                onChange={(value: string) => setField("developerDescription", value)}
+                onChange={(value: string) =>
+                  setField("developerDescription", value)
+                }
                 placeholder="Enter developer description"
               />
             </div>
@@ -864,7 +907,9 @@ export default function ProjectFormModal({
               <label className="text-sm text-gray-400">Short Description</label>
               <TextEditor
                 value={form.shortDescription}
-                onChange={(value: string) => setField("shortDescription", value)}
+                onChange={(value: string) =>
+                  setField("shortDescription", value)
+                }
                 placeholder="Enter short description"
               />
             </div>
@@ -884,7 +929,9 @@ export default function ProjectFormModal({
                 <input
                   type="file"
                   accept="image/*"
-                  onChange={(e: any) => uploadDeveloperLogofile(e.target.files?.[0] || null)}
+                  onChange={(e: any) =>
+                    uploadDeveloperLogofile(e.target.files?.[0] || null)
+                  }
                   className="input mt-1"
                 />
                 {uploading.developerLogo && (
@@ -900,11 +947,15 @@ export default function ProjectFormModal({
               </div>
 
               <div>
-                <label className="text-sm text-gray-400">Upload Brochure (PDF)</label>
+                <label className="text-sm text-gray-400">
+                  Upload Brochure (PDF)
+                </label>
                 <input
                   type="file"
                   accept=".pdf"
-                  onChange={(e: any) => uploadBrochurefile(e.target.files?.[0] || null)}
+                  onChange={(e: any) =>
+                    uploadBrochurefile(e.target.files?.[0] || null)
+                  }
                   className="input mt-1"
                 />
                 {uploading.brochure && (
@@ -920,11 +971,15 @@ export default function ProjectFormModal({
               </div>
 
               <div>
-                <label className="text-sm text-gray-400">Upload Floor Plan</label>
+                <label className="text-sm text-gray-400">
+                  Upload Floor Plan
+                </label>
                 <input
                   type="file"
                   accept="image/*,.pdf"
-                  onChange={(e: any) => uploadFloorPlanfile(e.target.files?.[0] || null)}
+                  onChange={(e: any) =>
+                    uploadFloorPlanfile(e.target.files?.[0] || null)
+                  }
                   className="input mt-1"
                 />
                 {uploading.floorPlan && (
@@ -972,7 +1027,9 @@ export default function ProjectFormModal({
               <label className="text-sm text-gray-400">Meta Description</label>
               <TextEditor
                 value={form.seo.metaDescription}
-                onChange={(value: string) => setSeoField("metaDescription", value)}
+                onChange={(value: string) =>
+                  setSeoField("metaDescription", value)
+                }
                 placeholder="Enter meta description"
               />
             </div>
@@ -1049,21 +1106,40 @@ export default function ProjectFormModal({
                     <input
                       placeholder="Amenity Title"
                       value={amenity.title}
-                      onChange={(e) => updateAmenity(index, "title", e.target.value)}
+                      onChange={(e) =>
+                        updateAmenity(index, "title", e.target.value)
+                      }
                       className="input"
                     />
 
-                    <input
+                    {/* <input
                       placeholder="Amenity Icon"
                       value={amenity.icon || ""}
                       onChange={(e) => updateAmenity(index, "icon", e.target.value)}
                       className="input"
+                    /> */}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e: any) =>
+                        uploadAmenityIcon(index, e.target.files?.[0] || null)
+                      }
+                      className="input mt-1"
                     />
 
+                    {/* PREVIEW */}
+                    {amenity.icon && (
+                      <img
+                        src={amenity.icon}
+                        className="w-8 h-8 mt-2 object-contain"
+                      />
+                    )}
                     <input
                       placeholder="Amenity Image URL"
                       value={amenity.image || ""}
-                      onChange={(e) => updateAmenity(index, "image", e.target.value)}
+                      onChange={(e) =>
+                        updateAmenity(index, "image", e.target.value)
+                      }
                       className="input"
                     />
 
@@ -1175,7 +1251,7 @@ export default function ProjectFormModal({
                         updateFloorPlanItem(
                           index,
                           "bedrooms",
-                          e.target.value ? Number(e.target.value) : null
+                          e.target.value ? Number(e.target.value) : null,
                         )
                       }
                       className="input"
@@ -1228,7 +1304,7 @@ export default function ProjectFormModal({
                           uploadFloorPlanItemFile(
                             index,
                             "image",
-                            e.target.files?.[0] || null
+                            e.target.files?.[0] || null,
                           )
                         }
                         className="input mt-1"
@@ -1253,7 +1329,7 @@ export default function ProjectFormModal({
                           uploadFloorPlanItemFile(
                             index,
                             "brochure",
-                            e.target.files?.[0] || null
+                            e.target.files?.[0] || null,
                           )
                         }
                         className="input mt-1"
