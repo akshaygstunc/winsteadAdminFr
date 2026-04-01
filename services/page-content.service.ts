@@ -3,12 +3,6 @@ import { PageContent, PageKey } from "@/types/pageContent";
 import instance from "@/utils/axios";
 import { getProjects } from "./projects.service";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL;
-
-const getJson = async (res: Response) => {
-  const data = await res.json().catch(() => null);
-  return data;
-};
 
 export async function getPageContentByKey(pageKey: PageKey): Promise<any> {
   try {
