@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import instance from "@/utils/axios";
 import axios from "@/utils/axios";
 

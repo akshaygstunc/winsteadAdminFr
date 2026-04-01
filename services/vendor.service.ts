@@ -1,35 +1,48 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import instance from "@/utils/axios";
-import axios from "@/utils/axios";
 
-const BASE_URL = "/vendors";
+export interface VendorPayload {
+  name: string;
+  slug: string;
+  logo?: string | null;
+  bannerImage?: string | null;
+  description?: string | null;
+  contactName?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  address?: string | null;
+  categoryId?: string | null;
+  isFeatured?: boolean;
+  status?: "active" | "inactive";
+  seo?: {
+    metaTitle?: string;
+    metaDescription?: string;
+    metaKeywords?: string[];
+  };
+}
 
-// ✅ GET ALL
-export const getVendors = async (params?: {
-  page?: number;
-  limit?: number;
-  search?: string;
-  categoryId?: string;
-  status?: string;
-  featured?: string;
-}) => {
-  const res = await axios.get("vendors", { params });
+export const getVendors = async (params?: Record<string, any>) => {
+  const res = await instance.get("/vendors", { params });
   return res.data;
 };
 
-// ✅ CREATE
-export const createVendor = async (data: any) => {
-  const res = await instance.post("vendors", data);
+export const getVendorById = async (id: string) => {
+  const res = await instance.get(`/vendors/${id}`);
   return res.data;
 };
 
-// ✅ UPDATE
-export const updateVendor = async (id: string, data: any) => {
-  const res = await instance.patch(`${BASE_URL}/${id}`, data);
+export const createVendor = async (payload: VendorPayload) => {
+  const res = await instance.post("/vendors", payload);
   return res.data;
 };
 
-// ✅ DELETE
+export const updateVendor = async (id: string, payload: VendorPayload) => {
+  const res = await instance.patch(`/vendors/${id}`, payload);
+  return res.data;
+};
+
 export const deleteVendor = async (id: string) => {
-  const res = await axios.delete(`${BASE_URL}/${id}`);
+  const res = await instance.delete(`/vendors/${id}`);
   return res.data;
 };

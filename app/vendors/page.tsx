@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import VendorTable from "../../components/vendors/VendorTable";
@@ -14,17 +15,18 @@ interface VendorSeo {
   metaKeywords: string[];
 }
 
-interface VendorFormData {
+export interface VendorFormData {
   _id?: string;
   name: string;
-  logo: string;
-  bannerImage: string;
-  description: string;
-  contactName: string;
-  email: string;
-  phone: string;
-  address: string;
-  categoryId: string;
+  slug: string;
+  logo: string | null;
+  bannerImage: string | null;
+  description: string | null;
+  contactName: string | null;
+  email: string | null;
+  phone: string | null;
+  address: string | null;
+  categoryId: string | null;
   isFeatured: boolean;
   status: VendorStatus;
   seo: VendorSeo;
@@ -33,18 +35,20 @@ interface VendorFormData {
 interface CategoryOption {
   _id: string;
   name: string;
+  type?: string;
 }
 
 const initialVendorForm: VendorFormData = {
   name: "",
-  logo: "",
-  bannerImage: "",
-  description: "",
-  contactName: "",
-  email: "",
-  phone: "",
-  address: "",
-  categoryId: "",
+  slug: "",
+  logo: null,
+  bannerImage: null,
+  description: null,
+  contactName: null,
+  email: null,
+  phone: null,
+  address: null,
+  categoryId: null,
   isFeatured: false,
   status: "active",
   seo: {
@@ -60,6 +64,7 @@ export default function VendorsPage() {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("all");
   const [status, setStatus] = useState("all");
+  const [reloadKey, setReloadKey] = useState(0);
 
   const [selectedVendor, setSelectedVendor] =
     useState<VendorFormData>(initialVendorForm);
@@ -68,7 +73,10 @@ export default function VendorsPage() {
     const fetchCategories = async () => {
       try {
         const res = await getCategories({ page: 1, limit: 100 });
-        setCategories(res?.data?.filter((item: any) => item.type === "vendor") || []);
+        setCategories(
+          res?.data?.filter((item: CategoryOption) => item.type === "vendor") ||
+          []
+        );
       } catch (err) {
         console.error("Failed to fetch categories:", err);
       }
@@ -82,24 +90,30 @@ export default function VendorsPage() {
     setOpen(true);
   };
 
-  const handleEditVendor = (vendor: VendorFormData) => {
+  const handleEditVendor = (vendor: any) => {
     setSelectedVendor({
       _id: vendor._id,
       name: vendor.name || "",
-      logo: vendor.logo || "",
-      bannerImage: vendor.bannerImage || "",
-      description: vendor.description || "",
-      contactName: vendor.contactName || "",
-      email: vendor.email || "",
-      phone: vendor.phone || "",
-      address: vendor.address || "",
-      categoryId: vendor.categoryId || "",
+      slug: vendor.slug || "",
+      logo: vendor.logo || null,
+      bannerImage: vendor.bannerImage || null,
+      description: vendor.description || null,
+      contactName: vendor.contactName || null,
+      email: vendor.email || null,
+      phone: vendor.phone || null,
+      address: vendor.address || null,
+      categoryId:
+        typeof vendor.categoryId === "object"
+          ? vendor.categoryId?._id || null
+          : vendor.categoryId || null,
       isFeatured: Boolean(vendor.isFeatured),
       status: vendor.status || "active",
       seo: {
         metaTitle: vendor.seo?.metaTitle || "",
         metaDescription: vendor.seo?.metaDescription || "",
-        metaKeywords: vendor.seo?.metaKeywords || [],
+        metaKeywords: Array.isArray(vendor.seo?.metaKeywords)
+          ? vendor.seo.metaKeywords
+          : [],
       },
     });
     setOpen(true);
@@ -108,6 +122,11 @@ export default function VendorsPage() {
   const handleCloseModal = () => {
     setOpen(false);
     setSelectedVendor(initialVendorForm);
+  };
+
+  const handleSuccess = () => {
+    setReloadKey((prev) => prev + 1);
+    handleCloseModal();
   };
 
   return (
@@ -161,6 +180,7 @@ export default function VendorsPage() {
       </div>
 
       <VendorTable
+        key={reloadKey}
         search={search}
         category={category}
         status={status}
@@ -170,6 +190,7 @@ export default function VendorsPage() {
       {open && (
         <VendorFormModal
           onClose={handleCloseModal}
+          onSuccess={handleSuccess}
           categories={categories}
           initialData={selectedVendor}
           isEdit={Boolean(selectedVendor?._id)}
