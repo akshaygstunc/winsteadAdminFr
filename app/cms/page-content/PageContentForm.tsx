@@ -259,37 +259,73 @@ export default function PageContentForm() {
         }));
     };
 
-    const handleSave = async () => {
-        try {
-            setSaving(true);
+    // const handleSave = async () => {
+    //     try {
+    //         setSaving(true);
 
-            const sanitizedSections = [...pageData.sections]
-                .sort((a, b) => a.order - b.order)
-                .map((section, index) => ({
-                    ...section,
-                    order: index + 1,
-                }));
+    //         const sanitizedSections = [...pageData.sections]
+    //             .sort((a, b) => a.order - b.order)
+    //             .map((section, index) => ({
+    //                 ...section,
+    //                 order: index + 1,
+    //             }));
 
-            const saved = await savePageContent({
-                ...pageData,
-                sections: sanitizedSections,
-            });
+    //         const saved = await savePageContent({
+    //             ...pageData,
+    //             sections: sanitizedSections,
+    //         });
 
-            setPageData((prev) => ({
-                ...prev,
-                ...saved,
-                sections: normalizeSections(saved.sections || sanitizedSections),
-            }));
+    //         setPageData((prev) => ({
+    //             ...prev,
+    //             ...saved,
+    //             sections: normalizeSections(saved.sections || sanitizedSections),
+    //         }));
 
-            alert("Page content saved successfully");
-        } catch (error: any) {
-            console.error(error);
-            alert(error?.message || "Failed to save page content");
-        } finally {
-            setSaving(false);
-        }
+    //         alert("Page content saved successfully");
+    //     } catch (error: any) {
+    //         console.error(error);
+    //         alert(error?.message || "Failed to save page content");
+    //     } finally {
+    //         setSaving(false);
+    //     }
+    // };
+const handleSave = async () => {
+  try {
+    setSaving(true);
+
+    // ✅ normalize sections order
+    const sanitizedSections = [...pageData.sections]
+      .sort((a, b) => a.order - b.order)
+      .map((section, index) => ({
+        ...section,
+        order: index + 1,
+      }));
+
+    const payload = {
+      ...pageData,
+      sections: sanitizedSections,
     };
 
+    console.log("🚀 Saving Payload:", payload);
+
+    // ✅ API CALL
+    const res = await savePageContent(payload);
+
+    // ✅ update UI with latest data
+    setPageData((prev) => ({
+      ...prev,
+      ...res,
+      sections: normalizeSections(res.sections || sanitizedSections),
+    }));
+
+    alert("✅ Page content saved successfully");
+  } catch (error: any) {
+    console.error("❌ Save Error:", error);
+    alert(error?.response?.data?.message || "Failed to save page content");
+  } finally {
+    setSaving(false);
+  }
+};
     return (
         <div className="space-y-6">
             <div className="rounded-2xl border border-gray-800 bg-[#0f0f0f] p-5">
