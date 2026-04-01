@@ -1,231 +1,376 @@
-/* eslint-disable react-hooks/set-state-in-effect */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { FaTimes } from "react-icons/fa";
-import { useEffect, useState } from "react";
-import MediaPickerModal from "../media/MediaPickerModal";
-import { createVendor } from "@/services/vendor.service";
-import { getCategoryDropdown } from "@/services/category.service";
-import { updateVendor } from "@/services/vendor.service";
+import { useEffect, useMemo, useState } from "react";
+import Image from "next/image";
+import { createVendor, updateVendor } from "@/services/vendor.service";
+import { uploadImageFile } from "@/services/page-content.service";
+import type { VendorFormData } from "@/app/vendors/page";
 
-export default function VendorFormModal({ onClose, vendor }: any) {
-  const [form, setForm] = useState({
-    name: "",
-    description: "",
-    contact: "",
-    category: "",
-    status: "active",
-    featured: false,
-  });
- const [categories, setCategories] = useState<any[]>([]);
-  const [logo, setLogo] = useState("");
-  const [logoPreview, setLogoPreview] = useState<any>(null);
-  const [openMedia, setOpenMedia] = useState(false);
-  const fetchCategories = async () => {
+interface CategoryOption {
+  _id: string;
+  name: string;
+}
+
+interface VendorFormModalProps {
+  onClose: () => void;
+  onSuccess: () => void;
+  categories: CategoryOption[];
+  initialData: VendorFormData;
+  isEdit: boolean;
+}
+
+const slugify = (value: string) =>
+  value
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-");
+
+export default function VendorFormModal({
+  onClose,
+  onSuccess,
+  categories,
+  initialData,
+  isEdit,
+}: VendorFormModalProps) {
+  const [form, setForm] = useState<VendorFormData>(initialData);
+  const [keywordInput, setKeywordInput] = useState(
+    initialData.seo?.metaKeywords?.join(", ") || ""
+  );
+  const [loading, setLoading] = useState(false);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [uploadingBanner, setUploadingBanner] = useState(false);
+
+  useEffect(() => {
+    setForm(initialData);
+    setKeywordInput(initialData.seo?.metaKeywords?.join(", ") || "");
+  }, [initialData]);
+
+  const canAutoSlug = useMemo(() => !isEdit || !form.slug, [isEdit, form.slug]);
+
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+  ) => {
+    const { name, value, type } = e.target as HTMLInputElement;
+
+    if (name.startsWith("seo.")) {
+      const seoKey = name.split(".")[1] as keyof VendorFormData["seo"];
+      setForm((prev) => ({
+        ...prev,
+        seo: {
+          ...prev.seo,
+          [seoKey]: value,
+        },
+      }));
+      return;
+    }
+
+    if (type === "checkbox") {
+      setForm((prev) => ({
+        ...prev,
+        [name]: (e.target as HTMLInputElement).checked,
+      }));
+      return;
+    }
+
+    setForm((prev) => {
+      const updated = {
+        ...prev,
+        [name]: value === "" ? null : value,
+      };
+
+      if (name === "name" && canAutoSlug) {
+        updated.slug = slugify(value);
+      }
+
+      return updated;
+    });
+  };
+
+  const handleKeywordChange = (value: string) => {
+    setKeywordInput(value);
+    setForm((prev) => ({
+      ...prev,
+      seo: {
+        ...prev.seo,
+        metaKeywords: value
+          .split(",")
+          .map((item) => item.trim())
+          .filter(Boolean),
+      },
+    }));
+  };
+
+  const handleUpload = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+    field: "logo" | "bannerImage"
+  ) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
     try {
-      const res = await getCategoryDropdown({
-        type: "vendor", // ⚠️ confirm this type
-      });
-      setCategories(res.data);
-    } catch (err) {
-      console.error("Category fetch error:", err);
+      if (field === "logo") setUploadingLogo(true);
+      if (field === "bannerImage") setUploadingBanner(true);
+
+      const res = await uploadImageFile(file);
+      const imageUrl = res;
+
+      if (!imageUrl) throw new Error("Image URL not returned from upload API");
+
+      setForm((prev) => ({
+        ...prev,
+        [field]: imageUrl,
+      }));
+    } catch (error) {
+      console.error(`${field} upload failed`, error);
+      alert(`Failed to upload ${field}`);
+    } finally {
+      if (field === "logo") setUploadingLogo(false);
+      if (field === "bannerImage") setUploadingBanner(false);
     }
   };
 
-  useEffect(() => {
-    fetchCategories();
-  }, []);
-   // ✅ HANDLE SAVE
- const handleSave = async () => {
-  try {
-    const payload = {
-      name: form.name,
-      description: form.description,
-      contactName: form.contactName,
-      phone: form.phone,
-      categoryId: form.categoryId,
-      status: form.status,
-      isFeatured: form.isFeatured,
-      logo: logo,
-    };
+  const handleSubmit = async () => {
+    try {
+      setLoading(true);
 
-    if (vendor?._id) {
-      // ✅ UPDATE
-      await updateVendor(vendor._id, payload);
-    } else {
-      // ✅ CREATE
-      await createVendor(payload);
+      const payload = {
+        name: form.name.trim(),
+        slug: form.slug?.trim() || slugify(form.name),
+        logo: form.logo || null,
+        bannerImage: form.bannerImage || null,
+        description: form.description || null,
+        contactName: form.contactName || null,
+        email: form.email || null,
+        phone: form.phone || null,
+        address: form.address || null,
+        categoryId: form.categoryId || null,
+        isFeatured: Boolean(form.isFeatured),
+        status: form.status,
+        seo: {
+          metaTitle: form.seo?.metaTitle || "",
+          metaDescription: form.seo?.metaDescription || "",
+          metaKeywords: form.seo?.metaKeywords || [],
+        },
+      };
+
+      if (!payload.name) {
+        alert("Vendor name is required");
+        return;
+      }
+
+      if (!payload.slug) {
+        alert("Slug is required");
+        return;
+      }
+
+      if (isEdit && form._id) {
+        await updateVendor(form._id, payload);
+      } else {
+        await createVendor(payload);
+      }
+
+      onSuccess();
+    } catch (error: any) {
+      console.error("Vendor save failed", error);
+      alert(error?.response?.data?.message || "Failed to save vendor");
+    } finally {
+      setLoading(false);
     }
+  };
 
-    onClose();
-  } catch (err) {
-    console.error("Save vendor error:", err);
-  }
-};
-  useEffect(() => {
-  if (vendor) {
-    setForm({
-      name: vendor.name || "",
-      description: vendor.description || "",
-      contactName: vendor.contactName || "",
-      phone: vendor.phone || "",
-      categoryId: vendor.categoryId?._id || "",
-      status: vendor.status || "ACTIVE",
-      isFeatured: vendor.isFeatured || false,
-    });
-
-    setLogo(vendor.logo || "");
-  }
-}, [vendor]);
   return (
-    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-      <div className="bg-[#111111] w-full max-w-2xl rounded-2xl p-6 border border-[#1A1A1A] overflow-y-auto max-h-[90vh]">
-        {/* HEADER */}
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-lg font-semibold">
-  {vendor ? "Edit Vendor" : "Add Vendor"}
-</h2>
-          <FaTimes className="cursor-pointer" onClick={onClose} />
+    <div className="fixed inset-0 bg-black/60 z-50 flex justify-center items-start overflow-y-auto p-6">
+      <div className="bg-[#111] text-white w-full max-w-4xl rounded-2xl p-6 space-y-6 border border-white/10">
+        <div className="flex justify-between items-center">
+          <h2 className="text-xl font-semibold">
+            {isEdit ? "Edit Vendor" : "Add Vendor"}
+          </h2>
+          <button onClick={onClose} className="text-sm text-gray-400">
+            Close
+          </button>
         </div>
 
-        {/* FORM */}
-        <div className="space-y-4">
-          {/* NAME */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <input
-            placeholder="Vendor Name"
+            name="name"
             value={form.name}
-            onChange={(e) =>
-              setForm({ ...form, name: e.target.value })
-            }
+            onChange={handleChange}
+            placeholder="Vendor name"
             className="input"
           />
 
-          {/* DESCRIPTION */}
-          <textarea
-            placeholder="Description"
-            value={form.description}
-            onChange={(e) =>
-              setForm({ ...form, description: e.target.value })
-            }
-            className="input"
-          />
-
-          {/* CONTACT NAME */}
           <input
-            placeholder="Contact Person Name"
-            value={form.contactName}
+            name="slug"
+            value={form.slug}
             onChange={(e) =>
-              setForm({ ...form, contactName: e.target.value })
+              setForm((prev) => ({ ...prev, slug: slugify(e.target.value) }))
             }
-            className="input"
-          />
-           {/* PHONE */}
-          <input
-            placeholder="Phone Number"
-            value={form.phone}
-            onChange={(e) =>
-              setForm({ ...form, phone: e.target.value })
-            }
+            placeholder="Slug"
             className="input"
           />
 
-           {/* CATEGORY DROPDOWN ✅ */}
+          <input
+            name="contactName"
+            value={form.contactName || ""}
+            onChange={handleChange}
+            placeholder="Contact name"
+            className="input"
+          />
+
+          <input
+            name="email"
+            value={form.email || ""}
+            onChange={handleChange}
+            placeholder="Email"
+            className="input"
+          />
+
+          <input
+            name="phone"
+            value={form.phone || ""}
+            onChange={handleChange}
+            placeholder="Phone"
+            className="input"
+          />
+
           <select
-            value={form.categoryId}
-            onChange={(e) =>
-              setForm({ ...form, categoryId: e.target.value })
-            }
+            name="categoryId"
+            value={form.categoryId || ""}
+            onChange={handleChange}
             className="input"
           >
-            <option value="">Select Category</option>
-            {categories.map((c) => (
-              <option key={c._id} value={c._id}>
-                {c.name}
+            <option value="">Select category</option>
+            {categories.map((cat) => (
+              <option key={cat._id} value={cat._id}>
+                {cat.name}
               </option>
             ))}
           </select>
 
-          {/* STATUS ✅ */}
           <select
+            name="status"
             value={form.status}
-            onChange={(e) =>
-              setForm({ ...form, status: e.target.value })
-            }
+            onChange={handleChange}
             className="input"
           >
             <option value="active">Active</option>
             <option value="inactive">Inactive</option>
           </select>
-           {/* FEATURED */}
-          <label className="flex items-center gap-2 text-sm">
+
+          <label className="flex items-center gap-2">
             <input
               type="checkbox"
+              name="isFeatured"
               checked={form.isFeatured}
-              onChange={(e) =>
-                setForm({ ...form, isFeatured: e.target.checked })
-              }
+              onChange={handleChange}
             />
-            Mark as Featured
+            Featured vendor
           </label>
-          {/* ✅ MEDIA PICKER BUTTON (ADDED) */}
-          <div>
-            <button
-              onClick={() => setOpenMedia(true)}
-              className="w-full bg-[#0B0B0C] border border-[#1A1A1A] p-3 rounded-xl text-left"
-            >
-              Select Logo from Media Library
-            </button>
+        </div>
 
-            {/* PREVIEW FROM MEDIA PICKER */}
-            {logo && (
-              <img
-                src={logo}
-                className="w-16 h-16 mt-2 rounded-lg object-cover"
-              />
+        <textarea
+          name="address"
+          value={form.address || ""}
+          onChange={handleChange}
+          placeholder="Address"
+          className="input w-full min-h-[80px]"
+        />
+
+        <textarea
+          name="description"
+          value={form.description || ""}
+          onChange={handleChange}
+          placeholder="Description"
+          className="input w-full min-h-[120px]"
+        />
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label className="block mb-2 text-sm">Upload Logo</label>
+            <input type="file" accept="image/*" onChange={(e) => handleUpload(e, "logo")} />
+            {uploadingLogo && (
+              <p className="text-xs text-yellow-400 mt-2">Uploading logo...</p>
+            )}
+            {form.logo && (
+              <div className="mt-3">
+                <img
+                  src={form.logo}
+                  alt="Logo"
+                  width={80}
+                  height={80}
+                  className="rounded object-cover border border-white/10"
+                />
+              </div>
             )}
           </div>
 
-           {/* MEDIA PICKER */}
-          <button onClick={() => setOpenMedia(true)} className="input">
-            Select Logo from Media Library
-          </button>
-
-          {logo && (
-            <img src={logo} className="w-16 h-16 rounded-lg" />
-          )}
-
-          {/* FILE UPLOAD */}
-          <input
-            type="file"
-            onChange={(e: any) =>
-              setLogoPreview(URL.createObjectURL(e.target.files[0]))
-            }
-            className="input"
-          />
-
-          {logoPreview && (
-            <img src={logoPreview} className="w-16 h-16 rounded-lg" />
-          )}
-
-          {/* ACTIONS */}
-          <div className="flex justify-end gap-3 pt-4">
-            <button onClick={onClose} className="btn-secondary">
-              Cancel
-            </button>
-
-            <button onClick={handleSave} className="btn-primary">
-              Save Vendor
-            </button>
+          <div>
+            <label className="block mb-2 text-sm">Upload Banner</label>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => handleUpload(e, "bannerImage")}
+            />
+            {uploadingBanner && (
+              <p className="text-xs text-yellow-400 mt-2">Uploading banner...</p>
+            )}
+            {form.bannerImage && (
+              <div className="mt-3">
+                <Image
+                  src={form.bannerImage}
+                  alt="Banner"
+                  width={200}
+                  height={100}
+                  className="rounded object-cover border border-white/10"
+                />
+              </div>
+            )}
           </div>
         </div>
+
+        <div className="border-t border-white/10 pt-4 space-y-4">
+          <h3 className="text-lg font-medium">SEO</h3>
+
+          <input
+            name="seo.metaTitle"
+            value={form.seo.metaTitle}
+            onChange={handleChange}
+            placeholder="Meta title"
+            className="input w-full"
+          />
+
+          <textarea
+            name="seo.metaDescription"
+            value={form.seo.metaDescription}
+            onChange={handleChange}
+            placeholder="Meta description"
+            className="input w-full min-h-[100px]"
+          />
+
+          <input
+            value={keywordInput}
+            onChange={(e) => handleKeywordChange(e.target.value)}
+            placeholder="Meta keywords (comma separated)"
+            className="input w-full"
+          />
+        </div>
+
+        <div className="flex justify-end gap-3">
+          <button onClick={onClose} className="px-4 py-2 rounded-xl border border-white/10">
+            Cancel
+          </button>
+          <button
+            onClick={handleSubmit}
+            disabled={loading || uploadingLogo || uploadingBanner}
+            className="px-4 py-2 rounded-xl bg-[#C8A96A] text-black disabled:opacity-60"
+          >
+            {loading ? "Saving..." : isEdit ? "Update Vendor" : "Create Vendor"}
+          </button>
+        </div>
       </div>
-      {/* ✅ MEDIA MODAL */}
-      {openMedia && (
-        <MediaPickerModal
-          onSelect={(img: string) => setLogo(img)}
-          onClose={() => setOpenMedia(false)}
-        />
-      )}
     </div>
   );
 }
