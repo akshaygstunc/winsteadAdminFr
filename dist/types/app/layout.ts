@@ -1,4 +1,4 @@
-// File: /Users/akshaysharma/Downloads/luxury-realestate-closing-pass-parent-routes/apps/frontend/app/layout.tsx
+// File: /root/winsteadAdminFr/app/layout.tsx
 import * as entry from '../../../app/layout.js'
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
 
