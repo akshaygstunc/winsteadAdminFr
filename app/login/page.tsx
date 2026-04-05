@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import clsx from 'clsx';
 
 type LoginResponse = {
-  accessToken: string;
+  access_token: string;
   user: {
     _id: string;
     name?: string;
@@ -31,27 +31,27 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      // const res = await fetch(`${API_URL}/auth/login`, {
-      //   method: 'POST',
-      //   headers: {
-      //     'Content-Type': 'application/json',
-      //   },
-      //   body: JSON.stringify({ email, password }),
-      // });
+      const res = await fetch(`${API_URL}auth/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
 
-      // const data = await res.json().catch(() => null);
+      const data = await res.json().catch(() => null);
 
-      // if (!res.ok) {
-      //   throw new Error(data?.message || 'Login failed');
-      // }
+      if (!res.ok) {
+        throw new Error(data?.message || 'Login failed');
+      }
 
-      // const payload = data as LoginResponse;
+      const payload = data as LoginResponse;
+      console.log('Login response payload:', payload);
+      if (!payload?.access_token) {
+        throw new Error('Access token missing in response');
+      }
 
-      // if (!payload?.accessToken) {
-      //   throw new Error('Access token missing in response');
-      // }
-
-      localStorage.setItem('accessToken', "payload.accessToken");
+      localStorage.setItem('accessToken', payload.access_token);
       // localStorage.setItem('authUser', JSON.stringify(payload.user || null));
 
       router.push('/dashboard');

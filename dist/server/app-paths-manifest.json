@@ -1,0 +1,6 @@
+{
+  "/cms/[id]/page": "app/cms/[id]/page.js",
+  "/properties/page": "app/properties/page.js",
+  "/customization/developer-community/page": "app/customization/developer-community/page.js",
+  "/customization/property-types/page": "app/customization/property-types/page.js"
+}

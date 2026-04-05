@@ -7,12 +7,14 @@ export function SectionCard({
   action,
   children,
   className,
+  button
 }: {
   title: string;
   subtitle?: string;
   action?: ReactNode;
   children: ReactNode;
   className?: string;
+  button?: boolean
 }) {
   return (
     <section className={clsx('card overflow-hidden', className)}>
