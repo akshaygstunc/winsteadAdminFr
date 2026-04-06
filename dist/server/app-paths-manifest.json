@@ -1,6 +1,7 @@
 {
-  "/cms/[id]/page": "app/cms/[id]/page.js",
+  "/blogs/page": "app/blogs/page.js",
+  "/sales/manage-sales/page": "app/sales/manage-sales/page.js",
+  "/sales/clients/page": "app/sales/clients/page.js",
   "/properties/page": "app/properties/page.js",
-  "/customization/developer-community/page": "app/customization/developer-community/page.js",
-  "/customization/property-types/page": "app/customization/property-types/page.js"
+  "/relationship-manager/page": "app/relationship-manager/page.js"
 }

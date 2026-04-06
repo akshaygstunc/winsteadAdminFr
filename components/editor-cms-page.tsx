@@ -738,7 +738,7 @@ function sanitizePayload(form: CmsItem) {
   };
 }
 
-export function EditorCmsPage({ config }: { config: CmsConfig }) {
+export function PageEditorCmsPage({ config }: { config: CmsConfig }) {
   const [items, setItems] = useState<CmsItem[]>([]);
   const [form, setForm] = useState<CmsItem>(blankFromConfig(config));
   const [editingId, setEditingId] = useState<string | null>(null);

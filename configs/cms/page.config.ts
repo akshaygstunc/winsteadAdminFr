@@ -3,7 +3,7 @@ import { CmsConfig } from "@/lib/cms";
 export const pagesCmsConfig: CmsConfig = {
   entity: "pages",
   title: "Pages",
-  layout: "editor",
+  layout: "pages",
   subtitle: "Manage website pages and dynamic section content",
   addLabel: "Add Page",
   searchPlaceholder: "Search pages...",
