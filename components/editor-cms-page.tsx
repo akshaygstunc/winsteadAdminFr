@@ -143,7 +143,7 @@ function renderSimpleField(
     try {
       const formData = new FormData()
       formData.append('file', file);
-      const data = await await api.post<any[]>(
+      const data = await api.post<any[]>(
         `/content/upload/gallery`,
         formData,
 
