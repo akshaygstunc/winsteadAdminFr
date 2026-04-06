@@ -100,106 +100,189 @@ type FieldSection = {
 };
 
 const propertyFormSections: FieldSection[] = [
-  {
-    key: 'basic',
-    title: 'Basic Information',
-    columns: 3,
-    fields: [
-      { key: 'title', label: 'Property Name', type: 'text' },
-      { key: 'buildingName', label: 'Building / Area Name', type: 'text' },
-      { key: 'slug', label: 'Slug', type: 'text' },
-      { key: 'type', label: 'Type', type: 'text' },
-      { key: 'subType', label: 'Sub-Type', type: 'text' },
-      { key: 'category', label: 'Category', type: 'text' },
-      { key: 'developer', label: 'Developer', type: 'text' },
-      { key: 'developerType', label: 'Developer Type', type: 'text' },
-      { key: 'propertyStatus', label: 'Property Status', type: 'text' },
-      { key: 'city', label: 'City', type: 'text' },
-      { key: 'location', label: 'Location', type: 'text' },
-      { key: 'address', label: 'Address', type: 'text' },
-    ],
-  },
-  {
-    key: 'seo',
-    title: 'SEO',
-    columns: 3,
-    fields: [
-      { key: 'metaTitle', label: 'Meta Title', type: 'text' },
-      { key: 'metaDescription', label: 'Meta Description', type: 'text' },
-      { key: 'metaKeywords', label: 'Meta Keywords', type: 'text' },
-    ],
-  },
-  {
-    key: 'details',
-    title: 'Property Details',
-    columns: 3,
-    fields: [
-      { key: 'longitude', label: 'Longitude', type: 'text' },
-      { key: 'latitude', label: 'Latitude', type: 'text' },
-      { key: 'price', label: 'Price', type: 'number' },
-      { key: 'bedrooms', label: 'Bedrooms', type: 'number' },
-      { key: 'bathrooms', label: 'Bathrooms', type: 'number' },
-      { key: 'sortOrder', label: 'Sort Order', type: 'number' },
-      { key: 'thumbnail', label: 'Thumbnail URL', type: 'image' },
-      { key: 'enquireFormImage', label: 'Enquire Form Image', type: 'image' },
-      { key: 'author', label: 'Author', type: 'text' },
-    ],
-  },
-  {
-    key: 'visibility',
-    title: 'Visibility & Status',
-    columns: 3,
-    fields: [
-      {
-        key: 'visibility',
-        label: 'Visibility',
-        type: 'select',
-        options: [
-          { label: 'Mobile', value: 'mobile' },
-          { label: 'Web', value: 'web' },
-          { label: 'Both', value: 'both' },
-        ],
-      },
-      {
-        key: 'status',
-        label: 'Status',
-        type: 'select',
-        options: [
-          { label: 'Active', value: 'active' },
-          { label: 'Inactive', value: 'inactive' },
-          { label: 'Draft', value: 'draft' },
-          { label: 'Ready', value: 'ready' },
-          { label: 'Sold', value: 'sold' },
-        ],
-      },
-    ],
-  },
-  {
-    key: 'descriptions',
-    title: 'Descriptions',
-    columns: 2,
-    fields: [
-      { key: 'shortDescription', label: 'Short Description', type: 'textarea' },
-      { key: 'appDescription', label: 'App Description', type: 'textarea' },
-      { key: 'fullDescription', label: 'Full Description', type: 'textarea' },
-    ],
-  },
-  {
-    key: 'gallery',
-    title: 'Gallery Images',
-    custom: 'gallery',
-  },
-  {
-    key: 'flags',
-    title: 'Flags',
-    columns: 2,
-    fields: [
-      { key: 'active', label: 'Active', type: 'toggle' },
-      { key: 'hotLaunch', label: 'Hot Launch', type: 'toggle' },
-      { key: 'exclusive', label: 'Exclusive', type: 'toggle' },
-      { key: 'featured', label: 'Featured', type: 'toggle' },
-    ],
-  },
+  [
+    {
+      key: 'basic',
+      title: 'Basic Information',
+      columns: 3,
+      fields: [
+        { key: 'title', label: 'Property Name', type: 'text' },
+        { key: 'buildingName', label: 'Building / Area Name', type: 'text' },
+        { key: 'slug', label: 'Slug', type: 'text' },
+
+        {
+          key: 'propertyType',
+          label: 'Property Type',
+          type: 'relation-select',
+          relation: {
+            entity: 'property-types',
+            labelKey: 'name',
+            valueKey: '_id',
+          },
+        },
+        {
+          key: 'propertySubType',
+          label: 'Property Sub-Type',
+          type: 'relation-select',
+          relation: {
+            entity: 'property-sub-types',
+            labelKey: 'name',
+            valueKey: '_id',
+          },
+        },
+        {
+          key: 'categories',
+          label: 'Property Categories',
+          type: 'relation-multiselect',
+          relation: {
+            entity: 'property-categories',
+            labelKey: 'name',
+            valueKey: '_id',
+          },
+        },
+        {
+          key: 'developer',
+          label: 'Developer',
+          type: 'relation-select',
+          relation: {
+            entity: 'developers',
+            labelKey: 'name',
+            valueKey: '_id',
+          },
+        },
+        {
+          key: 'developerType',
+          label: 'Developer Type',
+          type: 'relation-select',
+          relation: {
+            entity: 'developer-types',
+            labelKey: 'name',
+            valueKey: '_id',
+          },
+        },
+
+        {
+          key: 'propertyStatus',
+          label: 'Property Status',
+          type: 'select',
+          options: [
+            { label: 'Off Plan', value: 'off-plan' },
+            { label: 'Ready', value: 'ready' },
+            { label: 'Sold Out', value: 'sold-out' },
+          ],
+        },
+
+        { key: 'city', label: 'City', type: 'text' },
+        { key: 'location', label: 'Location', type: 'text' },
+        { key: 'address', label: 'Address', type: 'text' },
+      ],
+    },
+
+    {
+      key: 'seo',
+      title: 'SEO',
+      columns: 3,
+      fields: [
+        { key: 'metaTitle', label: 'Meta Title', type: 'text' },
+        { key: 'metaDescription', label: 'Meta Description', type: 'textarea' },
+        { key: 'metaKeywords', label: 'Meta Keywords', type: 'text' },
+      ],
+    },
+
+    {
+      key: 'details',
+      title: 'Property Details',
+      columns: 3,
+      fields: [
+        { key: 'longitude', label: 'Longitude', type: 'text' },
+        { key: 'latitude', label: 'Latitude', type: 'text' },
+        { key: 'price', label: 'Price', type: 'number' },
+        { key: 'bedrooms', label: 'Bedrooms', type: 'number' },
+        { key: 'bathrooms', label: 'Bathrooms', type: 'number' },
+        { key: 'sortOrder', label: 'Sort Order', type: 'number' },
+
+        { key: 'thumbnail', label: 'Thumbnail', type: 'image' },
+        { key: 'propertyBanner', label: 'Property Banner', type: 'image' },
+        { key: 'enquireFormImage', label: 'Enquire Form Image', type: 'image' },
+
+        { key: 'author', label: 'Author', type: 'text' },
+      ],
+    },
+
+    {
+      key: 'visibility',
+      title: 'Visibility & Status',
+      columns: 3,
+      fields: [
+        {
+          key: 'visibility',
+          label: 'Visibility',
+          type: 'select',
+          options: [
+            { label: 'Mobile', value: 'mobile' },
+            { label: 'Web', value: 'web' },
+            { label: 'Both', value: 'both' },
+          ],
+        },
+        {
+          key: 'status',
+          label: 'Status',
+          type: 'select',
+          options: [
+            { label: 'Active', value: 'active' },
+            { label: 'Inactive', value: 'inactive' },
+            { label: 'Draft', value: 'draft' },
+            { label: 'Ready', value: 'ready' },
+            { label: 'Sold', value: 'sold' },
+          ],
+        },
+      ],
+    },
+
+    {
+      key: 'descriptions',
+      title: 'Descriptions',
+      columns: 2,
+      fields: [
+        { key: 'shortDescription', label: 'Short Description', type: 'textarea' },
+        { key: 'appDescription', label: 'App Description', type: 'textarea' },
+        { key: 'fullDescription', label: 'Full Description', type: 'textarea' },
+      ],
+    },
+
+    /**
+     * Custom Sections
+     */
+    {
+      key: 'amenities',
+      title: 'Amenities',
+      custom: 'amenities',
+    },
+
+    {
+      key: 'floorPlans',
+      title: 'Floor Plans',
+      custom: 'floorPlans',
+    },
+
+    {
+      key: 'gallery',
+      title: 'Gallery Images',
+      custom: 'gallery',
+    },
+
+    {
+      key: 'flags',
+      title: 'Flags',
+      columns: 2,
+      fields: [
+        { key: 'active', label: 'Active', type: 'toggle' },
+        { key: 'hotLaunch', label: 'Hot Launch', type: 'toggle' },
+        { key: 'exclusive', label: 'Exclusive', type: 'toggle' },
+        { key: 'featured', label: 'Featured', type: 'toggle' },
+      ],
+    },
+  ]
 ];
 
 function createSlug(value: string) {

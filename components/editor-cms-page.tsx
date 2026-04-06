@@ -144,7 +144,7 @@ function renderSimpleField(
       const formData = new FormData()
       formData.append('file', file);
       const data = await await api.post<any[]>(
-        `content/upload/gallery`,
+        `/content/upload/gallery`,
         formData,
 
       );
@@ -441,7 +441,7 @@ function renderField(
       const formData = new FormData()
       formData.append('file', file);
       const data = await await api.post<any[]>(
-        `content/upload/gallery`,
+        `/content/upload/gallery`,
         formData,
 
       );
@@ -770,7 +770,7 @@ export function EditorCmsPage({ config }: { config: CmsConfig }) {
   const load = async (term = '') => {
     try {
       const rows = await api.get<CmsItem[]>(
-        `content/${config.entity}${term ? `?search=${encodeURIComponent(term)}` : ''}`,
+        `/content/${config.entity}${term ? `?search=${encodeURIComponent(term)}` : ''}`,
       );
       setItems(rows || []);
     } catch {
@@ -871,9 +871,9 @@ export function EditorCmsPage({ config }: { config: CmsConfig }) {
       const payload = sanitizePayload(form);
 
       if (editingId) {
-        await api.patch(`content/${config.entity}/${editingId}`, payload);
+        await api.patch(`/content/${config.entity}/${editingId}`, payload);
       } else {
-        await api.post(`content/${config.entity}`, payload);
+        await api.post(`/content/${config.entity}`, payload);
       }
 
       await load(search);
@@ -888,7 +888,7 @@ export function EditorCmsPage({ config }: { config: CmsConfig }) {
     if (!id) return;
 
     try {
-      await api.delete(`content/${config.entity}/${id}`);
+      await api.delete(`/content/${config.entity}/${id}`);
 
       if (editingId === id) {
         reset();

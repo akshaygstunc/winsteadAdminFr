@@ -12,6 +12,8 @@ export const projectsCmsConfig: CmsConfig = {
     { key: "hero", label: "Hero Section", column: "left" },
     { key: "specs", label: "Project Specifications", column: "left" },
     { key: "overview", label: "Overview Section", column: "left" },
+    { key: "floorPlans", label: "Floor Plans", column: "left" },
+    { key: "amenities", label: "Amenities", column: "left" },
     { key: "gallery", label: "Gallery", column: "left" },
     { key: "cta", label: "CTA Section", column: "left" },
     { key: "seo", label: "SEO", column: "right" },
@@ -46,21 +48,6 @@ export const projectsCmsConfig: CmsConfig = {
       ],
     },
     {
-      key: "category",
-      label: "Category",
-      type: "select",
-      group: "basic",
-      column: "left",
-      options: [
-        { label: "Luxury", value: "luxury" },
-        { label: "Investment", value: "investment" },
-        { label: "Apartments", value: "apartments" },
-        { label: "Villa", value: "villa" },
-        { label: "Townhouse", value: "townhouse" },
-        { label: "Waterfront", value: "waterfront" },
-      ],
-    },
-    {
       key: "signatureLabel",
       label: "Signature Label",
       type: "text",
@@ -69,9 +56,83 @@ export const projectsCmsConfig: CmsConfig = {
       placeholder: "Signature Residence",
     },
 
+    /**
+     * Dynamic API driven fields
+     */
+    {
+      key: "propertyType",
+      label: "Property Type",
+      type: "relation-select",
+      group: "basic",
+      column: "left",
+      relation: {
+        entity: "property-types",
+        labelKey: "name",
+        valueKey: "_id",
+      },
+    },
+    {
+      key: "propertySubType",
+      label: "Property Sub Type",
+      type: "relation-select",
+      group: "basic",
+      column: "left",
+      relation: {
+        entity: "property-sub-types",
+        labelKey: "name",
+        valueKey: "_id",
+      },
+    },
+    {
+      key: "propertyCategories",
+      label: "Property Categories",
+      type: "relation-multiselect",
+      group: "basic",
+      column: "left",
+      relation: {
+        entity: "property-categories",
+        labelKey: "name",
+        valueKey: "_id",
+      },
+    },
+    {
+      key: "developer",
+      label: "Developer",
+      type: "relation-select",
+      group: "basic",
+      column: "left",
+      relation: {
+        entity: "developers",
+        labelKey: "name",
+        valueKey: "_id",
+      },
+    },
+    {
+      key: "developerType",
+      label: "Developer Type",
+      type: "relation-select",
+      group: "basic",
+      column: "left",
+      relation: {
+        entity: "developer-types",
+        labelKey: "name",
+        valueKey: "_id",
+      },
+    },
+
+    /**
+     * Hero section
+     */
     {
       key: "image",
       label: "Hero Image",
+      type: "image",
+      group: "hero",
+      column: "left",
+    },
+    {
+      key: "propertyBanner",
+      label: "Property Banner",
       type: "image",
       group: "hero",
       column: "left",
@@ -92,6 +153,9 @@ export const projectsCmsConfig: CmsConfig = {
       column: "left",
     },
 
+    /**
+     * Specs
+     */
     {
       key: "startingPrice",
       label: "Starting Price",
@@ -106,7 +170,7 @@ export const projectsCmsConfig: CmsConfig = {
       type: "text",
       group: "specs",
       column: "left",
-      placeholder: "2–8 Bedrooms",
+      placeholder: "1–5 Bedrooms",
     },
     {
       key: "sizeRange",
@@ -114,7 +178,7 @@ export const projectsCmsConfig: CmsConfig = {
       type: "text",
       group: "specs",
       column: "left",
-      placeholder: "2,800 – 7,200 sq.ft.",
+      placeholder: "750 – 4,500 sq.ft.",
     },
     {
       key: "community",
@@ -125,22 +189,6 @@ export const projectsCmsConfig: CmsConfig = {
       placeholder: "Downtown Dubai",
     },
     {
-      key: "developer",
-      label: "Developer",
-      type: "text",
-      group: "specs",
-      column: "left",
-      placeholder: "Emaar",
-    },
-    {
-      key: "propertyType",
-      label: "Property Type",
-      type: "text",
-      group: "specs",
-      column: "left",
-      placeholder: "Villa / Apartment / Townhouse",
-    },
-    {
       key: "handover",
       label: "Handover",
       type: "text",
@@ -149,6 +197,9 @@ export const projectsCmsConfig: CmsConfig = {
       placeholder: "Q4 2029",
     },
 
+    /**
+     * Overview
+     */
     {
       key: "overviewHeading",
       label: "Overview Heading",
@@ -156,6 +207,13 @@ export const projectsCmsConfig: CmsConfig = {
       group: "overview",
       column: "left",
       defaultValue: "Project Overview",
+    },
+    {
+      key: "overviewTitle",
+      label: "Overview Title",
+      type: "text",
+      group: "overview",
+      column: "left",
     },
     {
       key: "description",
@@ -174,7 +232,7 @@ export const projectsCmsConfig: CmsConfig = {
     },
     {
       key: "highlightCards",
-      label: "Why It Stands Out Cards",
+      label: "Highlight Cards",
       type: "repeater",
       group: "overview",
       column: "left",
@@ -184,6 +242,86 @@ export const projectsCmsConfig: CmsConfig = {
       ],
     },
 
+    /**
+     * Floor Plans
+     */
+    {
+      key: "floorPlansHeading",
+      label: "Floor Plans Heading",
+      type: "text",
+      group: "floorPlans",
+      column: "left",
+      defaultValue: "Floor Plans",
+    },
+    {
+      key: "floorPlansDescription",
+      label: "Floor Plans Description",
+      type: "textarea",
+      group: "floorPlans",
+      column: "left",
+    },
+    {
+      key: "floorPlans",
+      label: "Floor Plans",
+      type: "repeater",
+      group: "floorPlans",
+      column: "left",
+      fields: [
+        { key: "unitType", label: "Unit Type", type: "text" },
+        { key: "title", label: "Plan Title", type: "text" },
+        { key: "bedrooms", label: "Bedrooms", type: "text" },
+        { key: "bathrooms", label: "Bathrooms", type: "text" },
+        { key: "size", label: "Size", type: "text" },
+        { key: "startingPrice", label: "Starting Price", type: "text" },
+        { key: "image", label: "Floor Plan Image", type: "image" },
+        { key: "alt", label: "Image Alt Text", type: "text" },
+        { key: "sortOrder", label: "Sort Order", type: "number" },
+      ],
+    },
+
+    /**
+     * Amenities
+     */
+    {
+      key: "amenitiesHeading",
+      label: "Amenities Heading",
+      type: "text",
+      group: "amenities",
+      column: "left",
+      defaultValue: "Amenities",
+    },
+    {
+      key: "amenitiesDescription",
+      label: "Amenities Description",
+      type: "textarea",
+      group: "amenities",
+      column: "left",
+    },
+    {
+      key: "amenities",
+      label: "Amenities List",
+      type: "repeater",
+      group: "amenities",
+      column: "left",
+      fields: [
+        { key: "icon", label: "Amenity Icon", type: "image" },
+        { key: "title", label: "Amenity Title", type: "text" },
+        { key: "description", label: "Amenity Description", type: "textarea" },
+        { key: "sortOrder", label: "Sort Order", type: "number" },
+      ],
+    },
+
+    /**
+     * Gallery
+     */
+    {
+      key: "galleryHeading",
+      label: "Gallery Heading",
+      type: "text",
+      group: "gallery",
+      column: "left",
+      defaultValue: "Gallery",
+    },
     {
       key: "gallery",
       label: "Gallery Images",
@@ -193,9 +331,13 @@ export const projectsCmsConfig: CmsConfig = {
       fields: [
         { key: "image", label: "Image", type: "image" },
         { key: "alt", label: "Alt Text", type: "text" },
+        { key: "sortOrder", label: "Sort Order", type: "number" },
       ],
     },
 
+    /**
+     * CTA
+     */
     {
       key: "ctaTitle",
       label: "CTA Title",
@@ -231,6 +373,9 @@ export const projectsCmsConfig: CmsConfig = {
       defaultValue: "Book Consultation",
     },
 
+    /**
+     * SEO
+     */
     {
       key: "metaTitle",
       label: "Meta Title",
@@ -245,6 +390,10 @@ export const projectsCmsConfig: CmsConfig = {
       group: "seo",
       column: "right",
     },
+
+    /**
+     * Settings
+     */
     {
       key: "sortOrder",
       label: "Sort Order",
