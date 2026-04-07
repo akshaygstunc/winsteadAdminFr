@@ -171,7 +171,7 @@ const propertyFormSections: FieldSection[] = [
         label: 'Developer',
         type: 'relation-select',
         relation: {
-          entity: 'developer-community',
+          entity: 'content/developer-community',
           labelKey: 'name',
           valueKey: '_id',
         },
