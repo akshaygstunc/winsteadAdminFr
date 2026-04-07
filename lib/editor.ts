@@ -813,7 +813,7 @@ export const EditorConfigs: Record<string, CmsConfig> = {
       [
         { key: "title", label: "City Name", type: "text" },
         { key: "city", label: "City", type: "text" },
-        { key: "subCityCount", label: "Sub City Count", type: "number" },
+        // { key: "subCityCount", label: "Sub City Count", type: "number" },
         { key: "status", label: "Status", type: "select", options: boolStatus },
         textArea,
       ],
