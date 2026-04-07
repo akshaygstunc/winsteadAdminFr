@@ -107,18 +107,18 @@ export const projectsCmsConfig: CmsConfig = {
         valueKey: "_id",
       },
     },
-    {
-      key: "developerType",
-      label: "Developer Type",
-      type: "relation-select",
-      group: "basic",
-      column: "left",
-      relation: {
-        entity: "developer-types",
-        labelKey: "name",
-        valueKey: "_id",
-      },
-    },
+    // {
+    //   key: "developerType",
+    //   label: "Developer Type",
+    //   type: "relation-select",
+    //   group: "basic",
+    //   column: "left",
+    //   relation: {
+    //     entity: "developer-types",
+    //     labelKey: "name",
+    //     valueKey: "_id",
+    //   },
+    // },
 
     /**
      * Hero section

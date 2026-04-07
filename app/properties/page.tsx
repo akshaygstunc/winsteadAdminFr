@@ -176,16 +176,16 @@ const propertyFormSections: FieldSection[] = [
           valueKey: '_id',
         },
       },
-      {
-        key: 'developerType',
-        label: 'Developer Type',
-        type: 'relation-select',
-        relation: {
-          entity: 'developer-types',
-          labelKey: 'name',
-          valueKey: '_id',
-        },
-      },
+      // {
+      //   key: 'developerType',
+      //   label: 'Developer Type',
+      //   type: 'relation-select',
+      //   relation: {
+      //     entity: 'developer-types',
+      //     labelKey: 'name',
+      //     valueKey: '_id',
+      //   },
+      // },
       {
         key: 'propertyStatus',
         label: 'Property Status',
@@ -196,7 +196,6 @@ const propertyFormSections: FieldSection[] = [
           { label: 'Sold Out', value: 'sold-out' },
         ],
       },
-      { key: 'city', label: 'City', type: 'text' },
       {
         key: 'location', label: 'Location', type: 'relation-select',
         relation: {
