@@ -392,11 +392,8 @@ function GalleryUploader({
     formData.append('file', file);
 
     const response = await api.post('/content/upload/gallery', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
     });
-
+    console.log(response, 'Upload response');
     const uploadedUrl =
       response?.data?.url ||
       response?.data?.data?.url ||
@@ -827,7 +824,27 @@ function renderDynamicField(
   relations: RelationData,
 ) {
   const value = form[field.key];
+  const uploadSingleFile = async (file: File): Promise<string> => {
+    const formData = new FormData();
+    formData.append('file', file);
 
+    const response = await api.post('/content/upload/gallery', formData);
+    console.log(response, 'Upload response');
+    const uploadedUrl =
+      response?.data?.url ||
+      response?.data?.data?.url ||
+      response?.data?.fileUrl ||
+      response?.data?.data?.fileUrl ||
+      response?.data?.location ||
+      response?.data?.data?.location ||
+      '';
+
+    if (!uploadedUrl) {
+      throw new Error('Upload API did not return image URL');
+    }
+
+    return uploadedUrl;
+  };
   switch (field.type) {
     case 'text':
       return (
@@ -962,7 +979,7 @@ function renderDynamicField(
             onChange={async (e: ChangeEvent<HTMLInputElement>) => {
               const file = e.target.files?.[0];
               if (!file) return;
-              const dataUrl = await fileToDataUrl(file);
+              const dataUrl = await uploadSingleFile(file);
               setForm((prev) => ({
                 ...prev,
                 [field.key]: dataUrl,
