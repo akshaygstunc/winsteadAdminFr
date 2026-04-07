@@ -141,7 +141,7 @@ const propertyFormSections: FieldSection[] = [
         label: 'Property Type',
         type: 'relation-select',
         relation: {
-          entity: 'property-types',
+          entity: 'content/property-types',
           labelKey: 'name',
           valueKey: '_id',
         },
@@ -151,7 +151,7 @@ const propertyFormSections: FieldSection[] = [
         label: 'Property Sub-Type',
         type: 'relation-select',
         relation: {
-          entity: 'property-sub-types',
+          entity: 'content/property-sub-types',
           labelKey: 'name',
           valueKey: '_id',
         },
@@ -1029,11 +1029,11 @@ export default function PropertiesPage() {
     const fetchRelations = async () => {
       try {
         const endpoints = [
-          'property-types',
-          'property-sub-types',
-          'property-categories',
-          'developers',
-          'developer-types',
+          'content/property-types',
+          'content/property-sub-types',
+          'content/property-categories',
+          'content/developers',
+          'content/developer-types',
         ];
 
         const responses = await Promise.all(

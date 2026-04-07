@@ -66,7 +66,7 @@ export const projectsCmsConfig: CmsConfig = {
       group: "basic",
       column: "left",
       relation: {
-        entity: "property-types",
+        entity: "content/property-types",
         labelKey: "name",
         valueKey: "_id",
       },
