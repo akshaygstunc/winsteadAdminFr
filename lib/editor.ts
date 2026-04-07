@@ -56,8 +56,8 @@ const statusOptions = [
 ];
 
 const boolStatus = [
-  { label: "Active", value: "active" },
-  { label: "Inactive", value: "inactive" },
+  { label: "Draft", value: "draft" },
+  { label: "Published", value: "published" },
 ];
 
 const textArea: CmsField = {
