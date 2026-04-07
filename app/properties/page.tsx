@@ -197,7 +197,14 @@ const propertyFormSections: FieldSection[] = [
         ],
       },
       { key: 'city', label: 'City', type: 'text' },
-      { key: 'location', label: 'Location', type: 'text' },
+      {
+        key: 'location', label: 'Location', type: 'relation-select',
+        relation: {
+          entity: 'content/location',
+          labelKey: 'name',
+          valueKey: '_id',
+        },
+      },
       { key: 'address', label: 'Address', type: 'text' },
     ],
   },
@@ -1034,6 +1041,7 @@ export default function PropertiesPage() {
           'content/property-categories',
           'content/developers',
           'content/developer-types',
+          'content/location',
         ];
 
         const responses = await Promise.all(
