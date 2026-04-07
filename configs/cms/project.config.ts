@@ -102,7 +102,7 @@ export const projectsCmsConfig: CmsConfig = {
       group: "basic",
       column: "left",
       relation: {
-        entity: "developers",
+        entity: "content/developer-community",
         labelKey: "name",
         valueKey: "_id",
       },

@@ -200,7 +200,7 @@ const propertyFormSections: FieldSection[] = [
       {
         key: 'location', label: 'Location', type: 'relation-select',
         relation: {
-          entity: 'content/location',
+          entity: 'content/locations',
           labelKey: 'name',
           valueKey: '_id',
         },
@@ -1041,7 +1041,7 @@ export default function PropertiesPage() {
           'content/property-categories',
           'content/developer-community',
           'content/developer-types',
-          'content/location',
+          'content/locations',
         ];
 
         const responses = await Promise.all(
