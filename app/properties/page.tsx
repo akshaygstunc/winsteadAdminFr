@@ -1022,8 +1022,9 @@ export default function PropertiesPage() {
 
   const load = async () => {
     try {
-      const snapshot = await api.get<WorkspaceSnapshot>('/workspace/snapshot');
-      setItems(((snapshot as any)?.properties || []) as PropertyForm[]);
+      const snapshot = await api.get<WorkspaceSnapshot>('/properties');
+      console.log(snapshot, 'Loaded properties snapshot');
+      setItems(((snapshot as any) || []) as PropertyForm[]);
     } catch {
       setError('Failed to load properties.');
     }
