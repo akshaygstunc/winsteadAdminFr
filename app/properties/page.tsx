@@ -17,6 +17,7 @@ import {
   TextArea,
   TextInput,
 } from '@/components/crud-kit';
+import PropertyImportModal from '@/components/PropertyImport';
 
 type FieldOption = {
   label: string;
@@ -1019,6 +1020,7 @@ export default function PropertiesPage() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
   const [relations, setRelations] = useState<RelationData>({});
+  const [open2, setOpen2] = useState(false);
 
   const load = async () => {
     try {
@@ -1220,139 +1222,137 @@ export default function PropertiesPage() {
 
             <ActionButton secondary>Manage FAQ</ActionButton>
             <ActionButton onClick={() => setOpen(true)}>Add Property</ActionButton>
+            <ActionButton onClick={() => setOpen2(!open2)}>Import CSV</ActionButton>
           </div>
         }
       >
-        <div className="grid gap-4 xl:grid-cols-2">
-          {filtered.map((property) => {
-            const developerLabel = getRelationLabel(
-              relations,
-              'developers',
-              property.developer,
-            );
-            const typeLabel = getRelationLabel(
-              relations,
-              'property-types',
-              property.propertyType || property.type,
-            );
+        <div className="overflow-x-auto rounded-2xl border border-line bg-panel/80">
+          <table className="min-w-full text-sm">
+            <thead className="bg-card/80 text-left text-xs uppercase tracking-wider text-muted">
+              <tr>
+                <th className="px-4 py-3">Image</th>
+                <th className="px-4 py-3">Title</th>
+                <th className="px-4 py-3">Location</th>
+                <th className="px-4 py-3">Type</th>
+                <th className="px-4 py-3">Developer</th>
+                <th className="px-4 py-3">Beds</th>
+                <th className="px-4 py-3">Baths</th>
+                <th className="px-4 py-3">Price</th>
+                <th className="px-4 py-3">Status</th>
+                <th className="px-4 py-3 text-right">Actions</th>
+              </tr>
+            </thead>
 
-            return (
-              <div
-                key={property._id || property.title}
-                className="rounded-[28px] border border-line bg-panel/80 p-4"
-              >
-                <div className="flex gap-4">
-                  <div className="h-28 w-28 shrink-0 overflow-hidden rounded-[22px] border border-line bg-gradient-to-br from-violet-500/20 to-gold/10">
-                    {property.thumbnail ? (
-                      <img
-                        src={property.thumbnail}
-                        alt={property.title}
-                        className="h-full w-full object-cover"
-                      />
-                    ) : null}
-                  </div>
+            <tbody>
+              {filtered.map((property) => {
+                const developerLabel = getRelationLabel(
+                  relations,
+                  'developers',
+                  property.developer,
+                );
 
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <div className="flex flex-wrap items-center gap-2">
-                          <h3 className="text-base font-semibold text-text">
-                            {property.title}
-                          </h3>
-                          {property.exclusive ? (
-                            <StatusBadge value="Exclusive" tone="gold" />
-                          ) : null}
-                          {property.hotLaunch ? (
-                            <StatusBadge value="HOT" tone="red" />
-                          ) : null}
-                        </div>
+                const typeLabel = getRelationLabel(
+                  relations,
+                  'property-types',
+                  property.propertyType || property.type,
+                );
 
-                        <p className="mt-1 text-xs text-muted">
-                          {property.url || `/property/${property.slug || ''}`}
-                        </p>
-
-                        <p className="mt-2 text-sm text-muted">
-                          {property.location}
-                          {property.city ? `, ${property.city}` : ''}
-                        </p>
-
-                        <p className="mt-2 text-xs text-muted">
-                          {typeLabel ? `Type: ${typeLabel}` : 'Type: —'}
-                          {developerLabel ? ` • Developer: ${developerLabel}` : ''}
-                        </p>
-
-                        {Array.isArray(property.gallery) && property.gallery.length ? (
-                          <p className="mt-2 text-xs text-muted">
-                            Gallery: {property.gallery.length} image(s)
-                          </p>
-                        ) : null}
-                      </div>
-
-                      <div className="flex flex-col items-end gap-2">
-                        <StatusBadge value={`#${property.sortOrder || 0}`} tone="gold" />
-                        <StatusBadge
-                          value={property.status || 'draft'}
-                          tone={
-                            property.status === 'active'
-                              ? 'green'
-                              : property.status === 'inactive'
-                                ? 'red'
-                                : 'slate'
-                          }
+                return (
+                  <tr
+                    key={property._id || property.title}
+                    className="border-t border-line hover:bg-card/50"
+                  >
+                    {/* Image */}
+                    <td className="px-4 py-3">
+                      {property.thumbnail ? (
+                        <img
+                          src={property.thumbnail}
+                          alt={property.title}
+                          className="h-12 w-12 rounded-lg object-cover"
                         />
+                      ) : (
+                        <div className="h-12 w-12 rounded-lg bg-muted" />
+                      )}
+                    </td>
+
+                    {/* Title */}
+                    <td className="px-4 py-3">
+                      <div className="font-medium text-text">
+                        {property.title}
                       </div>
-                    </div>
+                      <div className="text-xs text-muted">
+                        {property.slug}
+                      </div>
+                    </td>
 
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      <span className="rounded-full border border-line px-3 py-1 text-xs text-muted">
-                        Floor Plans: {Array.isArray(property.floorPlans) ? property.floorPlans.length : 0}
-                      </span>
-                      <span className="rounded-full border border-line px-3 py-1 text-xs text-muted">
-                        Amenities: {Array.isArray(property.amenities) ? property.amenities.length : 0}
-                      </span>
-                      <span className="rounded-full border border-line px-3 py-1 text-xs text-muted">
-                        Gallery: {Array.isArray(property.gallery) ? property.gallery.length : 0}
-                      </span>
-                    </div>
-                  </div>
-                </div>
+                    {/* Location */}
+                    <td className="px-4 py-3 text-muted">
+                      {property.location}
+                      {property.city ? `, ${property.city}` : ''}
+                    </td>
 
-                <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-4">
-                  <div className="rounded-2xl border border-line bg-card/80 p-3">
-                    <p className="text-[10px] uppercase tracking-[0.2em] text-gold">Beds</p>
-                    <p className="mt-2 text-sm text-text">{property.bedrooms}</p>
-                  </div>
-                  <div className="rounded-2xl border border-line bg-card/80 p-3">
-                    <p className="text-[10px] uppercase tracking-[0.2em] text-gold">Baths</p>
-                    <p className="mt-2 text-sm text-text">{property.bathrooms}</p>
-                  </div>
-                  <div className="rounded-2xl border border-line bg-card/80 p-3">
-                    <p className="text-[10px] uppercase tracking-[0.2em] text-gold">Author</p>
-                    <p className="mt-2 text-sm text-text">{property.author || 'wasim'}</p>
-                  </div>
-                  <div className="rounded-2xl border border-line bg-card/80 p-3">
-                    <p className="text-[10px] uppercase tracking-[0.2em] text-gold">Price</p>
-                    <p className="mt-2 text-sm text-text">
-                      ${Number(property.price || 0).toLocaleString()}
-                    </p>
-                  </div>
-                </div>
+                    {/* Type */}
+                    <td className="px-4 py-3 text-muted">
+                      {typeLabel || '—'}
+                    </td>
 
-                <div className="mt-4 flex justify-end">
-                  <InlineActions
-                    onEdit={() => edit(property)}
-                    onDelete={() => remove(property._id)}
-                  />
-                </div>
-              </div>
-            );
-          })}
+                    {/* Developer */}
+                    <td className="px-4 py-3 text-muted">
+                      {developerLabel || '—'}
+                    </td>
 
-          {!filtered.length ? (
-            <div className="col-span-full rounded-3xl border border-dashed border-line p-8 text-sm text-muted">
-              No properties found.
-            </div>
-          ) : null}
+                    {/* Beds */}
+                    <td className="px-4 py-3">
+                      {property.bedrooms || 0}
+                    </td>
+
+                    {/* Baths */}
+                    <td className="px-4 py-3">
+                      {property.bathrooms || 0}
+                    </td>
+
+                    {/* Price */}
+                    <td className="px-4 py-3 font-medium">
+                      ₹{Number(property.price || 0).toLocaleString()}
+                    </td>
+
+                    {/* Status */}
+                    <td className="px-4 py-3">
+                      <StatusBadge
+                        value={property.status || 'draft'}
+                        tone={
+                          property.status === 'active'
+                            ? 'green'
+                            : property.status === 'inactive'
+                              ? 'red'
+                              : 'slate'
+                        }
+                      />
+                    </td>
+
+                    {/* Actions */}
+                    <td className="px-4 py-3 text-right">
+                      <InlineActions
+                        onEdit={() => edit(property)}
+                        onDelete={() => remove(property._id)}
+                      />
+                    </td>
+                  </tr>
+                );
+              })}
+
+              {!filtered.length && (
+                <tr>
+                  <td
+                    colSpan={10}
+                    className="px-4 py-8 text-center text-muted"
+                  >
+                    No properties found.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
         </div>
       </SectionCard>
 
@@ -1420,6 +1420,7 @@ export default function PropertiesPage() {
           />
         </div>
       </Modal>
+      <PropertyImportModal open={open2} onClose={() => setOpen2(false)} />
     </DashboardShell>
   );
 }
