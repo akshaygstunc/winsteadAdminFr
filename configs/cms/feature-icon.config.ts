@@ -71,10 +71,10 @@ export const featureIconsCmsConfig: any = {
       type: "select",
       group: "settings",
       column: "right",
-      defaultValue: "active",
+      defaultValue: "Draft",
       options: [
-        { label: "Active", value: "active" },
-        { label: "Inactive", value: "inactive" },
+        { label: "Draft", value: "draft" },
+        { label: "Published", value: "published" },
       ],
     },
     {

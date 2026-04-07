@@ -85,10 +85,10 @@ export const testimonialsCmsConfig: any = {
       label: "Status",
       type: "select",
       group: "settings",
-      defaultValue: "active",
+      defaultValue: "draft",
       options: [
-        { label: "Active", value: "active" },
-        { label: "Inactive", value: "inactive" },
+        { label: "Draft", value: "draft" },
+        { label: "Published", value: "published" },
       ],
     },
     {
