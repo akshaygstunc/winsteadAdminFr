@@ -152,6 +152,11 @@ export const navSections: NavSection[] = [
             href: "/customization/testimonials",
             icon: Star,
           },
+          {
+            label: "Amenities",
+            href: "/amenities",
+            icon: Star,
+          },
           { label: "FAQ", href: "/customization/faq", icon: FileText },
           {
             label: "Property Types",

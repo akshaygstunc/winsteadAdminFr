@@ -22,7 +22,7 @@ export function CmsRoute({ id }: CmsRouteProps) {
       </div>
     );
   }
-
+  console.log(config.layout)
   switch (config.layout) {
     case 'pages':
       return <PageEditorCmsPage config={pagesCmsConfig} />;
