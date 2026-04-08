@@ -6,12 +6,14 @@ type Props = {
     open: boolean;
     onClose: () => void;
     onImported?: () => void;
+    load: () => void;
 };
 
 export default function PropertyImportModal({
     open,
     onClose,
     onImported,
+    load
 }: Props) {
     const inputRef = useRef<HTMLInputElement | null>(null);
     const [file, setFile] = useState<File | null>(null);
@@ -34,6 +36,9 @@ export default function PropertyImportModal({
 
             setResult(res.data);
             onImported?.();
+            // load();
+            onClose();
+
         } catch (error: any) {
             setResult({
                 success: false,
