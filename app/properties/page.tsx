@@ -1420,7 +1420,7 @@ export default function PropertiesPage() {
           />
         </div>
       </Modal>
-      <PropertyImportModal open={open2} onClose={() => setOpen2(false)} />
+      <PropertyImportModal open={open2} onClose={() => setOpen2(false)} fetchProperty={load} />
     </DashboardShell>
   );
 }
