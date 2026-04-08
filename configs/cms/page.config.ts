@@ -14,6 +14,11 @@ export const pagesCmsConfig: CmsConfig = {
     { key: "sections", label: "Dynamic Sections", column: "left" },
     { key: "seo", label: "SEO", column: "right" },
     { key: "settings", label: "Settings", column: "right" },
+    {
+      key: "stats",
+      label: "Stats Section",
+      column: "left",
+    },
   ],
   fields: [
     {
@@ -417,6 +422,41 @@ export const pagesCmsConfig: CmsConfig = {
       group: "settings",
       column: "right",
       defaultValue: 0,
+    },
+    {
+      key: "satisfiedCustomers",
+      label: "Satisfied Customers",
+      type: "number",
+      placeholder: "Enter total customers",
+      group: "stats",
+      required: true,
+    },
+
+    {
+      key: "propertyListed",
+      label: "Property Listed",
+      type: "number",
+      placeholder: "Enter total properties",
+      group: "stats",
+      required: true,
+    },
+
+    {
+      key: "premiumDevelopers",
+      label: "Premium Developers",
+      type: "number",
+      placeholder: "Enter total developers",
+      group: "stats",
+      required: true,
+    },
+
+    {
+      key: "locations",
+      label: "Locations",
+      type: "number",
+      placeholder: "Enter total locations",
+      group: "stats",
+      required: true,
     },
   ],
 };

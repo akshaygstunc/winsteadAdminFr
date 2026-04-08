@@ -76,11 +76,13 @@ const collection = (
   title: string,
   entity: string,
   subtitle: string,
+  layout?: "cards" | "editor" | "crm" | "locations" | undefined,
   fields: CmsField[],
   cardMeta: string[] = [],
 ): CmsConfig => ({
   title,
   subtitle,
+  layout,
   entity,
   addLabel: `Add ${title.replace(/s$/, "")}`,
   searchPlaceholder: `Search ${title.toLowerCase()}`,
@@ -107,6 +109,7 @@ export const EditorConfigs: Record<string, CmsConfig> = {
     "Property Features",
     "property-features",
     "Property-linked feature rows with icon, distance, and description.",
+    "editor",
     [
       { key: "title", label: "Feature Name", type: "text" },
       {
@@ -560,7 +563,9 @@ export const EditorConfigs: Record<string, CmsConfig> = {
     ...collection(
       "Pages",
       "pages",
+
       "Website pages with image, slug, and SEO fields.",
+      "editor",
       [
         { key: "title", label: "Page Title", type: "text" },
         { key: "slug", label: "Slug URL", type: "text" },
@@ -1020,6 +1025,7 @@ export const EditorConfigs: Record<string, CmsConfig> = {
     "Page Logs",
     "page-logs",
     "Page-level activity and change log entries.",
+    "editor",
     [
       { key: "title", label: "Log Title", type: "text" },
       { key: "subtitle", label: "Event Summary", type: "text" },
@@ -1045,6 +1051,7 @@ export const EditorConfigs: Record<string, CmsConfig> = {
     "Footer Menu",
     "footer-menu",
     "Website footer quick links and grouped navigation.",
+    "editor",
     [
       { key: "title", label: "Label", type: "text" },
       { key: "subtitle", label: "URL", type: "text" },
@@ -1065,6 +1072,7 @@ export const EditorConfigs: Record<string, CmsConfig> = {
     "Footer Menu 2",
     "footer-menu-2",
     "Secondary footer menu structure.",
+    "editor",
     [
       { key: "title", label: "Label", type: "text" },
       { key: "subtitle", label: "URL", type: "text" },
@@ -1085,6 +1093,7 @@ export const EditorConfigs: Record<string, CmsConfig> = {
     "Categories",
     "categories",
     "Category cards and listing taxonomy.",
+    "editor",
     [
       { key: "title", label: "Category Title", type: "text" },
       { key: "slug", label: "Slug", type: "text" },
@@ -1223,5 +1232,25 @@ export const EditorConfigs: Record<string, CmsConfig> = {
       imageField("Default OG Image"),
       textArea,
     ],
+  ),
+  "property-amenities": collection(
+    "Property Amenities",
+    "property-amenities",
+
+    "Property-specific amenities like pool, gym, parking, kids play area, etc.",
+    "crm",
+    [
+      { key: "title", label: "Amenity Name", type: "text" },
+      { key: "status", label: "Status", type: "select", options: boolStatus },
+      {
+        key: "icon",
+        label: "Amenity Icon",
+        type: "image",
+        note: "Pick an icon for the amenity card/list item.",
+      },
+      { key: "iconName", label: "Amenity Label", type: "text" },
+      { key: "sortOrder", label: "Sort Order", type: "number" },
+    ],
+    searchMeta("iconName", "category", "sortOrder"),
   ),
 };

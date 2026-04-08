@@ -160,12 +160,12 @@ const propertyFormSections: FieldSection[] = [
       {
         key: 'categories',
         label: 'Property Categories',
-        type: 'relation-multiselect',
-        relation: {
-          entity: 'property-categories',
-          labelKey: 'name',
-          valueKey: '_id',
-        },
+        type: 'select',
+        options: [
+          { label: 'Luxury', value: 'luxury' },
+          { label: 'Elite', value: 'elite' },
+          { label: 'Ultra Luxury', value: 'ultra-luxury' },
+        ],
       },
       {
         key: 'developer',
@@ -177,16 +177,6 @@ const propertyFormSections: FieldSection[] = [
           valueKey: '_id',
         },
       },
-      // {
-      //   key: 'developerType',
-      //   label: 'Developer Type',
-      //   type: 'relation-select',
-      //   relation: {
-      //     entity: 'developer-types',
-      //     labelKey: 'name',
-      //     valueKey: '_id',
-      //   },
-      // },
       {
         key: 'propertyStatus',
         label: 'Property Status',
@@ -223,11 +213,7 @@ const propertyFormSections: FieldSection[] = [
     title: 'Property Details',
     columns: 3,
     fields: [
-      { key: 'longitude', label: 'Longitude', type: 'text' },
-      { key: 'latitude', label: 'Latitude', type: 'text' },
       { key: 'price', label: 'Price', type: 'number' },
-      { key: 'bedrooms', label: 'Bedrooms', type: 'number' },
-      { key: 'bathrooms', label: 'Bathrooms', type: 'number' },
       { key: 'sortOrder', label: 'Sort Order', type: 'number' },
       { key: 'thumbnail', label: 'Thumbnail', type: 'image' },
       { key: 'propertyBanner', label: 'Property Banner', type: 'image' },
@@ -539,6 +525,20 @@ function GalleryUploader({
     </div>
   );
 }
+type AmenityItem = {
+  _id?: string;
+  title: string;
+  icon: string;
+  description?: string;
+};
+
+type AmenityOption = {
+  _id: string;
+  title: string;
+  icon: string;
+  description?: string;
+};
+
 function AmenitiesEditor({
   value,
   onChange,
@@ -547,109 +547,142 @@ function AmenitiesEditor({
   onChange: (next: AmenityItem[]) => void;
 }) {
   const items = Array.isArray(value) ? value : [];
+  const [options, setOptions] = useState<AmenityOption[]>([]);
+  const [loading, setLoading] = useState(false);
 
-  const updateItem = (index: number, key: keyof AmenityItem, nextValue: string) => {
-    const next = [...items];
-    next[index] = {
-      ...next[index],
-      [key]: nextValue,
+  useEffect(() => {
+    const fetchAmenities = async () => {
+      try {
+        setLoading(true);
+        const response = await api.get('/content/property-amenities');
+        const rows = normalizeApiArray(response);
+
+        const nextOptions: AmenityOption[] = rows.map((row: any) => ({
+          _id: String(row?._id ?? row?.id ?? ''),
+          title: String(row?.name ?? row?.title ?? ''),
+          icon: String(row?.data?.icon ?? row?.image ?? ''),
+          description: String(row?.description ?? ''),
+        }));
+
+        setOptions(nextOptions);
+      } catch (error) {
+        console.error('Failed to load amenities:', error);
+      } finally {
+        setLoading(false);
+      }
     };
-    onChange(next);
+
+    fetchAmenities();
+  }, []);
+
+  const isChecked = (optionId: string) => {
+    return items.some((item) => item._id === optionId);
   };
 
-  const addItem = () => {
-    onChange([
-      ...items,
-      {
-        title: '',
-        icon: '',
-        description: '',
-      },
-    ]);
-  };
+  const toggleAmenity = (option: AmenityOption, checked: boolean) => {
+    if (checked) {
+      const exists = items.some((item) => item._id === option._id);
+      if (exists) return;
 
-  const removeItem = (index: number) => {
-    onChange(items.filter((_, i) => i !== index));
+      onChange([
+        ...items,
+        {
+          _id: option._id,
+          title: option.title,
+          icon: option?.data?.icon,
+          description: option.description || '',
+        },
+      ]);
+      return;
+    }
+
+    onChange(items.filter((item) => item._id !== option._id));
   };
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <FieldLabel label="Amenities" />
-          <p className="mt-1 text-xs text-muted">
-            Add amenity title, icon/image and description.
-          </p>
-        </div>
-        <ActionButton onClick={addItem}>Add Amenity</ActionButton>
+      <div>
+        <FieldLabel label="Amenities" />
+        <p className="mt-1 text-xs text-muted">
+          Select one or more amenities. Selected amenity name and icon will be saved with the property.
+        </p>
       </div>
 
-      {!items.length ? (
-        <div className="rounded-2xl border border-dashed border-line p-6 text-sm text-muted">
-          No amenities added yet.
+      {loading ? (
+        <div className="rounded-2xl border border-line p-6 text-sm text-muted">
+          Loading amenities...
         </div>
-      ) : null}
+      ) : !options.length ? (
+        <div className="rounded-2xl border border-dashed border-line p-6 text-sm text-muted">
+            No amenities found.
+        </div>
+        ) : (
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+            {options.map((option) => {
+              const checked = isChecked(option._id);
+              { console.log(option) }
+              return (
+                <label
+                  key={option._id}
+                  className={`flex cursor-pointer items-start gap-3 rounded-2xl border p-4 transition ${checked
+                    ? 'border-primary bg-panel'
+                    : 'border-line bg-panel/40'
+                    }`}
+                >
+                  <input
+                    type="checkbox"
+                    className="mt-1"
+                    checked={checked}
+                    onChange={(e) => toggleAmenity(option, e.target.checked)}
+                  />
 
-      <div className="space-y-4">
-        {items.map((item, index) => (
-          <div
-            key={`amenity-${index}`}
-            className="rounded-[24px] border border-line bg-panel/40 p-4"
-          >
-            <div className="mb-4 flex items-center justify-between">
-              <h4 className="text-sm font-semibold text-text">Amenity {index + 1}</h4>
-              <ActionButton secondary onClick={() => removeItem(index)}>
-                Remove
-              </ActionButton>
-            </div>
+                  <div className="flex flex-1 items-start gap-3">
 
-            <FormGrid columns={2}>
-              <TextInput
-                label="Amenity Title"
-                value={item.title}
-                onChange={(next) => updateItem(index, 'title', next)}
-              />
+                    {option?.icon ? (
+                      <img
+                        src={option?.icon}
+                        alt={option.title}
+                        className="h-10 w-10 rounded-xl border border-line object-cover"
+                      />
+                    ) : (
+                      <div className="h-10 w-10 rounded-xl border border-line bg-card" />
+                    )}
 
-              <div className="space-y-3">
-                <TextInput
-                  label="Amenity Icon"
-                  value={item.icon}
-                  onChange={(next) => updateItem(index, 'icon', next)}
-                  placeholder="Paste icon/image URL or upload below"
-                />
+                    <div className="min-w-0">
+                      <div className="text-sm font-medium text-text">{option.title}</div>
+                      {option.description ? (
+                        <p className="mt-1 text-xs text-muted">{option.description}</p>
+                      ) : null}
+                    </div>
+                  </div>
+                </label>
+              );
+            })}
+        </div>
+      )}
 
-                <input
-                  className="input"
-                  type="file"
-                  accept="image/*"
-                  onChange={async (e: ChangeEvent<HTMLInputElement>) => {
-                    const file = e.target.files?.[0];
-                    if (!file) return;
-                    const dataUrl = await fileToDataUrl(file);
-                    updateItem(index, 'icon', dataUrl);
-                  }}
-                />
-
+      {!!items.length && (
+        <div className="rounded-2xl border border-line bg-panel/30 p-4">
+          <p className="mb-3 text-sm font-medium text-text">Selected Amenities</p>
+          <div className="flex flex-wrap gap-2">
+            {items.map((item, index) => (
+              <div
+                key={`${item._id || item.title}-${index}`}
+                className="flex items-center gap-2 rounded-full border border-line bg-card px-3 py-2 text-xs text-text"
+              >
                 {item.icon ? (
                   <img
                     src={item.icon}
-                    alt={item.title || `Amenity ${index + 1}`}
-                    className="h-24 w-24 rounded-2xl border border-line object-cover"
+                    alt={item.title}
+                    className="h-5 w-5 rounded object-cover"
                   />
                 ) : null}
+                <span>{item.title}</span>
               </div>
-
-              <div className="md:col-span-2">
-                <TextArea
-                  label="Description"
-                  value={item.description}
-                  onChange={(next) => updateItem(index, 'description', next)}
-                />
-              </div>
-            </FormGrid>
+            ))}
           </div>
-        ))}
-      </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -1044,6 +1077,7 @@ export default function PropertiesPage() {
           'content/developer-community',
           'content/developer-types',
           'content/locations',
+          'content/property-amenities',
         ];
 
         const responses = await Promise.all(

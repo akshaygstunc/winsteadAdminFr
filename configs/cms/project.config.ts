@@ -107,22 +107,7 @@ export const projectsCmsConfig: CmsConfig = {
         valueKey: "_id",
       },
     },
-    // {
-    //   key: "developerType",
-    //   label: "Developer Type",
-    //   type: "relation-select",
-    //   group: "basic",
-    //   column: "left",
-    //   relation: {
-    //     entity: "developer-types",
-    //     labelKey: "name",
-    //     valueKey: "_id",
-    //   },
-    // },
 
-    /**
-     * Hero section
-     */
     {
       key: "image",
       label: "Hero Image",
@@ -152,10 +137,6 @@ export const projectsCmsConfig: CmsConfig = {
       group: "hero",
       column: "left",
     },
-
-    /**
-     * Specs
-     */
     {
       key: "startingPrice",
       label: "Starting Price",
@@ -163,15 +144,7 @@ export const projectsCmsConfig: CmsConfig = {
       group: "specs",
       column: "left",
       placeholder: "From AED 2.3M",
-    },
-    {
-      key: "bedrooms",
-      label: "Bedrooms",
-      type: "text",
-      group: "specs",
-      column: "left",
-      placeholder: "1–5 Bedrooms",
-    },
+  },
     {
       key: "sizeRange",
       label: "Size Range",
@@ -269,8 +242,6 @@ export const projectsCmsConfig: CmsConfig = {
       fields: [
         { key: "unitType", label: "Unit Type", type: "text" },
         { key: "title", label: "Plan Title", type: "text" },
-        { key: "bedrooms", label: "Bedrooms", type: "text" },
-        { key: "bathrooms", label: "Bathrooms", type: "text" },
         { key: "size", label: "Size", type: "text" },
         { key: "startingPrice", label: "Starting Price", type: "text" },
         { key: "image", label: "Floor Plan Image", type: "image" },
