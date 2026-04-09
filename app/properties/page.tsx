@@ -556,7 +556,7 @@ function AmenitiesEditor({
         setLoading(true);
         const response = await api.get('/content/property-amenities');
         const rows = normalizeApiArray(response);
-
+        console.log(rows, 'Fetched amenities for selection');
         const nextOptions: AmenityOption[] = rows.map((row: any) => ({
           _id: String(row?._id ?? row?.id ?? ''),
           title: String(row?.name ?? row?.title ?? ''),
@@ -583,13 +583,13 @@ function AmenitiesEditor({
     if (checked) {
       const exists = items.some((item) => item._id === option._id);
       if (exists) return;
-
+      console.log(option, 'Toggling amenity - adding');
       onChange([
         ...items,
         {
           _id: option._id,
           title: option.title,
-          icon: option?.data?.icon,
+          icon: option?.icon,
           description: option.description || '',
         },
       ]);
@@ -677,7 +677,19 @@ function AmenitiesEditor({
                     className="h-5 w-5 rounded object-cover"
                   />
                 ) : null}
+
                 <span>{item.title}</span>
+
+                {/* 🔥 Remove Button */}
+                <button
+                  type="button"
+                  onClick={() =>
+                    onChange(items.filter((_, i) => i !== index))
+                  }
+                  className="ml-1 text-red-400 hover:text-red-500 text-xs"
+                >
+                  ✕
+                </button>
               </div>
             ))}
           </div>
