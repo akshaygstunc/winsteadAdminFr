@@ -28,6 +28,7 @@ export type CmsRepeaterField = {
 
 export type CmsFieldType =
   | "text"
+  | "editor"
   | "textarea"
   | "select"
   | "number"

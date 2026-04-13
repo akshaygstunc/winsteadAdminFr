@@ -99,6 +99,11 @@ export const navSections: NavSection[] = [
         icon: Wrench,
         children: [
           {
+            label: "Top Menu",
+            href: "/customization/top-menu",
+            icon: MenuSquare,
+          },
+          {
             label: "Footer Menu",
             href: "/customization/footer-menu",
             icon: MenuSquare,
@@ -114,8 +119,13 @@ export const navSections: NavSection[] = [
             icon: FolderKanban,
           },
           {
-            label: "Developer Community",
+            label: "Developer",
             href: "/customization/developer-community",
+            icon: Building2,
+          },
+          {
+            label: "Developer communities",
+            href: "/customization/communities",
             icon: Building2,
           },
           {
@@ -190,7 +200,22 @@ export const navSections: NavSection[] = [
         label: "Others",
         icon: Globe,
         children: [
+          { label: "Home", href: "/home", icon: FileText },
           { label: "About Us", href: "/about", icon: FileText },
+          { label: "Our Services", href: "/our-services", icon: FileText },
+          { label: "Projects Page", href: "/projects-page", icon: FileText },
+          { label: "Team Page", href: "/our-team-page", icon: FileText },
+          { label: "Developer Page", href: "/developer-page", icon: FileText },
+          {
+            label: "Contact Us Page",
+            href: "/contact-us-page",
+            icon: FileText,
+          },
+          {
+            label: "Events Page",
+            href: "/gallery-page",
+            icon: FileText,
+          },
           {
             label: "Meta Settings",
             href: "/master/meta-settings",
