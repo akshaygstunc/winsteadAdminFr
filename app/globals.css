@@ -8,8 +8,8 @@
 
 html,
 body {
-  background: #060914;
-  color: #e8edf7;
+  background: #fff;
+  color: #060914;
 }
 
 body {
@@ -34,4 +34,83 @@ body {
 
 .panel-grid {
   @apply grid gap-6 xl:grid-cols-2;
+}
+
+
+.tiptap ul {
+  list-style-type: disc;
+  padding-left: 1.5rem;
+  margin: 0.75rem 0;
+}
+
+.tiptap ol {
+  list-style-type: decimal;
+  padding-left: 1.5rem;
+  margin: 0.75rem 0;
+}
+
+.tiptap li {
+  margin: 0.25rem 0;
+}
+
+.tiptap p {
+  margin: 0.5rem 0;
+}
+
+.tiptap {
+  min-height: 260px;
+}
+
+.tiptap:focus {
+  outline: none;
+}
+
+.tiptap p {
+  margin: 0.75rem 0;
+  line-height: 1.7;
+}
+
+.tiptap h1,
+.tiptap h2,
+.tiptap h3 {
+  margin: 1rem 0 0.5rem;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.tiptap h1 {
+  font-size: 1.75rem;
+}
+
+.tiptap h2 {
+  font-size: 1.4rem;
+}
+
+.tiptap h3 {
+  font-size: 1.15rem;
+}
+
+.tiptap ul,
+.tiptap ol {
+  padding-left: 1.25rem;
+  margin: 0.75rem 0;
+}
+
+.tiptap blockquote {
+  border-left: 3px solid rgba(255,255,255,0.15);
+  padding-left: 1rem;
+  margin: 1rem 0;
+  opacity: 0.9;
+}
+
+.tiptap a {
+  text-decoration: underline;
+}
+
+.tiptap .is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  color: rgba(255,255,255,0.38);
+  pointer-events: none;
+  float: left;
+  height: 0;
 }
