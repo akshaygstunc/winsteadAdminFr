@@ -1114,6 +1114,7 @@ export const EditorConfigs: Record<string, CmsConfig> = {
     "Developer Community",
     "developer-community",
     "Developer logo and community partner records.",
+    "editor",
     [
       { key: "title", label: "Developer Name", type: "text" },
       { key: "city", label: "City", type: "text" },
