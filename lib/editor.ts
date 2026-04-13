@@ -8,7 +8,9 @@ export type CmsFieldType =
   | "date"
   | "video"
   | "multiselect"
-  | "icon";
+  | "icon"
+  | "relation-select"
+  | "editor";
 
 export type CmsField = {
   key: string;
@@ -63,7 +65,7 @@ const boolStatus = [
 const textArea: CmsField = {
   key: "description",
   label: "Description",
-  type: "textarea",
+  type: "editor",
 };
 const imageField = (label = "Image"): CmsField => ({
   key: "image",
@@ -540,6 +542,7 @@ export const EditorConfigs: Record<string, CmsConfig> = {
     "Media",
     "media",
     "Media gallery with type, alt text, and image/video links.",
+    "editor",
     [
       { key: "title", label: "Asset Name", type: "text" },
       { key: "subtitle", label: "Short Line", type: "text" },
@@ -658,6 +661,7 @@ export const EditorConfigs: Record<string, CmsConfig> = {
     "Careers",
     "careers",
     "Open positions with role details and recruitment content.",
+    "editor",
     [
       { key: "title", label: "Role Title", type: "text" },
       { key: "subtitle", label: "Role Summary", type: "text" },
@@ -666,8 +670,7 @@ export const EditorConfigs: Record<string, CmsConfig> = {
         label: "Status",
         type: "select",
         options: [
-          { label: "Open", value: "open" },
-          { label: "Closed", value: "closed" },
+          { label: "Published", value: "published" },
           { label: "Draft", value: "draft" },
         ],
       },
@@ -684,6 +687,7 @@ export const EditorConfigs: Record<string, CmsConfig> = {
     "Banner",
     "banner",
     "Homepage and app banners with city targeting and portrait media.",
+    "editor",
     [
       { key: "title", label: "Title", type: "text" },
       { key: "city", label: "City", type: "text" },
@@ -826,11 +830,1345 @@ export const EditorConfigs: Record<string, CmsConfig> = {
     ),
     layout: "locations",
   },
+  "projects-page": singleton(
+    "Projects Page",
+    "projects-page",
+    "Manage Projects page banner content only.",
+    [
+      {
+        key: "bannerTitle",
+        label: "Banner Title",
+        type: "text",
+        group: "banner-section",
+        column: "left",
+      },
+      {
+        key: "bannerSubtitle",
+        label: "Banner Subtitle",
+        type: "textarea",
+        group: "banner-section",
+        column: "left",
+      },
+      {
+        key: "bannerPrimaryButtonText",
+        label: "Primary Button Text",
+        type: "text",
+        group: "banner-section",
+        column: "right",
+      },
+      {
+        key: "bannerPrimaryButtonUrl",
+        label: "Primary Button URL",
+        type: "text",
+        group: "banner-section",
+        column: "right",
+      },
+      {
+        key: "bannerSecondaryButtonText",
+        label: "Secondary Button Text",
+        type: "text",
+        group: "banner-section",
+        column: "right",
+      },
+      {
+        key: "bannerSecondaryButtonUrl",
+        label: "Secondary Button URL",
+        type: "text",
+        group: "banner-section",
+        column: "right",
+      },
+      {
+        key: "bannerImage",
+        label: "Banner Image",
+        type: "image",
+        group: "banner-section",
+        column: "right",
+      },
 
+      // SEO
+      {
+        key: "metaTitle",
+        label: "Meta Title",
+        type: "text",
+        group: "seo",
+        column: "left",
+      },
+      {
+        key: "metaDescription",
+        label: "Meta Description",
+        type: "textarea",
+        group: "seo",
+        column: "left",
+      },
+      {
+        key: "ogImage",
+        label: "OG Image",
+        type: "image",
+        group: "seo",
+        column: "right",
+      },
+    ],
+  ),
+  "contact-page": singleton(
+    "Contact Us Page",
+    "contact-page",
+    "Manage Contact Us page content except inquiry form and footer CTA.",
+    [
+      // BANNER SECTION
+      {
+        key: "bannerTitle",
+        label: "Banner Title",
+        type: "text",
+        group: "banner-section",
+        column: "left",
+      },
+      {
+        key: "bannerSubtitle",
+        label: "Banner Subtitle",
+        type: "textarea",
+        group: "banner-section",
+        column: "left",
+      },
+      {
+        key: "bannerImage",
+        label: "Banner Image",
+        type: "image",
+        group: "banner-section",
+        column: "right",
+      },
+
+      // GET IN TOUCH SECTION
+      {
+        key: "getInTouchEyebrow",
+        label: "Get In Touch Eyebrow",
+        type: "text",
+        group: "get-in-touch-section",
+        column: "left",
+      },
+      {
+        key: "getInTouchTitle",
+        label: "Get In Touch Title",
+        type: "text",
+        group: "get-in-touch-section",
+        column: "left",
+      },
+      {
+        key: "getInTouchDescription",
+        label: "Get In Touch Description",
+        type: "textarea",
+        group: "get-in-touch-section",
+        column: "left",
+      },
+
+      // HIGHLIGHT POINTS
+      {
+        key: "highlightPoint1Title",
+        label: "Highlight Point 1 Title",
+        type: "text",
+        group: "highlight-points",
+        column: "right",
+      },
+      {
+        key: "highlightPoint1Description",
+        label: "Highlight Point 1 Description",
+        type: "textarea",
+        group: "highlight-points",
+        column: "right",
+      },
+      {
+        key: "highlightPoint2Title",
+        label: "Highlight Point 2 Title",
+        type: "text",
+        group: "highlight-points",
+        column: "right",
+      },
+      {
+        key: "highlightPoint2Description",
+        label: "Highlight Point 2 Description",
+        type: "textarea",
+        group: "highlight-points",
+        column: "right",
+      },
+      {
+        key: "highlightPoint3Title",
+        label: "Highlight Point 3 Title",
+        type: "text",
+        group: "highlight-points",
+        column: "right",
+      },
+      {
+        key: "highlightPoint3Description",
+        label: "Highlight Point 3 Description",
+        type: "textarea",
+        group: "highlight-points",
+        column: "right",
+      },
+
+      // CONTACT INFO SECTION
+      {
+        key: "phoneTitle",
+        label: "Phone Title",
+        type: "text",
+        group: "contact-info",
+        column: "left",
+      },
+      {
+        key: "phoneNumbers",
+        label: "Phone Numbers",
+        type: "textarea",
+        group: "contact-info",
+        column: "left",
+      },
+      {
+        key: "emailTitle",
+        label: "Email Title",
+        type: "text",
+        group: "contact-info",
+        column: "left",
+      },
+      {
+        key: "emailAddresses",
+        label: "Email Addresses",
+        type: "textarea",
+        group: "contact-info",
+        column: "left",
+      },
+      {
+        key: "locationTitle",
+        label: "Location Title",
+        type: "text",
+        group: "contact-info",
+        column: "right",
+      },
+      {
+        key: "locationAddresses",
+        label: "Location Addresses",
+        type: "textarea",
+        group: "contact-info",
+        column: "right",
+      },
+
+      // SEO
+      {
+        key: "metaTitle",
+        label: "Meta Title",
+        type: "text",
+        group: "seo",
+        column: "left",
+      },
+      {
+        key: "metaDescription",
+        label: "Meta Description",
+        type: "textarea",
+        group: "seo",
+        column: "left",
+      },
+      {
+        key: "ogImage",
+        label: "OG Image",
+        type: "image",
+        group: "seo",
+        column: "right",
+      },
+    ],
+  ),
+  "gallery-page": singleton(
+    "Gallery Page",
+    "gallery-page",
+    "Manage Gallery page content except gallery items, event tabs, footer, and footer CTA.",
+    [
+      // BANNER SECTION
+      {
+        key: "bannerTitle",
+        label: "Banner Title",
+        type: "text",
+        group: "banner-section",
+        column: "left",
+      },
+      {
+        key: "bannerSubtitle",
+        label: "Banner Subtitle",
+        type: "textarea",
+        group: "banner-section",
+        column: "left",
+      },
+      {
+        key: "bannerImage",
+        label: "Banner Image",
+        type: "image",
+        group: "banner-section",
+        column: "right",
+      },
+
+      // BREADCRUMB SECTION
+      {
+        key: "breadcrumbHomeText",
+        label: "Breadcrumb Home Text",
+        type: "text",
+        group: "breadcrumb-section",
+        column: "left",
+      },
+      {
+        key: "breadcrumbCurrentText",
+        label: "Breadcrumb Current Text",
+        type: "text",
+        group: "breadcrumb-section",
+        column: "right",
+      },
+
+      // INTRO SECTION
+      {
+        key: "introEyebrow",
+        label: "Intro Eyebrow",
+        type: "text",
+        group: "intro-section",
+        column: "left",
+      },
+      {
+        key: "introTitle",
+        label: "Intro Title",
+        type: "text",
+        group: "intro-section",
+        column: "left",
+      },
+      {
+        key: "introDescription",
+        label: "Intro Description",
+        type: "textarea",
+        group: "intro-section",
+        column: "left",
+      },
+
+      // SEO
+      {
+        key: "metaTitle",
+        label: "Meta Title",
+        type: "text",
+        group: "seo",
+        column: "left",
+      },
+      {
+        key: "metaDescription",
+        label: "Meta Description",
+        type: "textarea",
+        group: "seo",
+        column: "left",
+      },
+      {
+        key: "ogImage",
+        label: "OG Image",
+        type: "image",
+        group: "seo",
+        column: "right",
+      },
+    ],
+  ),
+  "developer-page": singleton(
+    "Developer Page",
+    "developer-page",
+    "Manage Developer page banner content only.",
+    [
+      {
+        key: "bannerEyebrow",
+        label: "Banner Eyebrow",
+        type: "text",
+        group: "banner-section",
+        column: "left",
+      },
+      {
+        key: "bannerTitle",
+        label: "Banner Title",
+        type: "text",
+        group: "banner-section",
+        column: "left",
+      },
+      {
+        key: "bannerSubtitle",
+        label: "Banner Subtitle",
+        type: "textarea",
+        group: "banner-section",
+        column: "left",
+      },
+      {
+        key: "bannerImage",
+        label: "Banner Image",
+        type: "image",
+        group: "banner-section",
+        column: "right",
+      },
+
+      // SEO
+      {
+        key: "metaTitle",
+        label: "Meta Title",
+        type: "text",
+        group: "seo",
+        column: "left",
+      },
+      {
+        key: "metaDescription",
+        label: "Meta Description",
+        type: "textarea",
+        group: "seo",
+        column: "left",
+      },
+      {
+        key: "ogImage",
+        label: "OG Image",
+        type: "image",
+        group: "seo",
+        column: "right",
+      },
+    ],
+  ),
+  "our-team-page": singleton(
+    "Our Team Page",
+    "our-team-page",
+    "Manage Our Team page content except team members and filter tabs.",
+    [
+      // HERO / BANNER SECTION
+      {
+        key: "bannerEyebrow",
+        label: "Banner Eyebrow",
+        type: "text",
+        group: "banner-section",
+        column: "left",
+      },
+      {
+        key: "bannerTitle",
+        label: "Banner Title",
+        type: "text",
+        group: "banner-section",
+        column: "left",
+      },
+      {
+        key: "bannerButtonText",
+        label: "Banner Button Text",
+        type: "text",
+        group: "banner-section",
+        column: "right",
+      },
+      {
+        key: "bannerButtonUrl",
+        label: "Banner Button URL",
+        type: "text",
+        group: "banner-section",
+        column: "right",
+      },
+      {
+        key: "bannerImage",
+        label: "Banner Image",
+        type: "image",
+        group: "banner-section",
+        column: "right",
+      },
+
+      // TEAM INTRO SECTION
+      {
+        key: "teamIntroTitle",
+        label: "Team Intro Title",
+        type: "text",
+        group: "team-intro-section",
+        column: "left",
+      },
+      {
+        key: "teamIntroDescription",
+        label: "Team Intro Description",
+        type: "textarea",
+        group: "team-intro-section",
+        column: "left",
+      },
+
+      // CONNECT CTA SECTION
+      {
+        key: "connectEyebrow",
+        label: "Connect Section Eyebrow",
+        type: "text",
+        group: "connect-section",
+        column: "left",
+      },
+      {
+        key: "connectTitle",
+        label: "Connect Section Title",
+        type: "text",
+        group: "connect-section",
+        column: "left",
+      },
+      {
+        key: "connectDescription",
+        label: "Connect Section Description",
+        type: "textarea",
+        group: "connect-section",
+        column: "left",
+      },
+      {
+        key: "connectPrimaryButtonText",
+        label: "Connect Primary Button Text",
+        type: "text",
+        group: "connect-section",
+        column: "right",
+      },
+      {
+        key: "connectPrimaryButtonUrl",
+        label: "Connect Primary Button URL",
+        type: "text",
+        group: "connect-section",
+        column: "right",
+      },
+      {
+        key: "connectSecondaryButtonText",
+        label: "Connect Secondary Button Text",
+        type: "text",
+        group: "connect-section",
+        column: "right",
+      },
+      {
+        key: "connectSecondaryButtonUrl",
+        label: "Connect Secondary Button URL",
+        type: "text",
+        group: "connect-section",
+        column: "right",
+      },
+
+      // FINAL CTA SECTION
+      {
+        key: "ctaEyebrow",
+        label: "CTA Eyebrow",
+        type: "text",
+        group: "cta-section",
+        column: "left",
+      },
+      {
+        key: "ctaTitle",
+        label: "CTA Title",
+        type: "text",
+        group: "cta-section",
+        column: "left",
+      },
+      {
+        key: "ctaSubtitle",
+        label: "CTA Subtitle",
+        type: "textarea",
+        group: "cta-section",
+        column: "left",
+      },
+      {
+        key: "ctaPrimaryButtonText",
+        label: "CTA Primary Button Text",
+        type: "text",
+        group: "cta-section",
+        column: "right",
+      },
+      {
+        key: "ctaPrimaryButtonUrl",
+        label: "CTA Primary Button URL",
+        type: "text",
+        group: "cta-section",
+        column: "right",
+      },
+      {
+        key: "ctaSecondaryButtonText",
+        label: "CTA Secondary Button Text",
+        type: "text",
+        group: "cta-section",
+        column: "right",
+      },
+      {
+        key: "ctaSecondaryButtonUrl",
+        label: "CTA Secondary Button URL",
+        type: "text",
+        group: "cta-section",
+        column: "right",
+      },
+
+      // SEO
+      {
+        key: "metaTitle",
+        label: "Meta Title",
+        type: "text",
+        group: "seo",
+        column: "left",
+      },
+      {
+        key: "metaDescription",
+        label: "Meta Description",
+        type: "textarea",
+        group: "seo",
+        column: "left",
+      },
+      {
+        key: "ogImage",
+        label: "OG Image",
+        type: "image",
+        group: "seo",
+        column: "right",
+      },
+    ],
+  ),
+  "services-page": singleton(
+    "Our Services",
+    "services-page",
+    "Manage Our Services page content section by section.",
+    [
+      // HERO SECTION
+      {
+        key: "heroTitle",
+        label: "Hero Title",
+        type: "text",
+        group: "hero-section",
+        column: "left",
+      },
+      {
+        key: "heroSubtitle",
+        label: "Hero Subtitle",
+        type: "textarea",
+        group: "hero-section",
+        column: "left",
+      },
+      {
+        key: "heroImage",
+        label: "Hero Image",
+        type: "image",
+        group: "hero-section",
+        column: "right",
+      },
+
+      // SERVICES OVERVIEW SECTION
+      {
+        key: "servicesOverviewTitle",
+        label: "Services Overview Title",
+        type: "text",
+        group: "services-overview",
+        column: "left",
+      },
+      {
+        key: "servicesOverviewSubtitle",
+        label: "Services Overview Subtitle",
+        type: "textarea",
+        group: "services-overview",
+        column: "left",
+      },
+
+      {
+        key: "overviewService1Number",
+        label: "Overview Service 1 Number",
+        type: "text",
+        group: "services-overview",
+        column: "right",
+      },
+      {
+        key: "overviewService1Title",
+        label: "Overview Service 1 Title",
+        type: "text",
+        group: "services-overview",
+        column: "right",
+      },
+      {
+        key: "overviewService1Description",
+        label: "Overview Service 1 Description",
+        type: "textarea",
+        group: "services-overview",
+        column: "right",
+      },
+      {
+        key: "overviewService1Image",
+        label: "Overview Service 1 Image",
+        type: "image",
+        group: "services-overview",
+        column: "right",
+      },
+
+      {
+        key: "overviewService2Number",
+        label: "Overview Service 2 Number",
+        type: "text",
+        group: "services-overview",
+        column: "right",
+      },
+      {
+        key: "overviewService2Title",
+        label: "Overview Service 2 Title",
+        type: "text",
+        group: "services-overview",
+        column: "right",
+      },
+      {
+        key: "overviewService2Description",
+        label: "Overview Service 2 Description",
+        type: "textarea",
+        group: "services-overview",
+        column: "right",
+      },
+      {
+        key: "overviewService2Image",
+        label: "Overview Service 2 Image",
+        type: "image",
+        group: "services-overview",
+        column: "right",
+      },
+
+      {
+        key: "overviewService3Number",
+        label: "Overview Service 3 Number",
+        type: "text",
+        group: "services-overview",
+        column: "right",
+      },
+      {
+        key: "overviewService3Title",
+        label: "Overview Service 3 Title",
+        type: "text",
+        group: "services-overview",
+        column: "right",
+      },
+      {
+        key: "overviewService3Description",
+        label: "Overview Service 3 Description",
+        type: "textarea",
+        group: "services-overview",
+        column: "right",
+      },
+      {
+        key: "overviewService3Image",
+        label: "Overview Service 3 Image",
+        type: "image",
+        group: "services-overview",
+        column: "right",
+      },
+
+      // DETAILED SERVICES SECTION
+      {
+        key: "detailedServicesTitle",
+        label: "Detailed Services Title",
+        type: "text",
+        group: "detailed-services",
+        column: "left",
+      },
+      {
+        key: "detailedServicesSubtitle",
+        label: "Detailed Services Subtitle",
+        type: "textarea",
+        group: "detailed-services",
+        column: "left",
+      },
+
+      {
+        key: "detailedService1Title",
+        label: "Detailed Service 1 Title",
+        type: "text",
+        group: "detailed-services",
+        column: "right",
+      },
+      {
+        key: "detailedService1ShortDescription",
+        label: "Detailed Service 1 Short Description",
+        type: "textarea",
+        group: "detailed-services",
+        column: "right",
+      },
+      {
+        key: "detailedService1Description",
+        label: "Detailed Service 1 Full Description",
+        type: "textarea",
+        group: "detailed-services",
+        column: "right",
+      },
+      {
+        key: "detailedService1Point1",
+        label: "Detailed Service 1 Point 1",
+        type: "text",
+        group: "detailed-services",
+        column: "right",
+      },
+      {
+        key: "detailedService1Point2",
+        label: "Detailed Service 1 Point 2",
+        type: "text",
+        group: "detailed-services",
+        column: "right",
+      },
+      {
+        key: "detailedService1Point3",
+        label: "Detailed Service 1 Point 3",
+        type: "text",
+        group: "detailed-services",
+        column: "right",
+      },
+      {
+        key: "detailedService1Image",
+        label: "Detailed Service 1 Image",
+        type: "image",
+        group: "detailed-services",
+        column: "right",
+      },
+
+      {
+        key: "detailedService2Title",
+        label: "Detailed Service 2 Title",
+        type: "text",
+        group: "detailed-services",
+        column: "right",
+      },
+      {
+        key: "detailedService2ShortDescription",
+        label: "Detailed Service 2 Short Description",
+        type: "textarea",
+        group: "detailed-services",
+        column: "right",
+      },
+      {
+        key: "detailedService2Description",
+        label: "Detailed Service 2 Full Description",
+        type: "textarea",
+        group: "detailed-services",
+        column: "right",
+      },
+      {
+        key: "detailedService2Point1",
+        label: "Detailed Service 2 Point 1",
+        type: "text",
+        group: "detailed-services",
+        column: "right",
+      },
+      {
+        key: "detailedService2Point2",
+        label: "Detailed Service 2 Point 2",
+        type: "text",
+        group: "detailed-services",
+        column: "right",
+      },
+      {
+        key: "detailedService2Point3",
+        label: "Detailed Service 2 Point 3",
+        type: "text",
+        group: "detailed-services",
+        column: "right",
+      },
+      {
+        key: "detailedService2Image",
+        label: "Detailed Service 2 Image",
+        type: "image",
+        group: "detailed-services",
+        column: "right",
+      },
+
+      {
+        key: "detailedService3Title",
+        label: "Detailed Service 3 Title",
+        type: "text",
+        group: "detailed-services",
+        column: "right",
+      },
+      {
+        key: "detailedService3ShortDescription",
+        label: "Detailed Service 3 Short Description",
+        type: "textarea",
+        group: "detailed-services",
+        column: "right",
+      },
+      {
+        key: "detailedService3Description",
+        label: "Detailed Service 3 Full Description",
+        type: "textarea",
+        group: "detailed-services",
+        column: "right",
+      },
+      {
+        key: "detailedService3Point1",
+        label: "Detailed Service 3 Point 1",
+        type: "text",
+        group: "detailed-services",
+        column: "right",
+      },
+      {
+        key: "detailedService3Point2",
+        label: "Detailed Service 3 Point 2",
+        type: "text",
+        group: "detailed-services",
+        column: "right",
+      },
+      {
+        key: "detailedService3Point3",
+        label: "Detailed Service 3 Point 3",
+        type: "text",
+        group: "detailed-services",
+        column: "right",
+      },
+      {
+        key: "detailedService3Image",
+        label: "Detailed Service 3 Image",
+        type: "image",
+        group: "detailed-services",
+        column: "right",
+      },
+
+      // HOW IT WORKS SECTION
+      {
+        key: "howItWorksTitle",
+        label: "How It Works Title",
+        type: "text",
+        group: "how-it-works",
+        column: "left",
+      },
+      {
+        key: "howItWorksSubtitle",
+        label: "How It Works Subtitle",
+        type: "textarea",
+        group: "how-it-works",
+        column: "left",
+      },
+      {
+        key: "howItWorksImage",
+        label: "How It Works Image",
+        type: "image",
+        group: "how-it-works",
+        column: "right",
+      },
+
+      {
+        key: "howItWorksStep1Number",
+        label: "How It Works Step 1 Number",
+        type: "text",
+        group: "how-it-works",
+        column: "right",
+      },
+      {
+        key: "howItWorksStep1Title",
+        label: "How It Works Step 1 Title",
+        type: "text",
+        group: "how-it-works",
+        column: "right",
+      },
+      {
+        key: "howItWorksStep1Description",
+        label: "How It Works Step 1 Description",
+        type: "textarea",
+        group: "how-it-works",
+        column: "right",
+      },
+
+      {
+        key: "howItWorksStep2Number",
+        label: "How It Works Step 2 Number",
+        type: "text",
+        group: "how-it-works",
+        column: "right",
+      },
+      {
+        key: "howItWorksStep2Title",
+        label: "How It Works Step 2 Title",
+        type: "text",
+        group: "how-it-works",
+        column: "right",
+      },
+      {
+        key: "howItWorksStep2Description",
+        label: "How It Works Step 2 Description",
+        type: "textarea",
+        group: "how-it-works",
+        column: "right",
+      },
+
+      {
+        key: "howItWorksStep3Number",
+        label: "How It Works Step 3 Number",
+        type: "text",
+        group: "how-it-works",
+        column: "right",
+      },
+      {
+        key: "howItWorksStep3Title",
+        label: "How It Works Step 3 Title",
+        type: "text",
+        group: "how-it-works",
+        column: "right",
+      },
+      {
+        key: "howItWorksStep3Description",
+        label: "How It Works Step 3 Description",
+        type: "textarea",
+        group: "how-it-works",
+        column: "right",
+      },
+
+      {
+        key: "howItWorksStep4Number",
+        label: "How It Works Step 4 Number",
+        type: "text",
+        group: "how-it-works",
+        column: "right",
+      },
+      {
+        key: "howItWorksStep4Title",
+        label: "How It Works Step 4 Title",
+        type: "text",
+        group: "how-it-works",
+        column: "right",
+      },
+      {
+        key: "howItWorksStep4Description",
+        label: "How It Works Step 4 Description",
+        type: "textarea",
+        group: "how-it-works",
+        column: "right",
+      },
+
+      // WHY CHOOSE WINSTEAD SECTION
+      {
+        key: "whyChooseWinsteadTitle",
+        label: "Why Choose Winstead Title",
+        type: "text",
+        group: "why-choose-winstead",
+        column: "left",
+      },
+      {
+        key: "whyChooseWinsteadSubtitle",
+        label: "Why Choose Winstead Subtitle",
+        type: "textarea",
+        group: "why-choose-winstead",
+        column: "left",
+      },
+      {
+        key: "whyChooseWinsteadImage",
+        label: "Why Choose Winstead Image",
+        type: "image",
+        group: "why-choose-winstead",
+        column: "right",
+      },
+      {
+        key: "whyChooseWinsteadPoint1",
+        label: "Why Choose Winstead Point 1",
+        type: "text",
+        group: "why-choose-winstead",
+        column: "right",
+      },
+      {
+        key: "whyChooseWinsteadPoint2",
+        label: "Why Choose Winstead Point 2",
+        type: "text",
+        group: "why-choose-winstead",
+        column: "right",
+      },
+      {
+        key: "whyChooseWinsteadPoint3",
+        label: "Why Choose Winstead Point 3",
+        type: "text",
+        group: "why-choose-winstead",
+        column: "right",
+      },
+      {
+        key: "whyChooseWinsteadPoint4",
+        label: "Why Choose Winstead Point 4",
+        type: "text",
+        group: "why-choose-winstead",
+        column: "right",
+      },
+
+      // CTA SECTION
+      {
+        key: "ctaTitle",
+        label: "CTA Title",
+        type: "text",
+        group: "cta-section",
+        column: "left",
+      },
+      {
+        key: "ctaSubtitle",
+        label: "CTA Subtitle",
+        type: "textarea",
+        group: "cta-section",
+        column: "left",
+      },
+      {
+        key: "ctaButtonText",
+        label: "CTA Button Text",
+        type: "text",
+        group: "cta-section",
+        column: "right",
+      },
+      {
+        key: "ctaButtonUrl",
+        label: "CTA Button URL",
+        type: "text",
+        group: "cta-section",
+        column: "right",
+      },
+
+      // SEO
+      {
+        key: "metaTitle",
+        label: "Meta Title",
+        type: "text",
+        group: "seo",
+        column: "left",
+      },
+      {
+        key: "metaDescription",
+        label: "Meta Description",
+        type: "textarea",
+        group: "seo",
+        column: "left",
+      },
+      {
+        key: "ogImage",
+        label: "OG Image",
+        type: "image",
+        group: "seo",
+        column: "right",
+      },
+    ],
+  ),
+  "home-page": singleton(
+    "Home Page",
+    "home-page",
+    "Manage home page content section by section.",
+    [
+      // HERO SECTION
+      {
+        key: "heroTitle",
+        label: "Hero Title",
+        type: "text",
+        group: "hero-section",
+        column: "left",
+      },
+      {
+        key: "heroSubtitle",
+        label: "Hero Subtitle",
+        type: "textarea",
+        group: "hero-section",
+        column: "left",
+      },
+      {
+        key: "heroBackgroundImage",
+        label: "Hero Background Image",
+        type: "video",
+        group: "hero-section",
+        column: "right",
+      },
+      {
+        key: "heroMobileImage",
+        label: "Hero Mobile Image",
+        type: "video",
+        group: "hero-section",
+        column: "right",
+      },
+      {
+        key: "heroVideo",
+        label: "Hero Background Video",
+        type: "video",
+        group: "hero-section",
+        column: "right",
+      },
+
+      // ABOUT WINSTEAD SECTION
+      {
+        key: "aboutWinsteadTitle",
+        label: "About Winstead Title",
+        type: "text",
+        group: "about-winstead",
+        column: "left",
+      },
+      {
+        key: "aboutWinsteadSubtitle",
+        label: "About Winstead Subtitle",
+        type: "textarea",
+        group: "about-winstead",
+        column: "left",
+      },
+      {
+        key: "aboutWinsteadImage",
+        label: "About Winstead Image",
+        type: "image",
+        group: "about-winstead",
+        column: "right",
+      },
+      {
+        key: "aboutWinsteadButtonText",
+        label: "About Winstead Button Text",
+        type: "text",
+        group: "about-winstead",
+        column: "right",
+      },
+      {
+        key: "aboutWinsteadButtonUrl",
+        label: "About Winstead Button URL",
+        type: "text",
+        group: "about-winstead",
+        column: "right",
+      },
+
+      // STATS SECTION
+      {
+        key: "statsSectionTitle",
+        label: "Stats Section Title",
+        type: "text",
+        group: "stats-section",
+        column: "left",
+      },
+      {
+        key: "satisfiedCustomersCount",
+        label: "Satisfied Customers Count",
+        type: "number",
+        group: "stats-section",
+        column: "left",
+      },
+      {
+        key: "propertyListedCount",
+        label: "Property Listed Count",
+        type: "number",
+        group: "stats-section",
+        column: "left",
+      },
+      {
+        key: "premiumDevelopersCount",
+        label: "Premium Developers Count",
+        type: "number",
+        group: "stats-section",
+        column: "right",
+      },
+      {
+        key: "locationsCount",
+        label: "Locations Count",
+        type: "number",
+        group: "stats-section",
+        column: "right",
+      },
+
+      // SOCIAL SECTION
+      {
+        key: "socialSectionTitle",
+        label: "Social Section Title",
+        type: "text",
+        group: "social-section",
+        column: "left",
+      },
+      {
+        key: "socialHandle",
+        label: "Social Handle",
+        type: "text",
+        group: "social-section",
+        column: "left",
+      },
+      {
+        key: "socialButtonText",
+        label: "Social Button Text",
+        type: "text",
+        group: "social-section",
+        column: "right",
+      },
+      {
+        key: "socialButtonUrl",
+        label: "Social Button URL",
+        type: "text",
+        group: "social-section",
+        column: "right",
+      },
+
+      // LUXURY CONCIERGE CTA SECTION
+      {
+        key: "ctaTitle",
+        label: "CTA Title",
+        type: "text",
+        group: "cta-section",
+        column: "left",
+      },
+      {
+        key: "ctaSubtitle",
+        label: "CTA Subtitle",
+        type: "textarea",
+        group: "cta-section",
+        column: "left",
+      },
+      {
+        key: "ctaPrimaryButtonText",
+        label: "CTA Primary Button Text",
+        type: "text",
+        group: "cta-section",
+        column: "right",
+      },
+      {
+        key: "ctaPrimaryButtonUrl",
+        label: "CTA Primary Button URL",
+        type: "text",
+        group: "cta-section",
+        column: "right",
+      },
+
+      // FOOTER BRAND SECTION
+      {
+        key: "footerLogo",
+        label: "Footer Logo",
+        type: "image",
+        group: "footer-brand",
+        column: "left",
+      },
+      {
+        key: "footerBrandText",
+        label: "Footer Brand Text",
+        type: "textarea",
+        group: "footer-brand",
+        column: "left",
+      },
+
+      // CONTACT SECTION
+      {
+        key: "contactAddress",
+        label: "Contact Address",
+        type: "textarea",
+        group: "contact-section",
+        column: "left",
+      },
+      {
+        key: "contactPhone",
+        label: "Contact Phone",
+        type: "text",
+        group: "contact-section",
+        column: "left",
+      },
+      {
+        key: "contactEmail",
+        label: "Contact Email",
+        type: "text",
+        group: "contact-section",
+        column: "right",
+      },
+      {
+        key: "workingHours",
+        label: "Working Hours",
+        type: "text",
+        group: "contact-section",
+        column: "right",
+      },
+
+      // SEO
+      {
+        key: "metaTitle",
+        label: "Meta Title",
+        type: "text",
+        group: "seo",
+        column: "left",
+      },
+      {
+        key: "metaDescription",
+        label: "Meta Description",
+        type: "textarea",
+        group: "seo",
+        column: "left",
+      },
+      {
+        key: "ogImage",
+        label: "OG Image",
+        type: "image",
+        group: "seo",
+        column: "right",
+      },
+    ],
+  ),
   awards: collection(
     "Awards",
     "awards",
     "Recognition entries with image, transparent image, video, and career toggle.",
+    "editor",
     [
       { key: "title", label: "Award Title", type: "text" },
       { key: "awardYear", label: "Year", type: "number" },
@@ -899,50 +2237,382 @@ export const EditorConfigs: Record<string, CmsConfig> = {
   "about-page": singleton(
     "About Us",
     "about-page",
-    "Section-based About page editor approximating the screenshot structure.",
+    "Manage About Us page content section by section.",
     [
-      { key: "title", label: "Hero Heading", type: "text" },
-      { key: "subtitle", label: "Hero Sub Heading", type: "text" },
-      imageField("Parallax Image (1920x800)"),
-      { key: "expertsHeading", label: "Experts Block Heading", type: "text" },
-      { key: "expertsBody", label: "Experts Block Body", type: "textarea" },
-      { key: "globalHeading", label: "Global Outlook Heading", type: "text" },
-      { key: "globalBody", label: "Global Outlook Body", type: "textarea" },
-      { key: "recognitionHeading", label: "Recognition Heading", type: "text" },
-      { key: "recognitionBody", label: "Recognition Body", type: "textarea" },
+      // HERO SECTION
       {
-        key: "inventoryHeading",
-        label: "Exclusive Inventory Heading",
+        key: "heroTitle",
+        label: "Hero Title",
         type: "text",
+        group: "hero-section",
+        column: "left",
       },
       {
-        key: "inventoryBody",
-        label: "Exclusive Inventory Body",
+        key: "heroSubtitle",
+        label: "Hero Subtitle",
         type: "textarea",
+        group: "hero-section",
+        column: "left",
       },
       {
-        key: "responsiveHeading",
-        label: "Responsiveness Heading",
+        key: "heroPrimaryButtonText",
+        label: "Hero Primary Button Text",
         type: "text",
+        group: "hero-section",
+        column: "right",
       },
-      { key: "responsiveBody", label: "Responsiveness Body", type: "textarea" },
       {
-        key: "languageHeading",
-        label: "Fluent In Your World Heading",
+        key: "heroPrimaryButtonUrl",
+        label: "Hero Primary Button URL",
         type: "text",
+        group: "hero-section",
+        column: "right",
       },
       {
-        key: "languageBody",
-        label: "Fluent In Your World Body",
+        key: "heroSecondaryButtonText",
+        label: "Hero Secondary Button Text",
+        type: "text",
+        group: "hero-section",
+        column: "right",
+      },
+      {
+        key: "heroSecondaryButtonUrl",
+        label: "Hero Secondary Button URL",
+        type: "text",
+        group: "hero-section",
+        column: "right",
+      },
+      {
+        key: "heroMainImage",
+        label: "Hero Main Image",
+        type: "image",
+        group: "hero-section",
+        column: "right",
+      },
+      {
+        key: "heroSecondaryImage",
+        label: "Hero Secondary Image",
+        type: "image",
+        group: "hero-section",
+        column: "right",
+      },
+
+      // WORD OF CEO SECTION
+      {
+        key: "ceoSectionTitle",
+        label: "Word of CEO Title",
+        type: "text",
+        group: "word-of-ceo",
+        column: "left",
+      },
+      {
+        key: "ceoSectionBody",
+        label: "Word of CEO Description",
         type: "textarea",
+        group: "word-of-ceo",
+        column: "left",
       },
       {
-        key: "blockOrderNote",
-        label: "Section Ordering Note",
+        key: "ceoName",
+        label: "CEO Name",
         type: "text",
-        note: "Use the heading/body pairs above to mirror the screenshot blocks in order.",
+        group: "word-of-ceo",
+        column: "right",
       },
-      textArea,
+      {
+        key: "ceoDesignation",
+        label: "CEO Designation",
+        type: "text",
+        group: "word-of-ceo",
+        column: "right",
+      },
+      {
+        key: "ceoImage",
+        label: "CEO Image",
+        type: "image",
+        group: "word-of-ceo",
+        column: "right",
+      },
+
+      // WHY CHOOSE US SECTION
+      {
+        key: "whyChooseUsTitle",
+        label: "Why Choose Us Title",
+        type: "text",
+        group: "why-choose-us",
+        column: "left",
+      },
+      {
+        key: "whyChooseUsSubtitle",
+        label: "Why Choose Us Subtitle",
+        type: "textarea",
+        group: "why-choose-us",
+        column: "left",
+      },
+
+      {
+        key: "whyChooseUsCard1Title",
+        label: "Why Choose Us Card 1 Title",
+        type: "text",
+        group: "why-choose-us",
+        column: "right",
+      },
+      {
+        key: "whyChooseUsCard1Description",
+        label: "Why Choose Us Card 1 Description",
+        type: "textarea",
+        group: "why-choose-us",
+        column: "right",
+      },
+
+      {
+        key: "whyChooseUsCard2Title",
+        label: "Why Choose Us Card 2 Title",
+        type: "text",
+        group: "why-choose-us",
+        column: "right",
+      },
+      {
+        key: "whyChooseUsCard2Description",
+        label: "Why Choose Us Card 2 Description",
+        type: "textarea",
+        group: "why-choose-us",
+        column: "right",
+      },
+
+      {
+        key: "whyChooseUsCard3Title",
+        label: "Why Choose Us Card 3 Title",
+        type: "text",
+        group: "why-choose-us",
+        column: "right",
+      },
+      {
+        key: "whyChooseUsCard3Description",
+        label: "Why Choose Us Card 3 Description",
+        type: "textarea",
+        group: "why-choose-us",
+        column: "right",
+      },
+
+      // HOW WE WORK SECTION
+      {
+        key: "howWeWorkTitle",
+        label: "How We Work Title",
+        type: "text",
+        group: "how-we-work",
+        column: "left",
+      },
+      {
+        key: "howWeWorkSubtitle",
+        label: "How We Work Subtitle",
+        type: "textarea",
+        group: "how-we-work",
+        column: "left",
+      },
+
+      {
+        key: "step1Title",
+        label: "Step 1 Title",
+        type: "text",
+        group: "how-we-work",
+        column: "right",
+      },
+      {
+        key: "step1Description",
+        label: "Step 1 Description",
+        type: "textarea",
+        group: "how-we-work",
+        column: "right",
+      },
+
+      {
+        key: "step2Title",
+        label: "Step 2 Title",
+        type: "text",
+        group: "how-we-work",
+        column: "right",
+      },
+      {
+        key: "step2Description",
+        label: "Step 2 Description",
+        type: "textarea",
+        group: "how-we-work",
+        column: "right",
+      },
+
+      {
+        key: "step3Title",
+        label: "Step 3 Title",
+        type: "text",
+        group: "how-we-work",
+        column: "right",
+      },
+      {
+        key: "step3Description",
+        label: "Step 3 Description",
+        type: "textarea",
+        group: "how-we-work",
+        column: "right",
+      },
+
+      {
+        key: "step4Title",
+        label: "Step 4 Title",
+        type: "text",
+        group: "how-we-work",
+        column: "right",
+      },
+      {
+        key: "step4Description",
+        label: "Step 4 Description",
+        type: "textarea",
+        group: "how-we-work",
+        column: "right",
+      },
+
+      // TRUST SECTION
+      {
+        key: "trustSectionTitle",
+        label: "Trust Section Title",
+        type: "text",
+        group: "trust-section",
+        column: "left",
+      },
+      {
+        key: "trustSectionSubtitle",
+        label: "Trust Section Subtitle",
+        type: "textarea",
+        group: "trust-section",
+        column: "left",
+      },
+
+      {
+        key: "trustCard1Title",
+        label: "Trust Card 1 Title",
+        type: "text",
+        group: "trust-section",
+        column: "right",
+      },
+      {
+        key: "trustCard1Description",
+        label: "Trust Card 1 Description",
+        type: "textarea",
+        group: "trust-section",
+        column: "right",
+      },
+
+      {
+        key: "trustCard2Title",
+        label: "Trust Card 2 Title",
+        type: "text",
+        group: "trust-section",
+        column: "right",
+      },
+      {
+        key: "trustCard2Description",
+        label: "Trust Card 2 Description",
+        type: "textarea",
+        group: "trust-section",
+        column: "right",
+      },
+
+      {
+        key: "trustCard3Title",
+        label: "Trust Card 3 Title",
+        type: "text",
+        group: "trust-section",
+        column: "right",
+      },
+      {
+        key: "trustCard3Description",
+        label: "Trust Card 3 Description",
+        type: "textarea",
+        group: "trust-section",
+        column: "right",
+      },
+
+      {
+        key: "trustCard4Title",
+        label: "Trust Card 4 Title",
+        type: "text",
+        group: "trust-section",
+        column: "right",
+      },
+      {
+        key: "trustCard4Description",
+        label: "Trust Card 4 Description",
+        type: "textarea",
+        group: "trust-section",
+        column: "right",
+      },
+
+      // CTA SECTION
+      {
+        key: "ctaTitle",
+        label: "CTA Title",
+        type: "text",
+        group: "cta-section",
+        column: "left",
+      },
+      {
+        key: "ctaSubtitle",
+        label: "CTA Subtitle",
+        type: "textarea",
+        group: "cta-section",
+        column: "left",
+      },
+      {
+        key: "ctaPrimaryButtonText",
+        label: "CTA Primary Button Text",
+        type: "text",
+        group: "cta-section",
+        column: "right",
+      },
+      {
+        key: "ctaPrimaryButtonUrl",
+        label: "CTA Primary Button URL",
+        type: "text",
+        group: "cta-section",
+        column: "right",
+      },
+      {
+        key: "ctaSecondaryButtonText",
+        label: "CTA Secondary Button Text",
+        type: "text",
+        group: "cta-section",
+        column: "right",
+      },
+      {
+        key: "ctaSecondaryButtonUrl",
+        label: "CTA Secondary Button URL",
+        type: "text",
+        group: "cta-section",
+        column: "right",
+      },
+
+      // SEO
+      {
+        key: "metaTitle",
+        label: "Meta Title",
+        type: "text",
+        group: "seo",
+        column: "left",
+      },
+      {
+        key: "metaDescription",
+        label: "Meta Description",
+        type: "textarea",
+        group: "seo",
+        column: "left",
+      },
+      {
+        key: "ogImage",
+        label: "OG Image",
+        type: "image",
+        group: "seo",
+        column: "right",
+      },
     ],
   ),
 
@@ -1067,6 +2737,46 @@ export const EditorConfigs: Record<string, CmsConfig> = {
     ],
     searchMeta("group", "sortOrder", "status"),
   ),
+  "top-menu": collection(
+    "Top Menu",
+    "top-menu",
+    "Website top navigation menu.",
+    "editor",
+    [
+      { key: "title", label: "Label", type: "text" },
+      { key: "subtitle", label: "URL", type: "text" },
+      { key: "group", label: "Group", type: "text" },
+
+      {
+        key: "parentId",
+        label: "Parent Menu",
+        type: "relation-select",
+        relation: {
+          entity: "content/top-menu",
+          labelKey: "title",
+          valueKey: "_id",
+        },
+      },
+
+      { key: "sortOrder", label: "Sort Order", type: "number" },
+
+      {
+        key: "status",
+        label: "Status",
+        type: "select",
+        options: statusOptions,
+      },
+
+      {
+        key: "openInNewTab",
+        label: "Open In New Tab",
+        type: "boolean",
+      },
+
+      textArea,
+    ],
+    searchMeta("group", "sortOrder", "status"),
+  ),
 
   "footer-menu-2": collection(
     "Footer Menu 2",
@@ -1124,6 +2834,49 @@ export const EditorConfigs: Record<string, CmsConfig> = {
         type: "select",
         options: statusOptions,
       },
+      imageField("Logo / Image"),
+      textArea,
+    ],
+    searchMeta("city", "status"),
+  ),
+  communities: collection(
+    "Community",
+    "communities",
+    "Developer logo and community partner records.",
+    "editor",
+    [
+      { key: "title", label: "Community Name", type: "text" },
+      { key: "city", label: "City", type: "text" },
+      {
+        key: "status",
+        label: "Status",
+        type: "select",
+        options: statusOptions,
+      },
+
+      {
+        key: "developer",
+        label: "Developer",
+        type: "relation-select",
+        relation: {
+          entity: "content/developer-community",
+          labelKey: "title",
+          valueKey: "_id",
+        },
+      },
+
+      {
+        key: "projects",
+        label: "Projects",
+        type: "relation-select",
+        multiple: true,
+        relation: {
+          entity: "properties",
+          labelKey: "title",
+          valueKey: "_id",
+        },
+      },
+
       imageField("Logo / Image"),
       textArea,
     ],
