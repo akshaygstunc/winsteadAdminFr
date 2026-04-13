@@ -1,4 +1,4 @@
-// File: /Users/akshaysharma/akshay/projects/DQI/luxury-realestate-closing-pass-parent-routes/apps/frontend/app/cms/[id]/page.tsx
+// File: /root/winsteadAdminFr/app/cms/[id]/page.tsx
 import * as entry from '../../../../../app/cms/[id]/page.js'
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
 
