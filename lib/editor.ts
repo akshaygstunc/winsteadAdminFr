@@ -10,7 +10,8 @@ export type CmsFieldType =
   | "multiselect"
   | "icon"
   | "relation-select"
-  | "editor";
+  | "editor"
+  | "gallery";
 
 export type CmsField = {
   key: string;
@@ -20,6 +21,8 @@ export type CmsField = {
   placeholder?: string;
   section?: string;
   note?: string;
+  multiple?: boolean;
+  accept?: string;
 };
 
 export type CmsConfig = {
@@ -745,6 +748,60 @@ export const EditorConfigs: Record<string, CmsConfig> = {
     searchMeta("rating", "status"),
   ),
 
+  events: collection(
+    "Events",
+    "events",
+    "Manage events with title, description, and multiple images/videos.",
+    "editor",
+    [
+      { key: "title", label: "Event Title", type: "text" },
+
+      { key: "subtitle", label: "Event Subtitle", type: "text" },
+
+      {
+        key: "eventDate",
+        label: "Event Date",
+        type: "date",
+      },
+
+      {
+        key: "location",
+        label: "Location",
+        type: "text",
+      },
+
+      {
+        key: "status",
+        label: "Status",
+        type: "select",
+        options: boolStatus,
+      },
+
+      {
+        key: "coverImage",
+        label: "Cover Image",
+        type: "image",
+        note: "Main thumbnail for event listing.",
+      },
+
+      {
+        key: "description",
+        label: "Event Description",
+        type: "textarea",
+      },
+
+      // 🔥 MAIN PART (MULTIPLE MEDIA INSIDE EVENT)
+      {
+        key: "media",
+        label: "Event Media (Images / Videos)",
+        type: "gallery",
+        multiple: true,
+        accept: "image/*,video/*",
+        note: "Upload multiple images and videos for this event.",
+      },
+    ],
+    searchMeta("status", "eventDate", "location"),
+  ),
   faq: collection(
     "FAQ",
     "faq",
@@ -1976,6 +2033,13 @@ export const EditorConfigs: Record<string, CmsConfig> = {
         column: "left",
       },
       {
+        key: "aboutWinsteadDescription",
+        label: "About Winstead Description",
+        type: "textarea",
+        group: "about-winstead-section",
+        column: "left",
+      },
+      {
         key: "aboutWinsteadImage",
         label: "About Winstead Image",
         type: "image",
@@ -2237,357 +2301,385 @@ export const EditorConfigs: Record<string, CmsConfig> = {
   "about-page": singleton(
     "About Us",
     "about-page",
-    "Manage About Us page content section by section.",
+    "Manage About Us page exactly as per the designed sections.",
     [
-      // HERO SECTION
+      // HERO BANNER
       {
-        key: "heroTitle",
-        label: "Hero Title",
+        key: "bannerTitle",
+        label: "Banner Title",
         type: "text",
-        group: "hero-section",
+        group: "hero-banner",
         column: "left",
       },
       {
-        key: "heroSubtitle",
-        label: "Hero Subtitle",
+        key: "bannerSubtitle",
+        label: "Banner Subtitle",
         type: "textarea",
-        group: "hero-section",
+        group: "hero-banner",
         column: "left",
       },
       {
-        key: "heroPrimaryButtonText",
-        label: "Hero Primary Button Text",
-        type: "text",
-        group: "hero-section",
-        column: "right",
-      },
-      {
-        key: "heroPrimaryButtonUrl",
-        label: "Hero Primary Button URL",
-        type: "text",
-        group: "hero-section",
-        column: "right",
-      },
-      {
-        key: "heroSecondaryButtonText",
-        label: "Hero Secondary Button Text",
-        type: "text",
-        group: "hero-section",
-        column: "right",
-      },
-      {
-        key: "heroSecondaryButtonUrl",
-        label: "Hero Secondary Button URL",
-        type: "text",
-        group: "hero-section",
-        column: "right",
-      },
-      {
-        key: "heroMainImage",
-        label: "Hero Main Image",
+        key: "bannerImage",
+        label: "Banner Image",
         type: "image",
-        group: "hero-section",
-        column: "right",
-      },
-      {
-        key: "heroSecondaryImage",
-        label: "Hero Secondary Image",
-        type: "image",
-        group: "hero-section",
+        group: "hero-banner",
         column: "right",
       },
 
-      // WORD OF CEO SECTION
+      // ABOUT WINSTEAD SECTION
       {
-        key: "ceoSectionTitle",
-        label: "Word of CEO Title",
+        key: "aboutWinsteadTitle",
+        label: "About Winstead Title",
         type: "text",
-        group: "word-of-ceo",
+        group: "about-winstead-section",
         column: "left",
       },
       {
-        key: "ceoSectionBody",
-        label: "Word of CEO Description",
+        key: "aboutWinsteadDescription",
+        label: "About Winstead Description",
         type: "textarea",
-        group: "word-of-ceo",
+        group: "about-winstead-section",
+        column: "left",
+      },
+      {
+        key: "aboutWinsteadImage",
+        label: "About Winstead Image",
+        type: "image",
+        group: "about-winstead-section",
+        column: "right",
+      },
+
+      // STATS SECTION
+      {
+        key: "statsTitle",
+        label: "Stats Title",
+        type: "text",
+        group: "stats-section",
+        column: "left",
+      },
+      {
+        key: "statsSubtitle",
+        label: "Stats Subtitle",
+        type: "textarea",
+        group: "stats-section",
+        column: "left",
+      },
+      {
+        key: "stat1Number",
+        label: "Stat 1 Number",
+        type: "text",
+        group: "stats-section",
+        column: "right",
+      },
+      {
+        key: "stat1Label",
+        label: "Stat 1 Label",
+        type: "text",
+        group: "stats-section",
+        column: "right",
+      },
+      {
+        key: "stat2Number",
+        label: "Stat 2 Number",
+        type: "text",
+        group: "stats-section",
+        column: "right",
+      },
+      {
+        key: "stat2Label",
+        label: "Stat 2 Label",
+        type: "text",
+        group: "stats-section",
+        column: "right",
+      },
+      {
+        key: "stat3Number",
+        label: "Stat 3 Number",
+        type: "text",
+        group: "stats-section",
+        column: "right",
+      },
+      {
+        key: "stat3Label",
+        label: "Stat 3 Label",
+        type: "text",
+        group: "stats-section",
+        column: "right",
+      },
+      {
+        key: "stat4Number",
+        label: "Stat 4 Number",
+        type: "text",
+        group: "stats-section",
+        column: "right",
+      },
+      {
+        key: "stat4Label",
+        label: "Stat 4 Label",
+        type: "text",
+        group: "stats-section",
+        column: "right",
+      },
+
+      // CEO MESSAGE SECTION
+      {
+        key: "ceoMessageTitle",
+        label: "CEO Message Title",
+        type: "text",
+        group: "ceo-message-section",
+        column: "left",
+      },
+      {
+        key: "ceoMessageDescription",
+        label: "CEO Message Description",
+        type: "textarea",
+        group: "ceo-message-section",
         column: "left",
       },
       {
         key: "ceoName",
         label: "CEO Name",
         type: "text",
-        group: "word-of-ceo",
+        group: "ceo-message-section",
         column: "right",
       },
       {
         key: "ceoDesignation",
         label: "CEO Designation",
         type: "text",
-        group: "word-of-ceo",
+        group: "ceo-message-section",
         column: "right",
       },
       {
         key: "ceoImage",
         label: "CEO Image",
         type: "image",
-        group: "word-of-ceo",
+        group: "ceo-message-section",
         column: "right",
       },
 
-      // WHY CHOOSE US SECTION
+      // WHY CLIENTS CHOOSE US SECTION
       {
-        key: "whyChooseUsTitle",
-        label: "Why Choose Us Title",
+        key: "whyChooseTitle",
+        label: "Why Clients Choose Us Title",
         type: "text",
-        group: "why-choose-us",
+        group: "why-choose-section",
         column: "left",
       },
       {
-        key: "whyChooseUsSubtitle",
-        label: "Why Choose Us Subtitle",
+        key: "whyChooseDescription",
+        label: "Why Clients Choose Us Description",
         type: "textarea",
-        group: "why-choose-us",
-        column: "left",
-      },
-
-      {
-        key: "whyChooseUsCard1Title",
-        label: "Why Choose Us Card 1 Title",
-        type: "text",
-        group: "why-choose-us",
-        column: "right",
-      },
-      {
-        key: "whyChooseUsCard1Description",
-        label: "Why Choose Us Card 1 Description",
-        type: "textarea",
-        group: "why-choose-us",
-        column: "right",
-      },
-
-      {
-        key: "whyChooseUsCard2Title",
-        label: "Why Choose Us Card 2 Title",
-        type: "text",
-        group: "why-choose-us",
-        column: "right",
-      },
-      {
-        key: "whyChooseUsCard2Description",
-        label: "Why Choose Us Card 2 Description",
-        type: "textarea",
-        group: "why-choose-us",
-        column: "right",
-      },
-
-      {
-        key: "whyChooseUsCard3Title",
-        label: "Why Choose Us Card 3 Title",
-        type: "text",
-        group: "why-choose-us",
-        column: "right",
-      },
-      {
-        key: "whyChooseUsCard3Description",
-        label: "Why Choose Us Card 3 Description",
-        type: "textarea",
-        group: "why-choose-us",
-        column: "right",
-      },
-
-      // HOW WE WORK SECTION
-      {
-        key: "howWeWorkTitle",
-        label: "How We Work Title",
-        type: "text",
-        group: "how-we-work",
+        group: "why-choose-section",
         column: "left",
       },
       {
-        key: "howWeWorkSubtitle",
-        label: "How We Work Subtitle",
-        type: "textarea",
-        group: "how-we-work",
-        column: "left",
-      },
-
-      {
-        key: "step1Title",
-        label: "Step 1 Title",
+        key: "whyChooseCard1Title",
+        label: "Why Choose Card 1 Title",
         type: "text",
-        group: "how-we-work",
+        group: "why-choose-section",
         column: "right",
       },
       {
-        key: "step1Description",
-        label: "Step 1 Description",
+        key: "whyChooseCard1Description",
+        label: "Why Choose Card 1 Description",
         type: "textarea",
-        group: "how-we-work",
+        group: "why-choose-section",
         column: "right",
       },
-
       {
-        key: "step2Title",
-        label: "Step 2 Title",
+        key: "whyChooseCard2Title",
+        label: "Why Choose Card 2 Title",
         type: "text",
-        group: "how-we-work",
+        group: "why-choose-section",
         column: "right",
       },
       {
-        key: "step2Description",
-        label: "Step 2 Description",
+        key: "whyChooseCard2Description",
+        label: "Why Choose Card 2 Description",
         type: "textarea",
-        group: "how-we-work",
+        group: "why-choose-section",
         column: "right",
       },
-
       {
-        key: "step3Title",
-        label: "Step 3 Title",
+        key: "whyChooseCard3Title",
+        label: "Why Choose Card 3 Title",
         type: "text",
-        group: "how-we-work",
+        group: "why-choose-section",
         column: "right",
       },
       {
-        key: "step3Description",
-        label: "Step 3 Description",
+        key: "whyChooseCard3Description",
+        label: "Why Choose Card 3 Description",
         type: "textarea",
-        group: "how-we-work",
+        group: "why-choose-section",
+        column: "right",
+      },
+      {
+        key: "whyChooseImage",
+        label: "Why Choose Us Image",
+        type: "image",
+        group: "why-choose-section",
         column: "right",
       },
 
+      // HOW WE CAN HELP SECTION
       {
-        key: "step4Title",
-        label: "Step 4 Title",
+        key: "howWeHelpTitle",
+        label: "How We Can Help Title",
         type: "text",
-        group: "how-we-work",
-        column: "right",
-      },
-      {
-        key: "step4Description",
-        label: "Step 4 Description",
-        type: "textarea",
-        group: "how-we-work",
-        column: "right",
-      },
-
-      // TRUST SECTION
-      {
-        key: "trustSectionTitle",
-        label: "Trust Section Title",
-        type: "text",
-        group: "trust-section",
+        group: "how-we-help-section",
         column: "left",
       },
       {
-        key: "trustSectionSubtitle",
-        label: "Trust Section Subtitle",
+        key: "howWeHelpDescription",
+        label: "How We Can Help Description",
         type: "textarea",
-        group: "trust-section",
-        column: "left",
-      },
-
-      {
-        key: "trustCard1Title",
-        label: "Trust Card 1 Title",
-        type: "text",
-        group: "trust-section",
-        column: "right",
-      },
-      {
-        key: "trustCard1Description",
-        label: "Trust Card 1 Description",
-        type: "textarea",
-        group: "trust-section",
-        column: "right",
-      },
-
-      {
-        key: "trustCard2Title",
-        label: "Trust Card 2 Title",
-        type: "text",
-        group: "trust-section",
-        column: "right",
-      },
-      {
-        key: "trustCard2Description",
-        label: "Trust Card 2 Description",
-        type: "textarea",
-        group: "trust-section",
-        column: "right",
-      },
-
-      {
-        key: "trustCard3Title",
-        label: "Trust Card 3 Title",
-        type: "text",
-        group: "trust-section",
-        column: "right",
-      },
-      {
-        key: "trustCard3Description",
-        label: "Trust Card 3 Description",
-        type: "textarea",
-        group: "trust-section",
-        column: "right",
-      },
-
-      {
-        key: "trustCard4Title",
-        label: "Trust Card 4 Title",
-        type: "text",
-        group: "trust-section",
-        column: "right",
-      },
-      {
-        key: "trustCard4Description",
-        label: "Trust Card 4 Description",
-        type: "textarea",
-        group: "trust-section",
-        column: "right",
-      },
-
-      // CTA SECTION
-      {
-        key: "ctaTitle",
-        label: "CTA Title",
-        type: "text",
-        group: "cta-section",
+        group: "how-we-help-section",
         column: "left",
       },
       {
-        key: "ctaSubtitle",
-        label: "CTA Subtitle",
-        type: "textarea",
-        group: "cta-section",
+        key: "howWeHelpImage",
+        label: "How We Can Help Image",
+        type: "image",
+        group: "how-we-help-section",
+        column: "right",
+      },
+      {
+        key: "point1Text",
+        label: "Point 1 Text",
+        type: "text",
+        group: "experience-section",
+        column: "right",
+      },
+      {
+        key: "point2Text",
+        label: "Point 2 Text",
+        type: "text",
+        group: "experience-section",
+        column: "right",
+      },
+      {
+        key: "point3Text",
+        label: "Point 3 Text",
+        type: "text",
+        group: "experience-section",
+        column: "right",
+      },
+      {
+        key: "point4Text",
+        label: "Point 4 Text",
+        type: "text",
+        group: "experience-section",
+        column: "right",
+      },
+      {
+        key: "point5Text",
+        label: "Point 5 Text",
+        type: "text",
+        group: "experience-section",
+        column: "right",
+      },
+      {
+        key: "point6Text",
+        label: "Point 6 Text",
+        type: "text",
+        group: "experience-section",
+        column: "right",
+      },
+
+      // CURATED EXPERIENCE CARD
+      {
+        key: "curatedExperienceTitle",
+        label: "Curated Experience Title",
+        type: "text",
+        group: "experience-section",
         column: "left",
       },
       {
-        key: "ctaPrimaryButtonText",
-        label: "CTA Primary Button Text",
+        key: "curatedExperienceDescription",
+        label: "Curated Experience Description",
+        type: "textarea",
+        group: "experience-section",
+        column: "left",
+      },
+      // // {
+      // //   key: "curatedExperienceIcon",
+      // //   label: "Curated Experience Icon",
+      // //   type: "icon",
+      // //   group: "experience-section",
+      // //   column: "left",
+      // },
+
+      // GUIDED SUPPORT CARD
+      {
+        key: "guidedSupportTitle",
+        label: "Guided Support Title",
         type: "text",
-        group: "cta-section",
+        group: "experience-section",
         column: "right",
       },
       {
-        key: "ctaPrimaryButtonUrl",
-        label: "CTA Primary Button URL",
+        key: "guidedSupportDescription",
+        label: "Guided Support Description",
+        type: "textarea",
+        group: "experience-section",
+        column: "right",
+      },
+      // {
+      //   key: "guidedSupportIcon",
+      //   label: "Guided Support Icon",
+      //   type: "icon",
+      //   group: "experience-section",
+      //   column: "right",
+      // },
+
+      // GALLERY PREVIEW SECTION
+      {
+        key: "galleryTitle",
+        label: "Gallery Title",
         type: "text",
-        group: "cta-section",
+        group: "gallery-preview-section",
+        column: "left",
+      },
+      {
+        key: "galleryDescription",
+        label: "Gallery Description",
+        type: "textarea",
+        group: "gallery-preview-section",
         column: "right",
       },
       {
-        key: "ctaSecondaryButtonText",
-        label: "CTA Secondary Button Text",
+        key: "media",
+        label: "Event Media (Images / Videos)",
+        type: "gallery",
+        multiple: true,
+        accept: "image/*,video/*",
+        group: "gallery-preview-section",
+        note: "Upload multiple images and videos for this event.",
+      },
+
+      // FINAL CTA SECTION
+     
+      {
+        key: "ctaDescription",
+        label: "CTA Description",
+        type: "textarea",
+        group: "final-cta-section",
+        column: "left",
+      },
+      {
+        key: "ctaButtonText",
+        label: "CTA Button Text",
         type: "text",
-        group: "cta-section",
+        group: "final-cta-section",
         column: "right",
       },
       {
-        key: "ctaSecondaryButtonUrl",
-        label: "CTA Secondary Button URL",
+        key: "ctaButtonUrl",
+        label: "CTA Button URL",
         type: "text",
-        group: "cta-section",
+        group: "final-cta-section",
         column: "right",
       },
 

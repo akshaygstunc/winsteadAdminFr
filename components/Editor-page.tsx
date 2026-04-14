@@ -105,7 +105,162 @@ function normalizeRelationOptions(
         value: String(row?.[valueKey] ?? ''),
     }));
 }
+function GalleryUploader({
+    value,
+    onChange,
+}: {
+    value: string[];
+    onChange: (next: string[]) => void;
+}) {
+    const images = Array.isArray(value) ? value : [];
+    const [urlInput, setUrlInput] = useState('');
+    const [uploading, setUploading] = useState(false);
 
+    const uploadSingleFile = async (file: File): Promise<string> => {
+        const formData = new FormData();
+        formData.append('file', file);
+
+        const response = await api.post('/content/upload/gallery', formData, {
+        });
+        console.log(response, 'Upload response');
+        const uploadedUrl =
+            response?.data?.url ||
+            response?.data?.data?.url ||
+            response?.data?.fileUrl ||
+            response?.data?.data?.fileUrl ||
+            response?.data?.location ||
+            response?.data?.data?.location ||
+            '';
+
+        if (!uploadedUrl) {
+            throw new Error('Upload API did not return image URL');
+        }
+
+        return uploadedUrl;
+    };
+
+    const handleFiles = async (e: ChangeEvent<HTMLInputElement>) => {
+        const files = Array.from(e.target.files || []);
+        if (!files.length) return;
+
+        setUploading(true);
+
+        try {
+            const nextImages = [...images];
+
+            for (const file of files) {
+                const uploadedUrl = await uploadSingleFile(file);
+                nextImages.push(uploadedUrl);
+                onChange([...nextImages]);
+            }
+        } catch (error) {
+            console.error('Gallery upload failed:', error);
+        } finally {
+            setUploading(false);
+            e.target.value = '';
+        }
+    };
+
+    const addUrl = () => {
+        const next = urlInput.trim();
+        if (!next) return;
+        onChange([...(images || []), next]);
+        setUrlInput('');
+    };
+
+    const updateImage = (index: number, nextValue: string) => {
+        const next = [...images];
+        next[index] = nextValue;
+        onChange(next);
+    };
+
+    const removeImage = (index: number) => {
+        onChange(images.filter((_, i) => i !== index));
+    };
+
+    return (
+        <div className="space-y-4">
+            <div>
+                <FieldLabel label="Gallery Images" />
+                <p className="mt-1 text-xs text-muted">
+                    Upload multiple property gallery images or paste image URLs.
+                </p>
+            </div>
+
+            <div className="space-y-3 rounded-[24px] border border-line bg-panel/40 p-4">
+                <div className="flex gap-2">
+                    <div className="flex-1">
+                        <TextInput
+                            label="Add Image URL"
+                            value={urlInput}
+                            onChange={setUrlInput}
+                            placeholder="https://example.com/image.jpg"
+                        />
+                    </div>
+                    <div className="flex items-end">
+                        <ActionButton secondary onClick={addUrl} disabled={uploading}>
+                            Add URL
+                        </ActionButton>
+                    </div>
+                </div>
+
+                <input
+                    className="input"
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={handleFiles}
+                    disabled={uploading}
+                />
+
+                {uploading ? (
+                    <p className="text-xs text-muted">Uploading images...</p>
+                ) : null}
+            </div>
+
+            {!!images.length && (
+                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                    {images.map((image, index) => (
+                        <div
+                            key={`${image}-${index}`}
+                            className="space-y-3 rounded-[24px] border border-line bg-panel/40 p-4"
+                        >
+                            <TextInput
+                                label={`Image ${index + 1}`}
+                                value={image}
+                                onChange={(next) => updateImage(index, next)}
+                            />
+
+                            {image ? (
+                                <img
+                                    src={image}
+                                    alt={`Gallery ${index + 1}`}
+                                    className="h-40 w-full rounded-2xl border border-line object-cover"
+                                />
+                            ) : null}
+
+                            <div className="flex justify-end">
+                                <ActionButton
+                                    secondary
+                                    onClick={() => removeImage(index)}
+                                    disabled={uploading}
+                                >
+                                    Remove
+                                </ActionButton>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            )}
+
+            {!images.length ? (
+                <div className="rounded-2xl border border-dashed border-line p-6 text-sm text-muted">
+                    No gallery images added yet.
+                </div>
+            ) : null}
+        </div>
+    );
+}
 function renderField(
     field: CmsField,
     value: any,
@@ -301,6 +456,7 @@ function renderField(
                         label={field.label}
                         value={value || ''}
                         onChange={onChange}
+                        multiple={field.multiple}
                         placeholder="Paste image URL or upload below"
                     />
                     <div>
@@ -337,6 +493,8 @@ function renderField(
                         : null}
                 </div>
             );
+        case 'gallery':
+            return <GalleryUploader value={value || []} onChange={onChange} />;
 
         default:
             return (
@@ -361,7 +519,7 @@ export function EditorCmsPage({ config }: { config: CmsConfig }) {
         () =>
             config.fields.filter(
                 (f) =>
-                    ['title', 'subtitle', 'slug', 'image', 'description', 'videoUrl'].includes(f.key) ||
+                    ['title', 'subtitle', 'slug', 'image', 'description', 'videoUrl', 'gallery'].includes(f.key) ||
                     f.type === 'textarea',
             ),
         [config],
