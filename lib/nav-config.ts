@@ -81,6 +81,7 @@ export const navSections: NavSection[] = [
       { label: "Podcast", href: "/podcast", icon: Mic },
       { label: "Blogs", href: "/blogs", icon: PenSquare },
       { label: "Media", href: "/media", icon: Images },
+      { label: "Events", href: "/customization/events", icon: Images },
       { label: "Pages", href: "/pages", icon: FileText },
       {
         label: "Relationship Manager",

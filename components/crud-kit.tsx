@@ -11,11 +11,11 @@ export function FieldLabel({ label }: { label: string }) {
   return <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.24em] text-gold">{label}</label>;
 }
 
-export function TextInput({ label, value, onChange, placeholder, type = 'text' }: { label: string; value: string | number; onChange: (value: string) => void; placeholder?: string; type?: string; }) {
+export function TextInput({ label, value, onChange, placeholder, type = 'text', multiple = false }: { label: string; value: string | number; onChange: (value: string) => void; placeholder?: string; type?: string; multiple?: boolean }) {
   return (
     <div>
       <FieldLabel label={label} />
-      <input className="input" value={value} type={type} placeholder={placeholder} onChange={(e) => onChange(e.target.value)} />
+      <input className="input" value={value} type={type} placeholder={placeholder} multiple={multiple} onChange={(e) => onChange(e.target.value)} />
     </div>
   );
 }

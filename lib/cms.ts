@@ -42,6 +42,8 @@ export type CmsFieldType =
   | "relation-multiselect";
 
 export type CmsField = {
+  multiple: boolean | undefined;
+  accept: string;
   key: string;
   label: string;
   type: CmsFieldType;
