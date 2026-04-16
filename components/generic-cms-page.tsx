@@ -7,6 +7,13 @@ import { Modal } from '@/components/modal';
 import { ActionButton, SectionCard, StatusBadge } from '@/components/ui';
 import { api } from '@/lib/api';
 import { CmsConfig, CmsField, CmsItem } from '@/lib/cms';
+
+// Extend CmsConfig to include cardMeta if not already defined
+declare module '@/lib/cms' {
+  interface CmsConfig {
+    cardMeta?: string[];
+  }
+}
 import { FieldLabel, FormActions, FormGrid, InlineActions, SectionNotice, SelectInput, TextArea, TextInput } from '@/components/crud-kit';
 
 function blankFromConfig(config: CmsConfig): CmsItem {
@@ -307,6 +314,13 @@ export function GenericCmsPage({ config }: { config: CmsConfig }) {
         setForm({ ...blankFromConfig(config), ...item, data: { ...blankFromConfig(config).data, ...(item.data || {}) } });
         setOpen(true);
       } else {
+        if (config.entity === "contact-query") {
+          const rows = await api.get<CmsItem[]>(`/contact-query${term ? `?search=${encodeURIComponent(term)}` : ''}`);
+
+          console.log(rows, 'Contact query rows');
+          setItems(rows?.data);
+          return;
+        }
         const rows = await api.get<CmsItem[]>(`/content/${config.entity}${term ? `?search=${encodeURIComponent(term)}` : ''}`);
         setItems(rows);
       }
@@ -391,38 +405,178 @@ export function GenericCmsPage({ config }: { config: CmsConfig }) {
                   }}
                 />
                 <ActionButton secondary onClick={() => load(search)}>Search</ActionButton>
+               {config.entity !== "contact-query" && (
                 <ActionButton onClick={() => { setEditingId(null); setForm(blankFromConfig(config)); setOpen(true); }}>{config.addLabel || 'Add New'}</ActionButton>
+               )}
               </div>
             }
           >
             {loading ? <p className="text-sm text-muted">Loading...</p> : null}
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-              {items.map((item) => (
-                <article key={item._id || item.title} className="rounded-[28px] border border-line bg-panel/70 p-4">
-                  {item.image ? <img src={item.image} alt={item.title} className="mb-4 h-40 w-full rounded-[22px] border border-line object-cover" /> : <div className="mb-4 h-40 rounded-[22px] border border-dashed border-line bg-gradient-to-br from-violet-500/15 via-transparent to-gold/10" />}
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <h3 className="text-base font-semibold text-text">{item.title}</h3>
-                      {item.subtitle ? <p className="mt-1 text-sm text-muted">{item.subtitle}</p> : null}
-                    </div>
-                    <StatusBadge value={item.status || 'draft'} tone={item.status === 'active' || item.status === 'published' ? 'green' : item.status === 'archived' ? 'red' : 'gold'} />
+            <div
+              className={
+                config.entity === "contact-query"
+                  ? ""
+                  : "grid gap-4 md:grid-cols-2 xl:grid-cols-3"
+              }
+            >
+              {config.entity === "contact-query" ? (
+                <div className="overflow-hidden rounded-[28px] border border-line bg-panel/70">
+                  <div className="overflow-x-auto">
+                    <table className="w-full min-w-[1100px] text-left">
+                      <thead className="border-b border-line bg-card/50">
+                        <tr>
+                          <th className="px-4 py-4 text-sm font-medium text-gold">Lead</th>
+                          <th className="px-4 py-4 text-sm font-medium text-gold">Email</th>
+                          <th className="px-4 py-4 text-sm font-medium text-gold">Phone</th>
+                          <th className="px-4 py-4 text-sm font-medium text-gold">Location</th>
+                          <th className="px-4 py-4 text-sm font-medium text-gold">Status</th>
+                          <th className="px-4 py-4 text-sm font-medium text-gold">Created</th>
+                          <th className="px-4 py-4 text-sm font-medium text-gold text-right">
+                            Actions
+                          </th>
+                        </tr>
+                      </thead>
+
+                      <tbody>
+                        {items.map((item) => (
+                          <tr
+                            key={item._id}
+                            className="border-b border-line last:border-none hover:bg-card/40"
+                          >
+                            <td className="px-4 py-4 text-text font-medium">
+                              {item?.contact?.fullName}
+                            </td>
+
+                            <td className="px-4 py-4 text-sm text-muted">
+                              {item?.contact?.email}
+                            </td>
+
+                            <td className="px-4 py-4 text-sm text-muted">
+                              {item?.contact?.phone}
+                            </td>
+
+                            <td className="px-4 py-4 text-sm text-muted">
+                              {item?.contact?.location || "-"}
+                            </td>
+
+                            <td className="px-4 py-4">
+                              <StatusBadge
+                                value={item.status || "new"}
+                                tone={
+                                  item.status === "active" ||
+                                    item.status === "published"
+                                    ? "green"
+                                    : item.status === "archived"
+                                      ? "red"
+                                      : "gold"
+                                }
+                              />
+                            </td>
+
+                            <td className="px-4 py-4 text-sm text-muted">
+                              {new Date(item.createdAt).toLocaleDateString()}
+                            </td>
+
+                            <td className="px-4 py-4 text-right">
+                              <InlineActions
+                                onEdit={() => onEdit(item)}
+                                onDelete={() => onDelete(item._id)}
+                              />
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
-                  {config.cardMeta?.length ? (
-                    <div className="mt-4 grid gap-2">
-                      {config.cardMeta.map((key) => {
-                        const val = getValue(item, { key, label: key, type: 'text' } as CmsField);
-                        if (val === undefined || val === null || val === '') return null;
-                        return <div key={key} className="rounded-2xl border border-line bg-card/70 px-3 py-2 text-sm text-muted"><span className="text-gold">{key.replace(/([A-Z])/g, ' $1')}:</span> {String(val)}</div>;
-                      })}
-                    </div>
+
+                  {!items.length && !loading ? (
+                    <div className="p-8 text-sm text-muted">No records found.</div>
                   ) : null}
-                  {item.description ? <p className="mt-4 line-clamp-4 text-sm leading-6 text-muted">{item.description}</p> : null}
-                  <div className="mt-4 flex justify-end">
-                    <InlineActions onEdit={() => onEdit(item)} onDelete={() => onDelete(item._id)} />
-                  </div>
-                </article>
-              ))}
-              {!items.length && !loading ? <div className="rounded-3xl border border-dashed border-line p-8 text-sm text-muted">No records found.</div> : null}
+                </div>
+              ) : (
+                items.map((item) => (
+                  <article
+                    key={item._id || item.title}
+                    className="rounded-[28px] border border-line bg-panel/70 p-4"
+                  >
+                    {item.image ? (
+                      <img
+                        src={item.image}
+                        alt={item.title}
+                        className="mb-4 h-40 w-full rounded-[22px] border border-line object-cover"
+                      />
+                    ) : (
+                      <div className="mb-4 h-40 rounded-[22px] border border-dashed border-line bg-gradient-to-br from-violet-500/15 via-transparent to-gold/10" />
+                    )}
+
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <h3 className="text-base font-semibold text-text">
+                          {item.title}
+                        </h3>
+                        {item.subtitle ? (
+                          <p className="mt-1 text-sm text-muted">{item.subtitle}</p>
+                        ) : null}
+                      </div>
+
+                      <StatusBadge
+                        value={item.status || "draft"}
+                        tone={
+                          item.status === "active" ||
+                            item.status === "published"
+                            ? "green"
+                            : item.status === "archived"
+                              ? "red"
+                              : "gold"
+                        }
+                      />
+                    </div>
+
+                    {config.cardMeta?.length ? (
+                      <div className="mt-4 grid gap-2">
+                        {config.cardMeta.map((key) => {
+                          const val = getValue(
+                            item,
+                            { key, label: key, type: "text" } as CmsField
+                          );
+                          if (val === undefined || val === null || val === "") return null;
+
+                          return (
+                            <div
+                              key={key}
+                              className="rounded-2xl border border-line bg-card/70 px-3 py-2 text-sm text-muted"
+                            >
+                              <span className="text-gold">
+                                {key.replace(/([A-Z])/g, " $1")}:
+                              </span>{" "}
+                              {String(val)}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : null}
+
+                    {item.description ? (
+                      <p className="mt-4 line-clamp-4 text-sm leading-6 text-muted">
+                        {item.description}
+                      </p>
+                    ) : null}
+
+                    <div className="mt-4 flex justify-end">
+                      <InlineActions
+                        onEdit={() => onEdit(item)}
+                        onDelete={() => onDelete(item._id)}
+                      />
+                    </div>
+                  </article>
+                ))
+              )}
+
+              {!items.length && !loading && config.entity !== "contact-query" ? (
+                <div className="rounded-3xl border border-dashed border-line p-8 text-sm text-muted">
+                  No records found.
+                </div>
+              ) : null}
             </div>
           </SectionCard>
         ) : null}
