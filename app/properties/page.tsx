@@ -78,7 +78,7 @@ type FieldSection = {
   title: string;
   columns?: 1 | 2 | 3;
   fields?: DynamicField[];
-  custom?: 'gallery' | 'amenities' | 'floorPlans';
+  custom?: 'gallery' | 'amenities' | 'floorPlans' | 'file';
 };
 
 type RelationData = Record<string, FieldOption[]>;
@@ -197,6 +197,11 @@ const propertyFormSections: FieldSection[] = [
       },
       { key: 'address', label: 'Address', type: 'text' },
     ],
+  },
+  {
+    key: "propertydoc",
+    title: "Property Document",
+    custom: "file",
   },
   {
     key: 'seo',
@@ -368,7 +373,77 @@ function MultiSelectInput({
     </div>
   );
 }
+function PdfUploader({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (url: string) => void;
+}) {
+  const uploadPdf = async (file: File) => {
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
 
+      const res = await api.post<any>(`/content/upload/gallery`, formData);
+      return res?.data?.url;
+    } catch {
+      alert("Failed to upload PDF");
+      return null;
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* URL Input */}
+      <input
+        type="text"
+        className="input"
+        placeholder="Paste PDF URL"
+        value={value || ""}
+        onChange={(e) => onChange(e.target.value)}
+      />
+
+      {/* Upload */}
+      <input
+        type="file"
+        accept="application/pdf"
+        className="input"
+        onChange={async (e: ChangeEvent<HTMLInputElement>) => {
+          const file = e.target.files?.[0];
+          if (!file) return;
+
+          const url = await uploadPdf(file);
+          if (url) onChange(url);
+        }}
+      />
+
+      {/* Preview */}
+      {value && (
+        <div className="rounded-2xl border border-line p-3 text-sm text-muted">
+          📄 PDF Uploaded
+          <div className="mt-2 flex gap-3">
+            <a
+              href={value}
+              target="_blank"
+              className="text-gold underline"
+            >
+              View
+            </a>
+
+            <a
+              href={value}
+              download
+              className="text-gold underline"
+            >
+              Download
+            </a>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 function GalleryUploader({
   value,
   onChange,
@@ -1417,37 +1492,48 @@ export default function PropertiesPage() {
             >
               <h3 className="text-sm font-semibold text-text">{section.title}</h3>
 
-              {section.custom === 'gallery' ? (
-                <GalleryUploader
-                  value={Array.isArray(form.gallery) ? form.gallery : []}
-                  onChange={(next) =>
-                    setForm((prev) => ({
-                      ...prev,
-                      gallery: next,
-                    }))
-                  }
-                />
-              ) : section.custom === 'amenities' ? (
-                <AmenitiesEditor
-                  value={Array.isArray(form.amenities) ? form.amenities : []}
-                  onChange={(next) =>
-                    setForm((prev) => ({
-                      ...prev,
-                      amenities: next,
-                    }))
-                  }
-                />
-              ) : section.custom === 'floorPlans' ? (
-                <FloorPlansEditor
-                  value={Array.isArray(form.floorPlans) ? form.floorPlans : []}
-                  onChange={(next) =>
-                    setForm((prev) => ({
-                      ...prev,
-                      floorPlans: next,
-                    }))
-                  }
-                />
-              ) : (
+              {
+                section.custom === 'gallery' ? (
+                  <GalleryUploader
+                    value={Array.isArray(form.gallery) ? form.gallery : []}
+                    onChange={(next) =>
+                      setForm((prev) => ({
+                        ...prev,
+                        gallery: next,
+                      }))
+                    }
+                  />
+                ) : section.custom === 'amenities' ? (
+                  <AmenitiesEditor
+                    value={Array.isArray(form.amenities) ? form.amenities : []}
+                    onChange={(next) =>
+                      setForm((prev) => ({
+                        ...prev,
+                        amenities: next,
+                      }))
+                    }
+                  />
+                ) : section.custom === 'floorPlans' ? (
+                  <FloorPlansEditor
+                    value={Array.isArray(form.floorPlans) ? form.floorPlans : []}
+                    onChange={(next) =>
+                      setForm((prev) => ({
+                        ...prev,
+                        floorPlans: next,
+                      }))
+                    }
+                  />
+                    ) : section.custom === 'file' ? (   // ✅ NEW
+                      <PdfUploader
+                        value={form.propertydoc || ""}
+                        onChange={(url) =>
+                          setForm((prev) => ({
+                            ...prev,
+                            propertydoc: url,
+                          }))
+                        }
+                      />
+                      ) : (
                 <FormGrid columns={section.columns || 3}>
                   {(section.fields || []).map((field) => (
                     <div key={String(field.key)}>
