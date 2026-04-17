@@ -434,6 +434,13 @@ export function GenericCmsPage({ config }: { config: CmsConfig }) {
           setItems(rows?.data);
           return;
         }
+        if (config.entity === "user-access") {
+          const rows = await api.get<CmsItem[]>(`/auth/users${term ? `?search=${encodeURIComponent(term)}` : ''}`);
+
+          console.log(rows, 'User access rows');
+          setItems(rows);
+          return;
+        }
         const rows = await api.get<CmsItem[]>(`/content/${config.entity}${term ? `?search=${encodeURIComponent(term)}` : ''}`);
         setItems(rows);
       }
@@ -753,8 +760,88 @@ export function GenericCmsPage({ config }: { config: CmsConfig }) {
                     <div className="p-8 text-sm text-muted">No records found.</div>
                   ) : null}
                 </div>
+              ) :
+                config.entity === "user-access" ? (
+                  <div className="overflow-hidden rounded-[28px] border border-line bg-panel/70 w-full">
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left">
+                        <thead className="border-b border-line bg-card/50">
+                          <tr>
+                            <th className="px-4 py-4 text-sm font-medium text-gold">Name</th>
+                            <th className="px-4 py-4 text-sm font-medium text-gold">Email</th>
+                            <th className="px-4 py-4 text-sm font-medium text-gold">Role</th>
+                            <th className="px-4 py-4 text-sm font-medium text-gold">Status</th>
+                            <th className="px-4 py-4 text-sm font-medium text-gold">Last Login</th>
+                            <th className="px-4 py-4 text-sm font-medium text-gold">Updated</th>
+                            <th className="px-4 py-4 text-sm font-medium text-gold text-right">
+                              Actions
+                            </th>
+                          </tr>
+                        </thead>
+
+                        <tbody>
+                          {console.log(items, 'User access items')}
+                          {items?.map((item) => (
+                            <tr
+                              key={item._id}
+                              className="border-b border-line last:border-none hover:bg-card/40"
+                            >
+                              {/* Name */}
+                              <td className="px-4 py-4 text-text font-medium">
+                                {item?.name || "-"}
+                              </td>
+
+                              {/* Email */}
+                              <td className="px-4 py-4 text-sm text-muted">
+                                {item?.email || "-"}
+                              </td>
+
+                              {/* Role */}
+                              <td className="px-4 py-4 text-sm text-muted">
+                                {item?.role || "-"}
+                              </td>
+
+                              {/* Status */}
+                              <td className="px-4 py-4">
+                                <StatusBadge
+                                  value={item?.status ? "active" : "inactive"}
+                                  tone={item?.status ? "green" : "red"}
+                                />
+                              </td>
+
+                              {/* Last Login */}
+                              <td className="px-4 py-4 text-sm text-muted">
+                                {item?.lastLogin
+                                  ? new Date(item.lastLogin).toLocaleString()
+                                  : "-"}
+                              </td>
+
+                              {/* Updated */}
+                              <td className="px-4 py-4 text-sm text-muted">
+                                {item?.updatedAt
+                                  ? new Date(item.updatedAt).toLocaleDateString()
+                                  : "-"}
+                              </td>
+
+                              {/* Actions */}
+                              {/* <td className="px-4 py-4 text-right">
+                                <InlineActions
+                                  onEdit={() => onEdit(item)}
+                                  onDelete={() => onDelete(item._id)}
+                                />
+                              </td> */}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {!items?.length && !loading ? (
+                      <div className="p-8 text-sm text-muted">No records found.</div>
+                    ) : null}
+                  </div>
               ) : (
-                items.map((item) => (
+                    items?.map((item) => (
                   <article
                     key={item._id || item.title}
                     className="rounded-[28px] border border-line bg-panel/70 p-4"
@@ -832,7 +919,7 @@ export function GenericCmsPage({ config }: { config: CmsConfig }) {
                 ))
               )}
 
-              {!items.length && !loading && config.entity !== "contact-query" ? (
+              {!items?.length && !loading && config.entity !== "contact-query" ? (
                 <div className="rounded-3xl border border-dashed border-line p-8 text-sm text-muted">
                   No records found.
                 </div>
