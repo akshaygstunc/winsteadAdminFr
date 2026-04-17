@@ -90,7 +90,7 @@ export function Sidebar() {
     <aside className="card sticky top-6 hidden h-[calc(100vh-3rem)] w-80 flex-col overflow-hidden lg:flex">
       <div className="border-b border-line px-5 py-5">
         <div className="rounded-3xl border border-line bg-panel p-4">
-          <p className="text-xs uppercase tracking-[0.34em] text-gold">Winstead</p>
+          <p className="text-xs uppercase tracking-[0.34em] flex justify-center text-gold"> <img src="https://storage.googleapis.com/winstead-global-assets/projects/gallery/1776246712700-winlogo.png" alt="Winstead Logo" width={200} height={200} /></p>
         </div>
       </div>
       <nav className="flex-1 space-y-6 overflow-y-auto px-4 py-4">
