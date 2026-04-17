@@ -175,7 +175,7 @@ export function Sidebar() {
 
   // 🔥 Replace with real user role later
 
-  const role = typeof window.localStorage.getItem('role') === 'string'
+  const role = typeof window !== 'undefined' && typeof window.localStorage.getItem('role') === 'string'
     ? window.localStorage.getItem('role')
     : 'super_admin';
 
