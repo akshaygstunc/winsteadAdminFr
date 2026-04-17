@@ -13,7 +13,7 @@ const STORAGE_KEY = 'luxury-admin-nav-state';
    ✅ ROLE ACCESS CONFIG
 ========================= */
 const roleAccessMap: Record<string, string[]> = {
-  super_admin: ['*'],
+  admin: ['*'],
   editor: ['/blogs', '/properties', '/customization/categories', '/customization/property-types', '/customization/property-sub-types', '/amenities', '/customization/developer-community', '/customization/communities'],
 };
 
