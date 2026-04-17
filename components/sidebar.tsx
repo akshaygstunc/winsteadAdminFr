@@ -174,7 +174,10 @@ export function Sidebar() {
   const pathname = usePathname();
 
   // 🔥 Replace with real user role later
-  const role = localStorage.getItem('role') || 'super_admin';
+
+  const role = typeof window.localStorage.getItem('role') === 'string'
+    ? window.localStorage.getItem('role')
+    : 'super_admin';
 
   const allSections = useMemo(() => {
     return filterNavSections(navSections, role);
