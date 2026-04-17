@@ -53,6 +53,7 @@ export default function LoginPage() {
       }
 
       localStorage.setItem('accessToken', payload.access_token);
+      localStorage.setItem('role', payload?.role);
       // localStorage.setItem('authUser', JSON.stringify(payload.user || null));
 
       router.push('/dashboard');

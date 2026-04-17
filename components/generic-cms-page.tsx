@@ -18,10 +18,52 @@ import { FieldLabel, FormActions, FormGrid, InlineActions, SectionNotice, Select
 
 function blankFromConfig(config: CmsConfig): CmsItem {
   const data: Record<string, any> = {};
-  config.fields.forEach((field) => {
-    if (['title', 'subtitle', 'slug', 'status', 'image', 'description', 'sortOrder'].includes(field.key)) return;
-    data[field.key] = field.type === 'boolean' ? false : field.type === 'number' ? 0 : field.type === 'multiselect' ? [] : '';
-  });
+
+  for (const field of config.fields) {
+    // skip root-level fields
+    if (
+      ['title', 'subtitle', 'slug', 'status', 'image', 'description', 'sortOrder'].includes(field.key)
+    ) {
+      continue;
+    }
+
+    switch (field.type) {
+      case 'boolean':
+        data[field.key] = false;
+        break;
+
+      case 'number':
+        data[field.key] = 0;
+        break;
+
+      case 'multiselect':
+        data[field.key] = [];
+        break;
+
+      case 'relation-select':
+        data[field.key] = (field as any).multiple ? [] : '';
+        break;
+
+      case 'gallery':
+        data[field.key] = [];
+        break;
+
+      case 'image':
+      case 'video':
+      case 'text':
+      case 'textarea':
+      case 'editor':
+      case 'date':
+      case 'select':
+      case 'faq':
+        data[field.key] = [];
+        break;
+      default:
+        data[field.key] = '';
+        break;
+    }
+  }
+
   return {
     title: '',
     subtitle: '',
@@ -59,6 +101,65 @@ async function fileToDataUrl(file: File) {
     response?.data?.data?.location ||
     '';
   return uploadedUrl
+}
+function FAQEditor({
+  value,
+  onChange,
+}: {
+  value: { question: string; answer: string }[];
+  onChange: (val: any[]) => void;
+}) {
+  const items = Array.isArray(value) ? value : [];
+
+  const updateItem = (index: number, key: string, val: string) => {
+    const next = [...items];
+    next[index] = { ...next[index], [key]: val };
+    onChange(next);
+  };
+
+  const addItem = () => {
+    onChange([...items, { question: "", answer: "" }]);
+  };
+
+  const removeItem = (index: number) => {
+    onChange(items.filter((_, i) => i !== index));
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex justify-between">
+        <p className="text-sm font-medium">FAQs</p>
+        <button onClick={addItem} className="btn-secondary">Add FAQ</button>
+      </div>
+
+      {items.map((faq, index) => (
+        <div key={index} className="border p-4 rounded-xl space-y-3">
+          <input
+            className="input"
+            placeholder="Question"
+            value={faq.question}
+            onChange={(e) =>
+              updateItem(index, "question", e.target.value)
+            }
+          />
+          <textarea
+            className="input"
+            placeholder="Answer"
+            value={faq.answer}
+            onChange={(e) =>
+              updateItem(index, "answer", e.target.value)
+            }
+          />
+          <button
+            className="text-red-500 text-sm"
+            onClick={() => removeItem(index)}
+          >
+            Remove
+          </button>
+        </div>
+      ))}
+    </div>
+  );
 }
 function GalleryUploader({
   value,
@@ -216,7 +317,12 @@ function GalleryUploader({
     </div>
   );
 }
-function renderField(field: CmsField, value: any, onChange: (value: any) => void) {
+function renderField(
+  field: CmsField & { type: CmsField['type'] | 'faq' },
+  value: any,
+  onChange: (value: any) => void
+) {
+  console.log('Rendering field:', field, 'with value:', field.label);
   switch (field.type) {
     case 'textarea':
       return <TextArea label={field.label} value={value || ''} onChange={onChange} />;
@@ -253,7 +359,14 @@ function renderField(field: CmsField, value: any, onChange: (value: any) => void
     }
     case 'gallery':
       return <GalleryUploader value={value || []} onChange={onChange} />;
-
+    case 'faq':
+      // console.log('Rendering FAQEditor with value:', value);
+      return (
+        <div>
+          <FieldLabel label={field.label} />
+          <FAQEditor value={value || []} onChange={onChange} />
+        </div>
+      );
     case 'icon': {
       return (
         <div>
@@ -348,26 +461,53 @@ export function GenericCmsPage({ config }: { config: CmsConfig }) {
   };
 
   const onEdit = (item: CmsItem) => {
+    const base = blankFromConfig(config);
+
     setEditingId(item._id || null);
-    setForm({ ...blankFromConfig(config), ...item, data: { ...blankFromConfig(config).data, ...(item.data || {}) } });
+    setForm({
+      ...base,
+      ...item,
+      data: {
+        ...base.data,
+        ...(item.data || {}),
+      },
+    });
+
     setOpen(true);
   };
 
   const onSubmit = async () => {
     try {
       setError(null);
-      if (isSingleton) {
-        await api.patch(`/content/${config.entity}/singleton`, form);
+
+      const isUserAccess = config.entity === 'user-access';
+      const base = isUserAccess && !editingId
+        ? '/auth/register' // ✅ custom API
+        : `/content/${config.entity}`;
+      const updateBase = isUserAccess && editingId ? `/auth/update-user/${editingId}` : `/content/${config.entity}/${editingId}`; // ✅ custom API
+      // ✅ Singleton only for normal content APIs
+      if (isSingleton && !isUserAccess) {
+        await api.patch(`${base}/singleton`, form);
         setMessage('Saved successfully.');
         await load();
         return;
       }
-      if (editingId) await api.patch(`/content/${config.entity}/${editingId}`, form);
-      else await api.post(`/content/${config.entity}`, form);
+      const formdata = isUserAccess ? { ...form.data } : form;
+      // ✅ UPDATE
+      if (editingId) {
+        await api.patch(`${updateBase}`, formdata);
+      }
+      // ✅ CREATE
+      else {
+        await api.post(base, formdata);
+      }
+
       setMessage(editingId ? 'Updated successfully.' : 'Created successfully.');
       resetForm();
       await load(search);
-    } catch {
+
+    } catch (err) {
+      console.error(err);
       setError('Unable to save record.');
     }
   };
@@ -422,15 +562,45 @@ export function GenericCmsPage({ config }: { config: CmsConfig }) {
               {config.entity === "contact-query" ? (
                 <div className="overflow-hidden rounded-[28px] border border-line bg-panel/70">
                   <div className="overflow-x-auto">
-                    <table className="w-full min-w-[1100px] text-left">
+                    <table className="w-full min-w-[1800px] text-left">
                       <thead className="border-b border-line bg-card/50">
                         <tr>
                           <th className="px-4 py-4 text-sm font-medium text-gold">Lead</th>
                           <th className="px-4 py-4 text-sm font-medium text-gold">Email</th>
                           <th className="px-4 py-4 text-sm font-medium text-gold">Phone</th>
                           <th className="px-4 py-4 text-sm font-medium text-gold">Location</th>
+
+                          <th className="px-4 py-4 text-sm font-medium text-gold">Query</th>
+                          <th className="px-4 py-4 text-sm font-medium text-gold">Inquiry Type</th>
+
+                          {/* Property */}
+                          <th className="px-4 py-4 text-sm font-medium text-gold">Property Title</th>
+                          <th className="px-4 py-4 text-sm font-medium text-gold">Project</th>
+                          <th className="px-4 py-4 text-sm font-medium text-gold">Property Location</th>
+                          <th className="px-4 py-4 text-sm font-medium text-gold">Unit</th>
+                          <th className="px-4 py-4 text-sm font-medium text-gold">Config</th>
+                          <th className="px-4 py-4 text-sm font-medium text-gold">Area</th>
+                          <th className="px-4 py-4 text-sm font-medium text-gold">Price</th>
+                          <th className="px-4 py-4 text-sm font-medium text-gold">URL</th>
+
+                          {/* Source */}
+                          <th className="px-4 py-4 text-sm font-medium text-gold">Source</th>
+                          <th className="px-4 py-4 text-sm font-medium text-gold">Referrer</th>
+
+                          {/* Device */}
+                          <th className="px-4 py-4 text-sm font-medium text-gold">Device</th>
+                          <th className="px-4 py-4 text-sm font-medium text-gold">OS</th>
+                          <th className="px-4 py-4 text-sm font-medium text-gold">Browser</th>
+                          <th className="px-4 py-4 text-sm font-medium text-gold">IP</th>
+
+                          {/* Admin */}
+                          <th className="px-4 py-4 text-sm font-medium text-gold">Assigned</th>
+                          <th className="px-4 py-4 text-sm font-medium text-gold">Notes</th>
+
                           <th className="px-4 py-4 text-sm font-medium text-gold">Status</th>
                           <th className="px-4 py-4 text-sm font-medium text-gold">Created</th>
+                          <th className="px-4 py-4 text-sm font-medium text-gold">Updated</th>
+
                           <th className="px-4 py-4 text-sm font-medium text-gold text-right">
                             Actions
                           </th>
@@ -459,12 +629,98 @@ export function GenericCmsPage({ config }: { config: CmsConfig }) {
                               {item?.contact?.location || "-"}
                             </td>
 
+                            <td className="px-4 py-4 text-sm text-muted">
+                              {item?.query || "-"}
+                            </td>
+
+                            <td className="px-4 py-4 text-sm text-muted">
+                              {item?.inquiryType || "-"}
+                            </td>
+
+                            {/* Property */}
+                            <td className="px-4 py-4 text-sm text-muted">
+                              {item?.property?.propertyTitle || "-"}
+                            </td>
+
+                            <td className="px-4 py-4 text-sm text-muted">
+                              {item?.property?.projectName || "-"}
+                            </td>
+
+                            <td className="px-4 py-4 text-sm text-muted">
+                              {item?.property?.location || "-"}
+                            </td>
+
+                            <td className="px-4 py-4 text-sm text-muted">
+                              {item?.property?.unitLabel || "-"}
+                            </td>
+
+                            <td className="px-4 py-4 text-sm text-muted">
+                              {item?.property?.configuration || "-"}
+                            </td>
+
+                            <td className="px-4 py-4 text-sm text-muted">
+                              {item?.property?.area || "-"}
+                            </td>
+
+                            <td className="px-4 py-4 text-sm text-muted">
+                              {item?.property?.price
+                                ? `₹ ${item.property.price.toLocaleString()}`
+                                : "-"}
+                            </td>
+
+                            <td className="px-4 py-4 text-sm text-muted">
+                              {item?.property?.propertyUrl ? (
+                                <a
+                                  href={item.property.propertyUrl}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="text-blue-500 underline"
+                                >
+                                  View
+                                </a>
+                              ) : "-"}
+                            </td>
+
+                            {/* Source */}
+                            <td className="px-4 py-4 text-sm text-muted">
+                              {item?.sourcePage || "-"}
+                            </td>
+
+                            <td className="px-4 py-4 text-sm text-muted">
+                              {item?.referrer || "-"}
+                            </td>
+
+                            {/* Device */}
+                            <td className="px-4 py-4 text-sm text-muted">
+                              {item?.device?.deviceType || "-"}
+                            </td>
+
+                            <td className="px-4 py-4 text-sm text-muted">
+                              {item?.device?.os || "-"}
+                            </td>
+
+                            <td className="px-4 py-4 text-sm text-muted truncate max-w-[200px]">
+                              {item?.device?.browser || "-"}
+                            </td>
+
+                            <td className="px-4 py-4 text-sm text-muted">
+                              {item?.device?.ipAddress || "-"}
+                            </td>
+
+                            {/* Admin */}
+                            <td className="px-4 py-4 text-sm text-muted">
+                              {item?.assignedTo || "-"}
+                            </td>
+
+                            <td className="px-4 py-4 text-sm text-muted truncate max-w-[200px]">
+                              {item?.adminNotes || "-"}
+                            </td>
+
                             <td className="px-4 py-4">
                               <StatusBadge
                                 value={item.status || "new"}
                                 tone={
-                                  item.status === "active" ||
-                                    item.status === "published"
+                                  item.status === "active" || item.status === "published"
                                     ? "green"
                                     : item.status === "archived"
                                       ? "red"
@@ -475,6 +731,10 @@ export function GenericCmsPage({ config }: { config: CmsConfig }) {
 
                             <td className="px-4 py-4 text-sm text-muted">
                               {new Date(item.createdAt).toLocaleDateString()}
+                            </td>
+
+                            <td className="px-4 py-4 text-sm text-muted">
+                              {new Date(item.updatedAt).toLocaleDateString()}
                             </td>
 
                             <td className="px-4 py-4 text-right">
@@ -585,15 +845,24 @@ export function GenericCmsPage({ config }: { config: CmsConfig }) {
           <SectionCard title={config.title} subtitle="Singleton settings editor with image upload and persistent save.">
             <div className="space-y-5">
               {form.image ? <img src={form.image} alt={form.title} className="h-64 w-full rounded-[28px] border border-line object-cover" /> : null}
-              {groupedFields.map((group, index) => (
-                <FormGrid key={index} columns={3}>
-                  {group.map((field) => (
-                    <div key={field.key} className={field.type === 'textarea' || field.type === 'image' ? 'md:col-span-2 xl:col-span-3' : ''}>
-                      {renderField(field, getValue(form, field), (value) => setForm((prev) => setValue(prev, field, value)))}
-                    </div>
-                  ))}
-                </FormGrid>
-              ))}
+              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                {config.fields.map((field) => (
+                  <div
+                    key={field.key}
+                    className={
+                      field.type === 'textarea' || field.type === 'editor' || field.type === 'gallery'
+                        ? 'md:col-span-2 xl:col-span-3'
+                        : ''
+                    }
+                  >
+                    {renderField(
+                      field,
+                      getValue(form, field),
+                      (value) => setForm((prev) => setValue(prev, field, value))
+                    )}
+                  </div>
+                ))}
+              </div>
               <FormActions onSubmit={onSubmit} submitLabel={config.addLabel || 'Save'} />
             </div>
           </SectionCard>
@@ -605,7 +874,11 @@ export function GenericCmsPage({ config }: { config: CmsConfig }) {
               {groupedFields.map((group, index) => (
                 <FormGrid key={index} columns={3}>
                   {group.map((field) => (
-                    <div key={field.key} className={field.type === 'textarea' || field.type === 'image' ? 'md:col-span-2 xl:col-span-3' : ''}>
+                    <div key={field.key} className={
+                      ['textarea', 'image', 'gallery', 'faq'].includes(field.type)
+                        ? 'md:col-span-2 xl:col-span-3'
+                        : ''
+                    }>
                       {renderField(field, getValue(form, field), (value) => setForm((prev) => setValue(prev, field, value)))}
                     </div>
                   ))}

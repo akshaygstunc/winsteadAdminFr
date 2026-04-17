@@ -83,11 +83,11 @@ export const navSections: NavSection[] = [
       { label: "Media", href: "/media", icon: Images },
       { label: "Events", href: "/customization/events", icon: Images },
       { label: "Pages", href: "/pages", icon: FileText },
-      {
-        label: "Relationship Manager",
-        href: "/relationship-manager",
-        icon: BookUser,
-      },
+      // {
+      //   label: "Relationship Manager",
+      //   href: "/relationship-manager",
+      //   icon: BookUser,
+      // },
       { label: "Careers", href: "/careers", icon: BriefcaseBusiness },
     ],
   },
@@ -136,23 +136,23 @@ export const navSections: NavSection[] = [
           },
         ],
       },
-      {
-        label: "App Customization",
-        icon: Settings,
-        children: [
-          {
-            label: "Contents",
-            href: "/app-customization/contents",
-            icon: FileText,
-          },
-          { label: "Banner", href: "/customization/banner", icon: Images },
-          {
-            label: "Property Banner",
-            href: "/app-customization/property-banner",
-            icon: Images,
-          },
-        ],
-      },
+      // {
+      //   label: "App Customization",
+      //   icon: Settings,
+      //   children: [
+      //     {
+      //       label: "Contents",
+      //       href: "/app-customization/contents",
+      //       icon: FileText,
+      //     },
+      //     { label: "Banner", href: "/customization/banner", icon: Images },
+      //     {
+      //       label: "Property Banner",
+      //       href: "/app-customization/property-banner",
+      //       icon: Images,
+      //     },
+      //   ],
+      // },
       {
         label: "Master",
         href: "/master",

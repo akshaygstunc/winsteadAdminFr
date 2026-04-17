@@ -11,7 +11,9 @@ export type CmsFieldType =
   | "icon"
   | "relation-select"
   | "editor"
-  | "gallery";
+  | "gallery"
+  | "password"
+  | "faq";
 
 export type CmsField = {
   key: string;
@@ -72,6 +74,11 @@ const textArea: CmsField = {
 };
 const imageField = (label = "Image"): CmsField => ({
   key: "image",
+  label,
+  type: "image",
+});
+const bannerField = (label = "Image"): CmsField => ({
+  key: "banner",
   label,
   type: "image",
 });
@@ -211,9 +218,39 @@ export const EditorConfigs: Record<string, CmsConfig> = {
     "Contact Query",
     "contact-query",
     "Website contact enquiries with owner, priority, and response notes.",
+    undefined,
     [
-      { key: "title", label: "Lead Name", type: "text" },
-      { key: "subtitle", label: "Subject", type: "text" },
+      // Contact
+      { key: "contact.fullName", label: "Lead Name", type: "text" },
+      { key: "contact.email", label: "Email", type: "text" },
+      { key: "contact.phone", label: "Phone", type: "text" },
+      { key: "contact.location", label: "Location", type: "text" },
+
+      // Inquiry
+      { key: "query", label: "Query", type: "textarea" },
+      { key: "inquiryType", label: "Inquiry Type", type: "text" },
+
+      // Property
+      { key: "property.propertyTitle", label: "Property Title", type: "text" },
+      { key: "property.projectName", label: "Project Name", type: "text" },
+      { key: "property.location", label: "Property Location", type: "text" },
+      { key: "property.unitLabel", label: "Unit", type: "text" },
+      { key: "property.configuration", label: "Configuration", type: "text" },
+      { key: "property.area", label: "Area", type: "text" },
+      { key: "property.price", label: "Price", type: "number" },
+      { key: "property.propertyUrl", label: "Property URL", type: "text" },
+
+      // Source
+      { key: "sourcePage", label: "Source Page", type: "text" },
+      { key: "referrer", label: "Referrer", type: "text" },
+
+      // Device
+      { key: "device.deviceType", label: "Device Type", type: "text" },
+      { key: "device.os", label: "Operating System", type: "text" },
+      { key: "device.browser", label: "Browser", type: "text" },
+      { key: "device.ipAddress", label: "IP Address", type: "text" },
+
+      // Admin
       {
         key: "status",
         label: "Status",
@@ -224,22 +261,12 @@ export const EditorConfigs: Record<string, CmsConfig> = {
           { label: "Resolved", value: "resolved" },
         ],
       },
-      { key: "email", label: "Email", type: "text" },
-      { key: "phone", label: "Phone", type: "text" },
-      { key: "city", label: "City", type: "text" },
-      { key: "propertyType", label: "Property Type", type: "text" },
-      {
-        key: "priority",
-        label: "Priority",
-        type: "select",
-        options: [
-          { label: "Low", value: "low" },
-          { label: "Medium", value: "medium" },
-          { label: "High", value: "high" },
-        ],
-      },
       { key: "assignedTo", label: "Assigned To", type: "text" },
-      textArea,
+      { key: "adminNotes", label: "Admin Notes", type: "textarea" },
+
+      // Dates
+      { key: "createdAt", label: "Created At", type: "date" },
+      { key: "updatedAt", label: "Updated At", type: "date" },
     ],
     searchMeta("email", "phone", "city", "priority"),
   ),
@@ -504,6 +531,7 @@ export const EditorConfigs: Record<string, CmsConfig> = {
       "Blogs",
       "blogs",
       "Blog posts with hero image, category, slug, and SEO fields.",
+      undefined,
       [
         { key: "title", label: "Blog Title", type: "text" },
         { key: "slug", label: "Slug URL", type: "text" },
@@ -2660,7 +2688,7 @@ export const EditorConfigs: Record<string, CmsConfig> = {
       },
 
       // FINAL CTA SECTION
-     
+
       {
         key: "ctaDescription",
         label: "CTA Description",
@@ -2712,9 +2740,11 @@ export const EditorConfigs: Record<string, CmsConfig> = {
     "User Access",
     "user-access",
     "User records with role and status controls.",
+    undefined,
     [
       { key: "title", label: "User Name", type: "text" },
       { key: "subtitle", label: "Designation", type: "text" },
+      { key: "password", label: "Password", type: "password" },
       {
         key: "status",
         label: "Status",
@@ -2733,9 +2763,7 @@ export const EditorConfigs: Record<string, CmsConfig> = {
         type: "select",
         options: [
           { label: "Super Admin", value: "super-admin" },
-          { label: "Manager", value: "manager" },
           { label: "Editor", value: "editor" },
-          { label: "Support", value: "support" },
         ],
       },
       imageField("Profile Image"),
@@ -2913,13 +2941,14 @@ export const EditorConfigs: Record<string, CmsConfig> = {
   ),
 
   "developer-community": collection(
-    "Developer Community",
+    "Developer",
     "developer-community",
     "Developer logo and community partner records.",
     "editor",
     [
       { key: "title", label: "Developer Name", type: "text" },
       { key: "city", label: "City", type: "text" },
+      { key: "slug", label: "Slug", type: "text" },
       {
         key: "status",
         label: "Status",
@@ -2927,7 +2956,13 @@ export const EditorConfigs: Record<string, CmsConfig> = {
         options: statusOptions,
       },
       imageField("Logo / Image"),
+      bannerField("Banner Image"),
       textArea,
+      // {
+      //   key: "faqs",
+      //   label: "FAQs",
+      //   type: "faq", // custom type
+      // },
     ],
     searchMeta("city", "status"),
   ),
@@ -2939,6 +2974,7 @@ export const EditorConfigs: Record<string, CmsConfig> = {
     [
       { key: "title", label: "Community Name", type: "text" },
       { key: "city", label: "City", type: "text" },
+      { key: "slug", label: "Slug", type: "text" },
       {
         key: "status",
         label: "Status",
