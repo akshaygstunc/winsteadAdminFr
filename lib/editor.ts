@@ -2742,8 +2742,8 @@ export const EditorConfigs: Record<string, CmsConfig> = {
     "User records with role and status controls.",
     undefined,
     [
-      { key: "title", label: "User Name", type: "text" },
-      { key: "subtitle", label: "Designation", type: "text" },
+      { key: "name", label: "Name", type: "text" },
+
       { key: "password", label: "Password", type: "password" },
       {
         key: "status",
