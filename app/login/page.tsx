@@ -3,6 +3,7 @@
 import { FormEvent, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import clsx from 'clsx';
+import Image from 'next/image';
 
 type LoginResponse = {
   access_token: string;
@@ -66,10 +67,11 @@ export default function LoginPage() {
     <main className="min-h-screen bg-[#0a0a0f] text-white">
       <div className="grid min-h-screen lg:grid-cols-[1.1fr_0.9fr]">
         <section className="hidden border-r border-white/10 bg-[radial-gradient(circle_at_top_left,_rgba(212,175,55,0.14),_transparent_35%),radial-gradient(circle_at_bottom_right,_rgba(124,58,237,0.12),_transparent_30%),linear-gradient(180deg,_#0b0b12,_#08080d)] p-10 lg:flex lg:flex-col lg:justify-between">
-          <div>
-            <p className="text-xs uppercase tracking-[0.35em] text-[#d4af37]">
+          <div className='flex justify-center items-center flex-col h-full'>
+            <p className="text-xs flex justify-center uppercase tracking-[0.35em] text-[#d4af37]">
 
             </p>
+            <img src="https://storage.googleapis.com/winstead-global-assets/projects/gallery/1776246712700-winlogo.png" alt="Winstead Logo" width={200} height={200} />
             <h1 className="mt-6 max-w-xl text-4xl font-semibold leading-tight">
               Winstead Admin Control Panel
             </h1>
