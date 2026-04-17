@@ -513,53 +513,10 @@ export function EditorCmsPage({ config }: { config: CmsConfig }) {
     const [message, setMessage] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [search, setSearch] = useState('');
-    const [relationOptions, setRelationOptions] = useState<RelationOptionsMap>({});
+    const [relationOptions, setRelationOptions] = useState({});
+    const [isFormOpen, setIsFormOpen] = useState(false); // ✅ control form
 
-    const leftFields = useMemo(
-        () =>
-            config.fields.filter(
-                (f) =>
-                    ['title', 'subtitle', 'slug', 'image', 'description', 'videoUrl', 'gallery'].includes(f.key) ||
-                    f.type === 'textarea',
-            ),
-        [config],
-    );
-
-    const rightFields = useMemo(
-        () => config.fields.filter((f) => !leftFields.includes(f)),
-        [config, leftFields],
-    );
-
-    const loadRelations = async () => {
-        try {
-            const relationFields = config.fields.filter((field) => field.type === 'relation-select');
-
-            if (!relationFields.length) return;
-
-            const results = await Promise.all(
-                relationFields.map(async (field) => {
-                    const relation = (field as any).relation;
-                    if (!relation?.entity) return { key: field.key, options: [] as RelationOption[] };
-
-                    const rows = await api.get<any[]>(`/${relation.entity}`);
-                    const options = normalizeRelationOptions(
-                        Array.isArray(rows) ? rows : [],
-                        relation.labelKey || 'title',
-                        relation.valueKey || '_id',
-                    );
-
-                    return { key: field.key, options };
-                }),
-            );
-
-            const mapped: RelationOptionsMap = {};
-            for (const item of results) mapped[item.key] = item.options;
-
-            setRelationOptions(mapped);
-        } catch (err) {
-            console.error('Failed to load relation options:', err);
-        }
-    };
+    const fields = useMemo(() => config.fields, [config]);
 
     const load = async (term = '') => {
         try {
@@ -567,17 +524,6 @@ export function EditorCmsPage({ config }: { config: CmsConfig }) {
                 `/content/${config.entity}${term ? `?search=${encodeURIComponent(term)}` : ''}`,
             );
             setItems(rows);
-
-            if (!editingId && rows[0]) {
-                setForm({
-                    ...blankFromConfig(config),
-                    ...rows[0],
-                    data: {
-                        ...blankFromConfig(config).data,
-                        ...(rows[0].data || {}),
-                    },
-                });
-            }
         } catch {
             setError('Failed to load records.');
         }
@@ -585,12 +531,12 @@ export function EditorCmsPage({ config }: { config: CmsConfig }) {
 
     useEffect(() => {
         load();
-        loadRelations();
     }, [config.entity]);
 
     const reset = () => {
         setEditingId(null);
         setForm(blankFromConfig(config));
+        setIsFormOpen(false); // ✅ close form
     };
 
     const edit = (item: CmsItem) => {
@@ -603,6 +549,7 @@ export function EditorCmsPage({ config }: { config: CmsConfig }) {
                 ...(item.data || {}),
             },
         });
+        setIsFormOpen(true); // ✅ open form
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
@@ -657,19 +604,34 @@ export function EditorCmsPage({ config }: { config: CmsConfig }) {
             <div className="space-y-6">
                 <SectionNotice message={message} error={error} />
 
-                <SectionCard
-                    title={editingId ? `Edit ${config.title.slice(0, -1) || config.title}` : config.addLabel || `Add ${config.title}`}
-                    subtitle="Full-page editor flow with content area on the left and SEO/settings panel on the right."
-                    action={
-                        <div className="flex gap-3">
-                            <ActionButton secondary onClick={reset}>Reset</ActionButton>
-                            <ActionButton onClick={submit}>{editingId ? 'Update' : 'Save'}</ActionButton>
-                        </div>
-                    }
-                >
-                    <div className="grid gap-6 xl:grid-cols-[1.6fr_0.9fr]">
+                {/* ✅ ADD BUTTON */}
+                <div className="flex justify-end">
+                    <ActionButton
+                        onClick={() => {
+                            setForm(blankFromConfig(config));
+                            setEditingId(null);
+                            setIsFormOpen(true);
+                        }}
+                    >
+                        Add New
+                    </ActionButton>
+                </div>
+
+                {/* ✅ SIMPLE FORM (NO LEFT RIGHT SPLIT) */}
+                {isFormOpen && (
+                    <SectionCard
+                        title={editingId ? 'Edit Record' : 'Add Record'}
+                        action={
+                            <div className="flex gap-3">
+                                <ActionButton secondary onClick={reset}>Cancel</ActionButton>
+                                <ActionButton onClick={submit}>
+                                    {editingId ? 'Update' : 'Save'}
+                                </ActionButton>
+                            </div>
+                        }
+                    >
                         <div className="space-y-5">
-                            {leftFields.map((field) => (
+                            {fields.map((field) => (
                                 <div key={field.key}>
                                     {renderField(
                                         field,
@@ -681,29 +643,15 @@ export function EditorCmsPage({ config }: { config: CmsConfig }) {
                             ))}
                         </div>
 
-                        <div className="space-y-4 rounded-[28px] border border-line bg-panel/50 p-4">
-                            <p className="text-xs uppercase tracking-[0.24em] text-gold">Meta & Settings</p>
+                        <FormActions
+                            onSubmit={submit}
+                            onCancel={reset}
+                            submitLabel={editingId ? 'Update Record' : 'Create Record'}
+                        />
+                    </SectionCard>
+                )}
 
-                            {rightFields.map((field) => (
-                                <div key={field.key}>
-                                    {renderField(
-                                        field,
-                                        getValue(form, field),
-                                        (value) => setForm((prev) => setValue(prev, field, value)),
-                                        relationOptions,
-                                    )}
-                                </div>
-                            ))}
-
-                            <FormActions
-                                onSubmit={submit}
-                                onCancel={reset}
-                                submitLabel={editingId ? 'Update Record' : 'Create Record'}
-                            />
-                        </div>
-                    </div>
-                </SectionCard>
-
+                {/* ✅ KEEP YOUR ORIGINAL LIST EXACTLY SAME */}
                 <SectionCard
                     title={`${config.title} Listing`}
                     subtitle="Search, review, edit, and remove saved records."

@@ -18,6 +18,7 @@ import {
   TextInput,
 } from '@/components/crud-kit';
 import PropertyImportModal from '@/components/PropertyImport';
+import { TiptapEditor } from '@/components/TextEditor';
 
 type FieldOption = {
   label: string;
@@ -53,8 +54,10 @@ type PropertyForm = Property & {
   propertySubType?: string;
   categories?: string[];
   propertyBanner?: string;
+  propertydoc?: string;
   amenities?: AmenityItem[];
   floorPlans?: FloorPlanItem[];
+  communities?: string;
 };
 
 type DynamicField = {
@@ -68,7 +71,8 @@ type DynamicField = {
   | 'toggle'
   | 'image'
   | 'relation-select'
-  | 'relation-multiselect';
+  | 'relation-multiselect'
+  | 'editor';
   options?: FieldOption[];
   relation?: RelationConfig;
 };
@@ -82,7 +86,6 @@ type FieldSection = {
 };
 
 type RelationData = Record<string, FieldOption[]>;
-
 const emptyForm: PropertyForm = {
   title: '',
   buildingName: '',
@@ -121,6 +124,8 @@ const emptyForm: PropertyForm = {
   propertyType: '',
   propertySubType: '',
   categories: [],
+  propertyBanner: '',
+  propertydoc: '',
   amenities: [],
   floorPlans: [],
   type: '',
@@ -158,14 +163,24 @@ const propertyFormSections: FieldSection[] = [
         },
       },
       {
+        key: 'communities',
+        label: 'Communities',
+        type: 'relation-select',
+        relation: {
+          entity: 'content/developer-communities', // 👈 new endpoint
+          labelKey: 'title',
+          valueKey: '_id',
+        },
+      },
+      {
         key: 'categories',
         label: 'Property Categories',
-        type: 'select',
-        options: [
-          { label: 'Luxury', value: 'luxury' },
-          { label: 'Elite', value: 'elite' },
-          { label: 'Ultra Luxury', value: 'ultra-luxury' },
-        ],
+        type: 'relation-select',
+        relation: {
+          entity: 'content/categories',
+          labelKey: 'title',
+          valueKey: '_id',
+        },
       },
       {
         key: 'developer',
@@ -196,6 +211,15 @@ const propertyFormSections: FieldSection[] = [
         },
       },
       { key: 'address', label: 'Address', type: 'text' },
+    ],
+  },
+  {
+    key: "payment-plan",
+    title: "Payment Plan",
+    columns: 1,
+    fields: [
+      { key: "duringconstruction", label: "During Construction", type: "number" },
+      { key: "handover", label: "Handover", type: "number" },
     ],
   },
   {
@@ -262,7 +286,7 @@ const propertyFormSections: FieldSection[] = [
     fields: [
       { key: 'shortDescription', label: 'Short Description', type: 'textarea' },
       { key: 'appDescription', label: 'App Description', type: 'textarea' },
-      { key: 'fullDescription', label: 'Full Description', type: 'textarea' },
+      { key: 'fullDescription', label: 'Full Description', type: 'editor' },
     ],
   },
   {
@@ -949,6 +973,7 @@ function renderDynamicField(
   form: PropertyForm,
   setForm: React.Dispatch<React.SetStateAction<PropertyForm>>,
   relations: RelationData,
+  communityOptions: FieldOption[],
 ) {
   const value = form[field.key];
   const uploadSingleFile = async (file: File): Promise<string> => {
@@ -1024,6 +1049,19 @@ function renderDynamicField(
           }
         />
       );
+    case 'editor':
+      return (
+        <TiptapEditor
+          label={field.label}
+          value={String(value ?? '')}
+          onChange={(next) =>
+            setForm((prev) => ({
+              ...prev,
+              [field.key]: next,
+            }))
+          }
+        />
+      );
 
     case 'select':
       return (
@@ -1051,7 +1089,11 @@ function renderDynamicField(
               [field.key]: next as never,
             }))
           }
-          options={relations[field.relation?.entity || ''] || []}
+          options={
+            field.key === 'communities'
+              ? communityOptions
+              : relations[field.relation?.entity || ''] || []
+          }
         />
       );
 
@@ -1141,7 +1183,36 @@ export default function PropertiesPage() {
   const [typeFilter, setTypeFilter] = useState('all');
   const [relations, setRelations] = useState<RelationData>({});
   const [open2, setOpen2] = useState(false);
+  const [communityOptions, setCommunityOptions] = useState<FieldOption[]>([]);
 
+  useEffect(() => {
+    const fetchCommunities = async () => {
+      if (!form.developer) {
+        setCommunityOptions([]);
+        return;
+      }
+
+      try {
+        const res = await api.get(
+          `/content/communities?developer=${form.developer}`
+        );
+
+        const rows = normalizeApiArray(res);
+
+        const options = rows.map((row: any) => ({
+          label: String(row?.title ?? ''),
+          value: String(row?._id ?? ''),
+        }));
+
+        setCommunityOptions(options);
+      } catch (err) {
+        console.error('Failed to fetch communities', err);
+        setCommunityOptions([]);
+      }
+    };
+
+    fetchCommunities();
+  }, [form.developer]);
   const load = async () => {
     try {
       const snapshot = await api.get<WorkspaceSnapshot>('/properties');
@@ -1160,11 +1231,12 @@ export default function PropertiesPage() {
         const endpoints = [
           'content/property-types',
           'content/property-sub-types',
-          'content/property-categories',
+          // 'content/property-categories',
           'content/developer-community',
           'content/developer-types',
           'content/locations',
           'content/property-amenities',
+          'content/categories'
         ];
 
         const responses = await Promise.all(
@@ -1480,6 +1552,7 @@ export default function PropertiesPage() {
       <Modal
         open={open}
         onClose={close}
+      
         title={editingId ? 'Edit Property' : 'Add Property'}
         subtitle="Expanded property form with SEO, geo, visibility, API relations, media, amenities, floor plans, and gallery uploads."
         size="xl"
@@ -1537,7 +1610,7 @@ export default function PropertiesPage() {
                 <FormGrid columns={section.columns || 3}>
                   {(section.fields || []).map((field) => (
                     <div key={String(field.key)}>
-                      {renderDynamicField(field, form, setForm, relations)}
+                      {renderDynamicField(field, form, setForm, relations, communityOptions)}
                     </div>
                   ))}
                 </FormGrid>

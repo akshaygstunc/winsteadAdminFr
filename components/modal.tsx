@@ -41,7 +41,7 @@ export function Modal({
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
-      <button className="absolute inset-0 cursor-default" aria-label="Close modal backdrop" type="button" onClick={onClose} />
+      {/* <button className="absolute inset-0 cursor-default" aria-label="Close modal backdrop" type="button" onClick={onClose} /> */}
       <div className={clsx('relative w-full overflow-hidden rounded-[30px] border border-line bg-card shadow-2xl', widths[size])}>
         <div className="flex items-start justify-between gap-4 border-b border-line px-6 py-5">
           <div>
