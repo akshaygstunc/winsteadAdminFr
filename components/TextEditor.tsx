@@ -91,7 +91,7 @@ export function TiptapEditor({
                     >
                         Link
                     </button>
-                    <button type="button" onClick={() => editor.chain().focus().unsetLink().run()} className={btnClass(false)}>Unlink</button>
+                    {/* <button type="button" onClick={() => editor.chain().focus().unsetLink().run()} className={btnClass(false)}>Unlink</button> */}
                     <button type="button" onClick={() => editor.chain().focus().setParagraph().run()} className={btnClass(editor.isActive('paragraph'))}>Paragraph</button>
                     <button type="button" onClick={() => editor.chain().focus().unsetAllMarks().clearNodes().run()} className={btnClass(false)}>Clear</button>
                     <button type="button" onClick={() => editor.chain().focus().undo().run()} className={btnClass(false)}>Undo</button>
