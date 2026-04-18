@@ -405,7 +405,28 @@ function renderField(
       return <div><TextInput label={field.label} value={value || ''} onChange={onChange} placeholder={field.placeholder} />{field.note ? <p className="mt-2 text-xs text-muted">{field.note}</p> : null}</div>;
   }
 }
+async function fetchAndUploadFromUrl(url: string): Promise<string> {
+  try {
+    const res = await fetch(url);
 
+    if (!res.ok) {
+      throw new Error("Failed to fetch media");
+    }
+
+    const blob = await res.blob();
+
+    const file = new File([blob], "media-file", {
+      type: blob.type || "application/octet-stream",
+    });
+
+    const uploadedUrl = await fileToDataUrl(file);
+
+    return uploadedUrl;
+  } catch (err) {
+    console.error("Media fetch/upload failed:", err);
+    throw err;
+  }
+}
 export function GenericCmsPage({ config }: { config: CmsConfig }) {
   const isSingleton = config.mode === 'singleton';
   const [items, setItems] = useState<CmsItem[]>([]);

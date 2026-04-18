@@ -13,6 +13,7 @@ export type CmsFieldType =
   | "editor"
   | "gallery"
   | "password"
+  | "podcast"
   | "faq";
 
 export type CmsField = {
@@ -76,6 +77,11 @@ const imageField = (label = "Image"): CmsField => ({
   key: "image",
   label,
   type: "image",
+});
+const videoField = (label = "Video"): CmsField => ({
+  key: "video",
+  label,
+  type: "video",
 });
 const bannerField = (label = "Image"): CmsField => ({
   key: "banner",
@@ -502,24 +508,16 @@ export const EditorConfigs: Record<string, CmsConfig> = {
 
   podcast: {
     ...collection(
-      "Podcast",
+      "Instagram",
       "podcast",
-      "Podcast episodes with artwork, publish date, and stream URL.",
+      "Podcast episodes with audio, description, and metadata.",
+      undefined,
       [
-        { key: "title", label: "Episode Title", type: "text" },
-        { key: "subtitle", label: "Episode Tagline", type: "text" },
-        {
-          key: "status",
-          label: "Status",
-          type: "select",
-          options: statusOptions,
-        },
-        { key: "host", label: "Host", type: "text" },
-        { key: "episodeNumber", label: "Episode #", type: "number" },
-        { key: "publishDate", label: "Publish Date", type: "date" },
-        { key: "streamUrl", label: "Stream URL", type: "text" },
-        imageField("Episode Artwork"),
-        textArea,
+        { key: "title", label: "Post Title", type: "text" },
+
+        videoField("Post Media"),
+
+        { key: "description", label: "Description", type: "editor" },
       ],
       searchMeta("host", "episodeNumber", "publishDate", "status"),
     ),
