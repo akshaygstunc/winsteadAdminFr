@@ -456,7 +456,65 @@ function RelationMultiSelectField({
     </div>
   );
 }
+function FAQEditor({
+  value,
+  onChange,
+}: {
+  value: { question: string; answer: string }[];
+  onChange: (val: any[]) => void;
+}) {
+  const items = Array.isArray(value) ? value : [];
 
+  const updateItem = (index: number, key: string, val: string) => {
+    const next = [...items];
+    next[index] = { ...next[index], [key]: val };
+    onChange(next);
+  };
+
+  const addItem = () => {
+    onChange([...items, { question: "", answer: "" }]);
+  };
+
+  const removeItem = (index: number) => {
+    onChange(items.filter((_, i) => i !== index));
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex justify-between">
+        <p className="text-sm font-medium">FAQs</p>
+        <button onClick={addItem} className="btn-secondary">Add FAQ</button>
+      </div>
+
+      {items.map((faq, index) => (
+        <div key={index} className="border p-4 rounded-xl space-y-3">
+          <input
+            className="input"
+            placeholder="Question"
+            value={faq.question}
+            onChange={(e) =>
+              updateItem(index, "question", e.target.value)
+            }
+          />
+          <textarea
+            className="input"
+            placeholder="Answer"
+            value={faq.answer}
+            onChange={(e) =>
+              updateItem(index, "answer", e.target.value)
+            }
+          />
+          <button
+            className="text-red-500 text-sm"
+            onClick={() => removeItem(index)}
+          >
+            Remove
+          </button>
+        </div>
+      ))}
+    </div>
+  );
+}
 function renderField(
   field: CmsField,
   value: any,
@@ -556,7 +614,14 @@ function renderField(
           ) : null}
         </div>
       );
-
+    case 'faq':
+      console.log('Rendering FAQEditor with value:', value);
+      return (
+        <div>
+          <FieldLabel label={field.label} />
+          <FAQEditor value={value || []} onChange={onChange} />
+        </div>
+      );
     case "boolean":
       return (
         <div>
@@ -690,7 +755,9 @@ function renderField(
       );
 
     default:
+
       return (
+
         <div>
           <TextInput
             label={field.label}
@@ -703,6 +770,7 @@ function renderField(
           ) : null}
         </div>
       );
+
   }
 }
 

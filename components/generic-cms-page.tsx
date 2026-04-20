@@ -128,8 +128,8 @@ function FAQEditor({
   return (
     <div className="space-y-4">
       <div className="flex justify-between">
-        <p className="text-sm font-medium">FAQs</p>
-        <button onClick={addItem} className="btn-secondary">Add FAQ</button>
+        <p className="text-sm font-medium text-gold">FAQs</p>
+        <button onClick={addItem} className=" border border-50 border-gold/50 bg-gold/10 text-gold px-4 py-2 rounded-2xl">Add FAQ</button>
       </div>
 
       {items.map((faq, index) => (
@@ -150,6 +150,72 @@ function FAQEditor({
               updateItem(index, "answer", e.target.value)
             }
           />
+          <button
+            className="text-red-500 text-sm"
+            onClick={() => removeItem(index)}
+          >
+            Remove
+          </button>
+        </div>
+      ))}
+    </div>
+  );
+}
+function AddressEditor({
+  value,
+  onChange,
+}: {
+  value: { location: string; address: string }[];
+  onChange: (val: any[]) => void;
+}) {
+  const items = Array.isArray(value) ? value : [];
+
+  const updateItem = (index: number, key: string, val: string) => {
+    const next = [...items];
+    next[index] = { ...next[index], [key]: val };
+    onChange(next);
+  };
+
+  const addItem = () => {
+    onChange([...items, { location: "", address: "" }]);
+  };
+
+  const removeItem = (index: number) => {
+    onChange(items.filter((_, i) => i !== index));
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex justify-between">
+        <p className="text-sm font-medium text-gold">Addresses</p>
+        <button
+          onClick={addItem}
+          className="border border-50 border-gold/50 bg-gold/10 text-gold px-4 py-2 rounded-2xl"
+        >
+          Add Address
+        </button>
+      </div>
+
+      {items.map((item, index) => (
+        <div key={index} className="border p-4 rounded-xl space-y-3">
+          <input
+            className="input"
+            placeholder="Location (e.g. Dubai Marina)"
+            value={item.location}
+            onChange={(e) =>
+              updateItem(index, "location", e.target.value)
+            }
+          />
+
+          <textarea
+            className="input"
+            placeholder="Full Address"
+            value={item.address}
+            onChange={(e) =>
+              updateItem(index, "address", e.target.value)
+            }
+          />
+
           <button
             className="text-red-500 text-sm"
             onClick={() => removeItem(index)}
@@ -363,8 +429,14 @@ function renderField(
       // console.log('Rendering FAQEditor with value:', value);
       return (
         <div>
-          <FieldLabel label={field.label} />
           <FAQEditor value={value || []} onChange={onChange} />
+        </div>
+      );
+    case 'address':
+      // console.log('Rendering FAQEditor with value:', value);
+      return (
+        <div>
+          <AddressEditor value={value || []} onChange={onChange} />
         </div>
       );
     case 'icon': {

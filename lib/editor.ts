@@ -14,7 +14,8 @@ export type CmsFieldType =
   | "gallery"
   | "password"
   | "podcast"
-  | "faq";
+  | "faq"
+  | "address";
 
 export type CmsField = {
   key: string;
@@ -1143,6 +1144,13 @@ export const EditorConfigs: Record<string, CmsConfig> = {
         key: "metaDescription",
         label: "Meta Description",
         type: "textarea",
+        group: "seo",
+        column: "left",
+      },
+      {
+        key: "address",
+        label: "Address",
+        type: "address",
         group: "seo",
         column: "left",
       },
@@ -2968,7 +2976,7 @@ export const EditorConfigs: Record<string, CmsConfig> = {
     "Community",
     "communities",
     "Developer logo and community partner records.",
-    "editor",
+    undefined,
     [
       { key: "title", label: "Community Name", type: "text" },
       { key: "city", label: "City", type: "text" },
@@ -2990,17 +2998,10 @@ export const EditorConfigs: Record<string, CmsConfig> = {
           valueKey: "_id",
         },
       },
-
       {
-        key: "projects",
-        label: "Projects",
-        type: "relation-select",
-        multiple: true,
-        relation: {
-          entity: "properties",
-          labelKey: "title",
-          valueKey: "_id",
-        },
+        key: "faq",
+        label: "FAQ's",
+        type: "faq",
       },
 
       imageField("Logo / Image"),
