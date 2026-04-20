@@ -58,6 +58,7 @@ type PropertyForm = Property & {
   amenities?: AmenityItem[];
   floorPlans?: FloorPlanItem[];
   communities?: string;
+  faq: any[]
 };
 
 type DynamicField = {
@@ -82,7 +83,7 @@ type FieldSection = {
   title: string;
   columns?: 1 | 2 | 3;
   fields?: DynamicField[];
-  custom?: 'gallery' | 'amenities' | 'floorPlans' | 'file';
+  custom?: 'gallery' | 'amenities' | 'floorPlans' | 'file' | 'faq';
 };
 
 type RelationData = Record<string, FieldOption[]>;
@@ -124,6 +125,7 @@ const emptyForm: PropertyForm = {
   propertyType: '',
   propertySubType: '',
   categories: [],
+  faq: [],
   propertyBanner: '',
   propertydoc: '',
   amenities: [],
@@ -221,6 +223,12 @@ const propertyFormSections: FieldSection[] = [
       { key: "duringconstruction", label: "During Construction", type: "number" },
       { key: "handover", label: "Handover", type: "number" },
     ],
+  },
+  {
+    key: "faq",
+    title: "Property FAQ",
+    columns: 1,
+    custom: 'faq',
   },
   {
     key: "propertydoc",
@@ -465,6 +473,65 @@ function PdfUploader({
           </div>
         </div>
       )}
+    </div>
+  );
+}
+function FAQEditor({
+  value,
+  onChange,
+}: {
+  value: { question: string; answer: string }[];
+  onChange: (val: any[]) => void;
+}) {
+  const items = Array.isArray(value) ? value : [];
+
+  const updateItem = (index: number, key: string, val: string) => {
+    const next = [...items];
+    next[index] = { ...next[index], [key]: val };
+    onChange(next);
+  };
+
+  const addItem = () => {
+    onChange([...items, { question: "", answer: "" }]);
+  };
+
+  const removeItem = (index: number) => {
+    onChange(items.filter((_, i) => i !== index));
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex justify-between">
+        <p className="text-sm font-medium text-gold">FAQs</p>
+        <button onClick={addItem} className=" border border-50 border-gold/50 bg-gold/10 text-gold px-4 py-2 rounded-2xl">Add FAQ</button>
+      </div>
+
+      {items.map((faq, index) => (
+        <div key={index} className="border p-4 rounded-xl space-y-3">
+          <input
+            className="input"
+            placeholder="Question"
+            value={faq.question}
+            onChange={(e) =>
+              updateItem(index, "question", e.target.value)
+            }
+          />
+          <textarea
+            className="input"
+            placeholder="Answer"
+            value={faq.answer}
+            onChange={(e) =>
+              updateItem(index, "answer", e.target.value)
+            }
+          />
+          <button
+            className="text-red-500 text-sm"
+            onClick={() => removeItem(index)}
+          >
+            Remove
+          </button>
+        </div>
+      ))}
     </div>
   );
 }
@@ -1576,7 +1643,13 @@ export default function PropertiesPage() {
                       }))
                     }
                   />
-                ) : section.custom === 'amenities' ? (
+                ) : section.custom === "faq" ? <FAQEditor value={Array.isArray(form.faq) ? form.faq : []}
+                  onChange={(next) =>
+                    setForm((prev) => ({
+                      ...prev,
+                      faq: next,
+                    }))
+                  } /> : section.custom === 'amenities' ? (
                   <AmenitiesEditor
                     value={Array.isArray(form.amenities) ? form.amenities : []}
                     onChange={(next) =>
