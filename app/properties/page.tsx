@@ -1282,7 +1282,7 @@ export default function PropertiesPage() {
   }, [form.developer]);
   const load = async () => {
     try {
-      const snapshot = await api.get<WorkspaceSnapshot>('/properties');
+      const snapshot = await api.get<WorkspaceSnapshot>('/properties/admin');
       console.log(snapshot, 'Loaded properties snapshot');
       setItems(((snapshot as any) || []) as PropertyForm[]);
     } catch {
@@ -1405,11 +1405,11 @@ export default function PropertiesPage() {
       ...item,
       gallery: Array.isArray(item.gallery) ? item.gallery : [],
       categories: Array.isArray(item.categories)
-        ? item.categories
+        ? item.categories._id
         : item.category
           ? [item.category]
           : [],
-      propertyType: item.propertyType || item.type || '',
+      propertyType: item.propertyType || item.type._id || '',
       propertySubType: item.propertySubType || item.subType || '',
       amenities: Array.isArray(item.amenities) ? item.amenities : [],
       floorPlans: Array.isArray(item.floorPlans) ? item.floorPlans : [],
@@ -1505,17 +1505,17 @@ export default function PropertiesPage() {
 
             <tbody>
               {filtered.map((property) => {
-                const developerLabel = getRelationLabel(
-                  relations,
-                  'developers',
-                  property.developer,
-                );
+                // const developerLabel = getRelationLabel(
+                //   relations,
+                //   'developers',
+                //   property.developer,
+                // );
 
-                const typeLabel = getRelationLabel(
-                  relations,
-                  'property-types',
-                  property.propertyType || property.type,
-                );
+                // const typeLabel = getRelationLabel(
+                //   relations,
+                //   'property-types',
+                //   property.propertyType || property.type,
+                // );
 
                 return (
                   <tr
@@ -1553,12 +1553,12 @@ export default function PropertiesPage() {
 
                     {/* Type */}
                     <td className="px-4 py-3 text-muted">
-                      {typeLabel || '—'}
+                      {property?.type?.title || '—'}
                     </td>
 
                     {/* Developer */}
                     <td className="px-4 py-3 text-muted">
-                      {developerLabel || '—'}
+                      {property?.developer?.title || '—'}
                     </td>
 
                     {/* Beds */}
