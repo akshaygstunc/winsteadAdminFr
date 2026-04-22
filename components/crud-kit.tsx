@@ -52,7 +52,7 @@ export function CheckboxInput({ label, checked, onChange }: { label: string; che
 export function FormActions({ onSubmit, onCancel, submitLabel, busy }: { onSubmit: () => void; onCancel?: () => void; submitLabel: string; busy?: boolean; }) {
   return (
     <div className="flex flex-wrap gap-3">
-      <button className="rounded-2xl border border-gold/50 bg-gold/10 px-4 py-2 text-sm font-medium    transition hover:bg-gold/20" onClick={onSubmit} type="button">
+      <button className="rounded-2xl border border-gold/50 bg-gold/10 px-4 py-2 text-white text-sm font-medium    transition hover:bg-gold/20" onClick={onSubmit} type="button">
         {busy ? 'Saving...' : submitLabel}
       </button>
       {onCancel ? <button className="rounded-2xl border border-line bg-transparent px-4 py-2 text-sm text-muted" onClick={onCancel} type="button">Cancel</button> : null}

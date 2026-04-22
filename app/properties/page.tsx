@@ -52,7 +52,7 @@ type FloorPlanItem = {
 type PropertyForm = Property & {
   propertyType?: string;
   propertySubType?: string;
-  categories?: string[];
+  categories?: string;
   propertyBanner?: string;
   propertydoc?: string;
   amenities?: AmenityItem[];
@@ -124,9 +124,8 @@ const emptyForm: PropertyForm = {
   gallery: [],
   propertyType: '',
   propertySubType: '',
-  categories: [],
+  categories: "",
   faq: [],
-  propertyBanner: '',
   propertydoc: '',
   amenities: [],
   floorPlans: [],
@@ -1251,7 +1250,11 @@ export default function PropertiesPage() {
   const [relations, setRelations] = useState<RelationData>({});
   const [open2, setOpen2] = useState(false);
   const [communityOptions, setCommunityOptions] = useState<FieldOption[]>([]);
+  const [mounted, setMounted] = useState(false);
 
+  useEffect(() => {
+    setMounted(true);
+  }, []);
   useEffect(() => {
     const fetchCommunities = async () => {
       if (!form.developer) {
@@ -1331,9 +1334,7 @@ export default function PropertiesPage() {
 
   const filtered = useMemo(() => {
     return items.filter((item) => {
-      const categoryText = Array.isArray(item.categories)
-        ? item.categories.join(' ')
-        : item.category || '';
+      const categoryText = item.categories;
 
       const relationText = [
         item.title,
@@ -1374,15 +1375,32 @@ export default function PropertiesPage() {
 
       const payload = {
         ...form,
+
         slug,
         url: form.url || `/property/${slug}`,
-        tag: form.hotLaunch ? 'HOT' : form.exclusive ? 'Exclusive' : form.tag,
-        gallery: Array.isArray(form.gallery) ? form.gallery : [],
-        amenities: Array.isArray(form.amenities) ? form.amenities : [],
-        floorPlans: Array.isArray(form.floorPlans) ? form.floorPlans : [],
-        type: form.propertyType || form.type || '',
-        subType: form.propertySubType || form.subType || '',
-        category: Array.isArray(form.categories) ? form.categories[0] || '' : form.category || '',
+
+        // ✅ NORMALIZE RELATIONS
+        propertyType: form.propertyType || '',
+        propertySubType: form.propertySubType || '',
+        developer: form.developer || '',
+        location: form.location || '',
+
+        // ✅ FIX CATEGORY
+        categories: form.categories,
+        category: form.category,
+
+        // ✅ ARRAYS SAFE
+        gallery: form.gallery || [],
+        amenities: form.amenities || [],
+        floorPlans: form.floorPlans || [],
+        faq: form.faq || [],
+
+        // ✅ TAG FIX
+        tag: form.hotLaunch
+          ? 'HOT'
+          : form.exclusive
+            ? 'Exclusive'
+            : form.tag,
       };
 
       if (editingId) {
@@ -1399,22 +1417,74 @@ export default function PropertiesPage() {
     }
   };
 
-  const edit = (item: PropertyForm) => {
+  const edit = (item: any) => {
+    const getId = (val: any) => {
+      if (!val) return '';
+      if (typeof val === 'string') return val;
+      return val._id || val.id || '';
+    };
+
+    const normalizeArrayIds = (val: any) => {
+      if (!val) return [];
+      if (Array.isArray(val)) {
+        return val.map((v) => (typeof v === 'string' ? v : v?._id));
+      }
+      // if single value
+      return [typeof val === 'string' ? val : val?._id];
+    };
+
     setForm({
       ...emptyForm,
       ...item,
+      type: item?.type?._id || "",
+      // ✅ TYPE FIX (important)
+      propertyType: getId(item.propertyType || item.type),
+      propertySubType: getId(item.propertySubType || item.subType),
+
+      // ✅ DEVELOPER FIX
+      developer: getId(item.developer),
+
+      // ✅ LOCATION FIX
+      location: getId(item.location),
+
+      // ✅ COMMUNITY (if exists)
+      communities: getId(item.communities),
+
+      // ✅ CATEGORY FIX (string → array)
+      categories: item.categories,
+
+      // ✅ PROPERTY STATUS FIX (case normalize)
+      propertyStatus: (item.propertyStatus || 'ready').toLowerCase(),
+
+      // ✅ MEDIA SAFE
       gallery: Array.isArray(item.gallery) ? item.gallery : [],
-      categories: Array.isArray(item.categories)
-        ? item.categories._id
-        : item.category
-          ? [item.category]
-          : [],
-      propertyType: item.propertyType || item.type._id || '',
-      propertySubType: item.propertySubType || item.subType || '',
+      thumbnail: item.thumbnail || '',
+      propertyBanner: item.propertyBanner || '',
+      enquireFormImage: item.enquireFormImage || '',
+      propertydoc: item.propertydoc || '',
+
+      // ✅ COMPLEX FIELDS
       amenities: Array.isArray(item.amenities) ? item.amenities : [],
       floorPlans: Array.isArray(item.floorPlans) ? item.floorPlans : [],
-      propertyBanner: item.propertyBanner || '',
+      faq: Array.isArray(item.faq) ? item.faq : [],
+
+      // ✅ NUMBERS SAFE
+      price: Number(item.price || 0),
+      bedrooms: Number(item.bedrooms || 0),
+      bathrooms: Number(item.bathrooms || 0),
+      sortOrder: Number(item.sortOrder || 0),
+
+      // ✅ FLAGS
+      featured: Boolean(item.featured),
+      active: Boolean(item.active),
+      hotLaunch: Boolean(item.hotLaunch),
+      exclusive: Boolean(item.exclusive),
+
+      // ✅ PAYMENT PLAN
+      duringconstruction: Number(item.duringconstruction || 0),
+      handover: Number(item.handover || 0),
     });
+
     setEditingId(item._id || null);
     setOpen(true);
   };
@@ -1432,7 +1502,7 @@ export default function PropertiesPage() {
   };
 
   const typeFilterOptions = relations['property-types'] || [];
-
+  if (!mounted) return null;
   return (
     <DashboardShell>
       <Header
@@ -1562,17 +1632,17 @@ export default function PropertiesPage() {
                     </td>
 
                     {/* Beds */}
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3 text-white">
                       {property.bedrooms || 0}
                     </td>
 
                     {/* Baths */}
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3 text-white">
                       {property.bathrooms || 0}
                     </td>
 
                     {/* Price */}
-                    <td className="px-4 py-3 font-medium">
+                    <td className="px-4 py-3 font-medium text-white">
                       ₹{Number(property.price || 0).toLocaleString()}
                     </td>
 
