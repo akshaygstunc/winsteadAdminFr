@@ -40,7 +40,8 @@ export type CmsFieldType =
   | "video"
   | "repeater"
   | "relation-multiselect"
-  | "faq";
+  | "faq"
+  | "relation-select";
 
 export type CmsField = {
   multiple: boolean | undefined;

@@ -549,7 +549,20 @@ function renderField(
           options={relationOptions[field.key] || []}
         />
       );
-
+    case "relation-select":
+      return (
+        <div>
+          <SelectInput
+            label={field.label}
+            value={value || ""}
+            onChange={onChange}
+            options={relationOptions[field.key] || []}
+          />
+          {field.note ? (
+            <p className="mt-2 text-xs text-muted">{field.note}</p>
+          ) : null}
+        </div>
+      );
     case "textarea":
       return (
         <div>
@@ -895,7 +908,9 @@ export function PageEditorCmsPage({ config }: { config: CmsConfig }) {
     try {
       const relationFields = config.fields.filter(
         (field) =>
-          field.type === "relation-multiselect" && field.relation?.endpoint,
+          (field.type === "relation-multiselect" ||
+            field.type === "relation-select") &&
+          field.relation?.endpoint
       );
 
       const results: Record<string, { label: string; value: string }[]> = {};
