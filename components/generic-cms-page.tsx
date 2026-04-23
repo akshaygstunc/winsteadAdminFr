@@ -102,6 +102,36 @@ async function fileToDataUrl(file: File) {
     '';
   return uploadedUrl
 }
+function RelationSelect({ field, value, onChange }: any) {
+  const [options, setOptions] = useState([]);
+
+  useEffect(() => {
+    const fetchOptions = async () => {
+      const res = await api.get(`/${field.relation.endpoint}`);
+      console.log(res)
+      setOptions(res || []);
+    };
+    fetchOptions();
+  }, []);
+
+  return (
+    <div>
+      <FieldLabel label={field.label} />
+      <select
+        className="input"
+        value={value || ''}
+        onChange={(e) => onChange(e.target.value)}
+      >
+        <option value="">Select {field.label}</option>
+        {options.map((opt: any) => (
+          <option key={opt._id} value={opt._id}>
+            {opt.title}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+}
 function FAQEditor({
   value,
   onChange,
@@ -408,6 +438,8 @@ function renderField(
           </label>
         </div>
       );
+    case 'relation-select':
+      return <RelationSelect field={field} value={value} onChange={onChange} />;
     case 'multiselect': {
       const selected = Array.isArray(value) ? value : [];
       return (

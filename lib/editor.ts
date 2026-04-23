@@ -2993,7 +2993,7 @@ export const EditorConfigs: Record<string, CmsConfig> = {
         label: "Developer",
         type: "relation-select",
         relation: {
-          entity: "content/developer-community",
+          endpoint: "content/developer-community",
           labelKey: "title",
           valueKey: "_id",
         },
