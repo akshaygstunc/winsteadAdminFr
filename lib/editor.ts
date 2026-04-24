@@ -80,20 +80,93 @@ const textArea2 = (label = "Content"): CmsField => ({
   label,
   type: "editor",
 });
-const imageField = (label = "Image"): CmsField => ({
-  key: "image",
+
+
+const DEFAULT_IMAGE_DIMENSION_NOTE =
+  "Note: Please upload image in the recommended dimensions/aspect ratio for best quality.";
+
+const DEFAULT_VIDEO_DIMENSION_NOTE =
+  "Note: Please upload video in the recommended dimensions/aspect ratio for best quality.";
+
+const withAssetDimensionNote = (
+  field: CmsField,
+  assetType?: "image" | "video",
+  dimensionHint?: string,
+): CmsField => {
+  const isImage = assetType === "image" || field.type === "image";
+  const isVideo = assetType === "video" || field.type === "video";
+
+  if (!isImage && !isVideo) return field;
+
+  const baseNote = field.note?.trim();
+  const dimensionNote = dimensionHint
+    ? `Note: Recommended ${isImage ? "image" : "video"} dimensions: ${dimensionHint}.`
+    : isImage
+      ? DEFAULT_IMAGE_DIMENSION_NOTE
+      : DEFAULT_VIDEO_DIMENSION_NOTE;
+
+  return {
+    ...field,
+    note: baseNote ? `${baseNote} ${dimensionNote}` : dimensionNote,
+  };
+};
+
+export const imageField = (
+  label = "Image",
+  key = "image",
+  dimensionHint = "1920x500",
+): CmsField =>
+  withAssetDimensionNote(
+    {
+      key,
+      label,
+      type: "image",
+    },
+    "image",
+    dimensionHint,
+  );
+
+export const videoField = (
+  label = "Video",
+  key = "videoUrl",
+  dimensionHint = "",
+): CmsField =>
+  withAssetDimensionNote(
+    {
+      key,
+      label,
+      type: "video",
+    },
+    "video",
+    dimensionHint,
+  );
+
+export const bannerField = (
+  label = "Banner Image",
+  key = "bannerImage",
+  dimensionHint = "1920x500",
+): CmsField =>
+  withAssetDimensionNote(
+    {
+      key,
+      label,
+      type: "image",
+    },
+    "image",
+    dimensionHint,
+  );
+
+export const galleryField = (
+  label = "Gallery",
+  key = "media",
+  note = "Upload multiple images and videos for this event.",
+): CmsField => ({
+  key,
   label,
-  type: "image",
-});
-const videoField = (label = "Video"): CmsField => ({
-  key: "video",
-  label,
-  type: "video",
-});
-const bannerField = (label = "Image"): CmsField => ({
-  key: "banner",
-  label,
-  type: "image",
+  type: "gallery",
+  multiple: true,
+  accept: "image/*,video/*",
+  note: `${note} Note: Please ensure uploaded images/videos follow the recommended dimensions/aspect ratio for best quality.`,
 });
 const searchMeta = (...keys: string[]) => keys;
 
@@ -505,7 +578,7 @@ export const EditorConfigs: Record<string, CmsConfig> = {
         { key: "metaTitle", label: "Meta Title", type: "text" },
         { key: "metaKeywords", label: "Meta Keywords", type: "text" },
         { key: "metaDescription", label: "Meta Description", type: "text" },
-        imageField("Cover Image (1920x500)"),
+        imageField("Cover Image (1920x500)", "image", "1920x500"),
         textArea,
       ],
       searchMeta("city", "metaTitle", "metaKeywords", "status"),
@@ -734,18 +807,26 @@ export const EditorConfigs: Record<string, CmsConfig> = {
         type: "select",
         options: statusOptions,
       },
-      {
-        key: "image",
-        label: "Banner Image (440x670)",
-        type: "image",
-        note: "Recommended 440x670 px portrait image.",
-      },
-      {
-        key: "videoUrl",
-        label: "Banner Video",
-        type: "video",
-        note: "Portrait MP4 only.",
-      },
+      withAssetDimensionNote(
+        {
+          key: "image",
+          label: "Banner Image (440x670)",
+          type: "image",
+          note: "Recommended 440x670 px portrait image.",
+        },
+        "image",
+        "440x670",
+      ),
+      withAssetDimensionNote(
+        {
+          key: "videoUrl",
+          label: "Banner Video",
+          type: "video",
+          note: "Portrait MP4 only.",
+        },
+        "video",
+        "1080x1920",
+      ),
       textArea,
     ],
     searchMeta("city", "sortOrder", "status"),
@@ -770,12 +851,16 @@ export const EditorConfigs: Record<string, CmsConfig> = {
         ],
       },
       { key: "status", label: "Status", type: "select", options: boolStatus },
-      {
-        key: "image",
-        label: "Profile Image (512x512)",
-        type: "image",
-        note: "Square image recommended.",
-      },
+      withAssetDimensionNote(
+        {
+          key: "image",
+          label: "Profile Image (512x512)",
+          type: "image",
+          note: "Square image recommended.",
+        },
+        "image",
+        "512x512",
+      ),
       { key: "description", label: "Review", type: "textarea" },
     ],
     searchMeta("rating", "status"),
@@ -810,12 +895,15 @@ export const EditorConfigs: Record<string, CmsConfig> = {
         options: boolStatus,
       },
 
-      {
-        key: "coverImage",
-        label: "Cover Image",
-        type: "image",
-        note: "Main thumbnail for event listing.",
-      },
+      withAssetDimensionNote(
+        {
+          key: "coverImage",
+          label: "Cover Image",
+          type: "image",
+          note: "Main thumbnail for event listing.",
+        },
+        "image",
+      ),
 
       {
         key: "description",
@@ -824,14 +912,11 @@ export const EditorConfigs: Record<string, CmsConfig> = {
       },
 
       // 🔥 MAIN PART (MULTIPLE MEDIA INSIDE EVENT)
-      {
-        key: "media",
-        label: "Event Media (Images / Videos)",
-        type: "gallery",
-        multiple: true,
-        accept: "image/*,video/*",
-        note: "Upload multiple images and videos for this event.",
-      },
+      galleryField(
+        "Event Media (Images / Videos)",
+        "media",
+        "Upload multiple images and videos for this event.",
+      ),
     ],
     searchMeta("status", "eventDate", "location"),
   ),
@@ -993,13 +1078,7 @@ export const EditorConfigs: Record<string, CmsConfig> = {
         group: "banner-section",
         column: "right",
       },
-      {
-        key: "bannerImage",
-        label: "Banner Image",
-        type: "image",
-        group: "banner-section",
-        column: "right",
-      },
+      imageField("Banner Image", "bannerImage"),
 
       // SEO
       {
@@ -1016,13 +1095,7 @@ export const EditorConfigs: Record<string, CmsConfig> = {
         group: "seo",
         column: "left",
       },
-      {
-        key: "ogImage",
-        label: "OG Image",
-        type: "image",
-        group: "seo",
-        column: "right",
-      },
+      imageField("OG Image", "ogImage"),
     ],
   ),
   "terms-and-conditions": singleton(
@@ -1035,13 +1108,7 @@ export const EditorConfigs: Record<string, CmsConfig> = {
         label: "Title",
         type: "text",
       },
-      {
-        key: "bannerImage",
-        label: "Banner Image",
-        type: "image",
-        group: "banner-section",
-        column: "right",
-      },
+      imageField("Banner Image", "bannerImage"),
 
       textArea2("content"),
 
@@ -1059,13 +1126,7 @@ export const EditorConfigs: Record<string, CmsConfig> = {
         group: "seo",
         column: "left",
       },
-      {
-        key: "ogImage",
-        label: "OG Image",
-        type: "image",
-        group: "seo",
-        column: "right",
-      },
+      imageField("OG Image", "ogImage"),
     ],
   ),
   "privacy-policy": singleton(
@@ -1078,13 +1139,7 @@ export const EditorConfigs: Record<string, CmsConfig> = {
         label: "Title",
         type: "text",
       },
-      {
-        key: "bannerImage",
-        label: "Banner Image",
-        type: "image",
-        group: "banner-section",
-        column: "right",
-      },
+      imageField("Banner Image", "bannerImage"),
 
       textArea2("content"),
 
@@ -1102,13 +1157,7 @@ export const EditorConfigs: Record<string, CmsConfig> = {
         group: "seo",
         column: "left",
       },
-      {
-        key: "ogImage",
-        label: "OG Image",
-        type: "image",
-        group: "seo",
-        column: "right",
-      },
+      imageField("OG Image", "ogImage"),
     ],
   ),
   "contact-page": singleton(
@@ -1131,13 +1180,7 @@ export const EditorConfigs: Record<string, CmsConfig> = {
         group: "banner-section",
         column: "left",
       },
-      {
-        key: "bannerImage",
-        label: "Banner Image",
-        type: "image",
-        group: "banner-section",
-        column: "right",
-      },
+      imageField("Banner Image", "bannerImage"),
 
       // GET IN TOUCH SECTION
       {
@@ -1272,13 +1315,7 @@ export const EditorConfigs: Record<string, CmsConfig> = {
         group: "seo",
         column: "left",
       },
-      {
-        key: "ogImage",
-        label: "OG Image",
-        type: "image",
-        group: "seo",
-        column: "right",
-      },
+      imageField("OG Image", "ogImage"),
     ],
   ),
   "gallery-page": singleton(
@@ -1301,13 +1338,7 @@ export const EditorConfigs: Record<string, CmsConfig> = {
         group: "banner-section",
         column: "left",
       },
-      {
-        key: "bannerImage",
-        label: "Banner Image",
-        type: "image",
-        group: "banner-section",
-        column: "right",
-      },
+      imageField("Banner Image", "bannerImage"),
 
       // BREADCRUMB SECTION
       {
@@ -1363,13 +1394,7 @@ export const EditorConfigs: Record<string, CmsConfig> = {
         group: "seo",
         column: "left",
       },
-      {
-        key: "ogImage",
-        label: "OG Image",
-        type: "image",
-        group: "seo",
-        column: "right",
-      },
+      imageField("OG Image", "ogImage"),
     ],
   ),
   "developer-page": singleton(
@@ -1398,13 +1423,7 @@ export const EditorConfigs: Record<string, CmsConfig> = {
         group: "banner-section",
         column: "left",
       },
-      {
-        key: "bannerImage",
-        label: "Banner Image",
-        type: "image",
-        group: "banner-section",
-        column: "right",
-      },
+      imageField("Banner Image", "bannerImage"),
 
       // SEO
       {
@@ -1421,13 +1440,7 @@ export const EditorConfigs: Record<string, CmsConfig> = {
         group: "seo",
         column: "left",
       },
-      {
-        key: "ogImage",
-        label: "OG Image",
-        type: "image",
-        group: "seo",
-        column: "right",
-      },
+      imageField("OG Image", "ogImage"),
     ],
   ),
   "our-team-page": singleton(
@@ -1464,13 +1477,7 @@ export const EditorConfigs: Record<string, CmsConfig> = {
         group: "banner-section",
         column: "right",
       },
-      {
-        key: "bannerImage",
-        label: "Banner Image",
-        type: "image",
-        group: "banner-section",
-        column: "right",
-      },
+      imageField("Banner Image", "bannerImage"),
 
       // TEAM INTRO SECTION
       {
@@ -1605,13 +1612,7 @@ export const EditorConfigs: Record<string, CmsConfig> = {
         group: "seo",
         column: "left",
       },
-      {
-        key: "ogImage",
-        label: "OG Image",
-        type: "image",
-        group: "seo",
-        column: "right",
-      },
+      imageField("OG Image", "ogImage"),
     ],
   ),
   "services-page": singleton(
@@ -1634,13 +1635,7 @@ export const EditorConfigs: Record<string, CmsConfig> = {
         group: "hero-section",
         column: "left",
       },
-      {
-        key: "heroImage",
-        label: "Hero Image",
-        type: "image",
-        group: "hero-section",
-        column: "right",
-      },
+      imageField("Hero Image", "heroImage"),
 
       // SERVICES OVERVIEW SECTION
       {
@@ -2118,13 +2113,7 @@ export const EditorConfigs: Record<string, CmsConfig> = {
         group: "seo",
         column: "left",
       },
-      {
-        key: "ogImage",
-        label: "OG Image",
-        type: "image",
-        group: "seo",
-        column: "right",
-      },
+      imageField("OG Image", "ogImage"),
     ],
   ),
   "home-page": singleton(
@@ -2371,13 +2360,7 @@ export const EditorConfigs: Record<string, CmsConfig> = {
         group: "seo",
         column: "left",
       },
-      {
-        key: "ogImage",
-        label: "OG Image",
-        type: "image",
-        group: "seo",
-        column: "right",
-      },
+      imageField("OG Image", "ogImage"),
     ],
   ),
   awards: collection(
@@ -2470,13 +2453,7 @@ export const EditorConfigs: Record<string, CmsConfig> = {
         group: "hero-banner",
         column: "left",
       },
-      {
-        key: "bannerImage",
-        label: "Banner Image",
-        type: "image",
-        group: "hero-banner",
-        column: "right",
-      },
+      imageField("Banner Image", "bannerImage"),
 
       // ABOUT WINSTEAD SECTION
       {
@@ -2850,13 +2827,7 @@ export const EditorConfigs: Record<string, CmsConfig> = {
         group: "seo",
         column: "left",
       },
-      {
-        key: "ogImage",
-        label: "OG Image",
-        type: "image",
-        group: "seo",
-        column: "right",
-      },
+      imageField("OG Image", "ogImage"),
     ],
   ),
 
