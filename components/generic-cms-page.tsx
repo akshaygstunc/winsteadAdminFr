@@ -15,6 +15,7 @@ declare module '@/lib/cms' {
   }
 }
 import { FieldLabel, FormActions, FormGrid, InlineActions, SectionNotice, SelectInput, TextArea, TextInput } from '@/components/crud-kit';
+import { TiptapEditor } from './TextEditor';
 
 function blankFromConfig(config: CmsConfig): CmsItem {
   const data: Record<string, any> = {};
@@ -455,6 +456,15 @@ function renderField(
         </div>
       );
     }
+    case 'editor':
+      return (
+        <TiptapEditor 
+          label={field.label}
+          value={value || ''}
+          onChange={onChange}
+          note={field.note}
+        />
+      );
     case 'gallery':
       return <GalleryUploader value={value || []} onChange={onChange} />;
     case 'faq':
