@@ -74,6 +74,12 @@ const textArea: CmsField = {
   label: "Description",
   type: "editor",
 };
+
+const textArea2 = (label = "Content"): CmsField => ({
+  key: "description",
+  label,
+  type: "editor",
+});
 const imageField = (label = "Image"): CmsField => ({
   key: "image",
   label,
@@ -914,6 +920,32 @@ export const EditorConfigs: Record<string, CmsConfig> = {
     ),
     layout: "locations",
   },
+  sublocations: {
+    ...collection(
+      "Sub Locations",
+      "sub-locations",
+      "City and sub-city hierarchy for search and listing grouping.",
+      undefined,
+      [
+        { key: "title", label: "Sub Location Name", type: "text" },
+        // { key: "subCityCount", label: "Sub City Count", type: "number" },
+        {
+          key: "location",
+          label: "Location",
+          relation: {
+            endpoint: "content/locations",
+            labelKey: "title",
+            valueKey: "_id",
+          },
+          type: "relation-select",
+        },
+        { key: "status", label: "Status", type: "select", options: boolStatus },
+        // textArea,
+      ],
+      // searchMeta("city", "subCityCount", "status"),
+    ),
+    // layout: "locations",
+  },
   "projects-page": singleton(
     "Projects Page",
     "projects-page",
@@ -970,6 +1002,92 @@ export const EditorConfigs: Record<string, CmsConfig> = {
       },
 
       // SEO
+      {
+        key: "metaTitle",
+        label: "Meta Title",
+        type: "text",
+        group: "seo",
+        column: "left",
+      },
+      {
+        key: "metaDescription",
+        label: "Meta Description",
+        type: "textarea",
+        group: "seo",
+        column: "left",
+      },
+      {
+        key: "ogImage",
+        label: "OG Image",
+        type: "image",
+        group: "seo",
+        column: "right",
+      },
+    ],
+  ),
+  "terms-and-conditions": singleton(
+    "Terms and Conditions",
+    "terms-and-conditions",
+    "Manage Terms and Conditions page content only.",
+    [
+      {
+        key: "title",
+        label: "Title",
+        type: "text",
+      },
+      {
+        key: "bannerImage",
+        label: "Banner Image",
+        type: "image",
+        group: "banner-section",
+        column: "right",
+      },
+
+      textArea2("content"),
+
+      {
+        key: "metaTitle",
+        label: "Meta Title",
+        type: "text",
+        group: "seo",
+        column: "left",
+      },
+      {
+        key: "metaDescription",
+        label: "Meta Description",
+        type: "textarea",
+        group: "seo",
+        column: "left",
+      },
+      {
+        key: "ogImage",
+        label: "OG Image",
+        type: "image",
+        group: "seo",
+        column: "right",
+      },
+    ],
+  ),
+  "privacy-policy": singleton(
+    "Privacy Policy",
+    "privacy-policy",
+    "Manage Privacy Policy page content only.",
+    [
+      {
+        key: "title",
+        label: "Title",
+        type: "text",
+      },
+      {
+        key: "bannerImage",
+        label: "Banner Image",
+        type: "image",
+        group: "banner-section",
+        column: "right",
+      },
+
+      textArea2("content"),
+
       {
         key: "metaTitle",
         label: "Meta Title",

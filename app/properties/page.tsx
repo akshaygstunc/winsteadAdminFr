@@ -52,6 +52,7 @@ type FloorPlanItem = {
 type PropertyForm = Property & {
   propertyType?: string;
   propertySubType?: string;
+  sublocation: string;
   categories?: string;
   propertyBanner?: string;
   propertydoc?: string;
@@ -132,6 +133,7 @@ const emptyForm: PropertyForm = {
   type: '',
   subType: '',
   category: '',
+  sublocation: ''
 };
 
 const propertyFormSections: FieldSection[] = [
@@ -207,6 +209,14 @@ const propertyFormSections: FieldSection[] = [
         key: 'location', label: 'Location', type: 'relation-select',
         relation: {
           entity: 'content/locations',
+          labelKey: 'name',
+          valueKey: '_id',
+        },
+      },
+      {
+        key: 'sublocation', label: 'Sub location', type: 'relation-select',
+        relation: {
+          entity: 'content/sub-locations',
           labelKey: 'name',
           valueKey: '_id',
         },
@@ -1306,7 +1316,8 @@ export default function PropertiesPage() {
           'content/developer-types',
           'content/locations',
           'content/property-amenities',
-          'content/categories'
+          'content/categories',
+          'content/sub-locations'
         ];
 
         const responses = await Promise.all(
