@@ -414,6 +414,29 @@ function GalleryUploader({
     </div>
   );
 }
+function validateMediaDimensions(file: File, width: number, height: number): Promise<boolean> {
+  return new Promise((resolve) => {
+    const url = URL.createObjectURL(file);
+
+    if (file.type.startsWith("image")) {
+      const img = new Image();
+      img.onload = () => {
+        resolve(img.width === width && img.height === height);
+        URL.revokeObjectURL(url);
+      };
+      img.src = url;
+    } else if (file.type.startsWith("video")) {
+      const video = document.createElement("video");
+      video.onloadedmetadata = () => {
+        resolve(video.videoWidth === width && video.videoHeight === height);
+        URL.revokeObjectURL(url);
+      };
+      video.src = url;
+    } else {
+      resolve(false);
+    }
+  });
+}
 function renderField(
   field: CmsField & { type: CmsField['type'] | 'faq' },
   value: any,
@@ -426,7 +449,7 @@ function renderField(
     case 'select':
       return <SelectInput label={field.label} value={value || ''} onChange={onChange} options={field.options || []} />;
     case 'number':
-      return <TextInput label={field.label} type="number" value={value ?? 0} onChange={(v) => onChange(Number(v))} />;
+      return <TextInput label={field.label} type="number" value={value ?? 0} onChange={(v) => onChange(Number(v))} min={0} />;
     case 'date':
       return <TextInput label={field.label} type="date" value={value || ''} onChange={onChange} />;
     case 'boolean':
@@ -551,32 +574,77 @@ export function GenericCmsPage({ config }: { config: CmsConfig }) {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-
+  const [developerFilter, setDeveloperFilter] = useState('');
+  const [developers, setDevelopers] = useState<any[]>([]);
+  useEffect(() => {
+    if (config.entity === 'communities') {
+      const fetchDevelopers = async () => {
+        try {
+          const res = await api.get('/content/developer-community');
+          setDevelopers(res || []);
+        } catch (err) {
+          console.error('Failed to load developers');
+        }
+      };
+      fetchDevelopers();
+    }
+  }, [config.entity]);
   const load = async (term = '') => {
     setLoading(true);
     setError(null);
+
     try {
       if (isSingleton) {
         const item = await api.get<CmsItem>(`/content/${config.entity}/singleton`);
         setItems([item]);
-        setForm({ ...blankFromConfig(config), ...item, data: { ...blankFromConfig(config).data, ...(item.data || {}) } });
+        setForm({
+          ...blankFromConfig(config),
+          ...item,
+          data: {
+            ...blankFromConfig(config).data,
+            ...(item.data || {}),
+          },
+        });
         setOpen(true);
       } else {
+        // ✅ CONTACT QUERY (unchanged)
         if (config.entity === "contact-query") {
-          const rows = await api.get<CmsItem[]>(`/contact-query${term ? `?search=${encodeURIComponent(term)}` : ''}`);
+          const rows = await api.get<CmsItem[]>(
+            `/contact-query${term ? `?search=${encodeURIComponent(term)}` : ''}`
+          );
 
-          console.log(rows, 'Contact query rows');
           setItems(rows?.data);
           return;
         }
-        if (config.entity === "user-access") {
-          const rows = await api.get<CmsItem[]>(`/auth/users${term ? `?search=${encodeURIComponent(term)}` : ''}`);
 
-          console.log(rows, 'User access rows');
+        // ✅ USER ACCESS (unchanged)
+        if (config.entity === "user-access") {
+          const rows = await api.get<CmsItem[]>(
+            `/auth/users${term ? `?search=${encodeURIComponent(term)}` : ''}`
+          );
+
           setItems(rows);
           return;
         }
-        const rows = await api.get<CmsItem[]>(`/content/${config.entity}${term ? `?search=${encodeURIComponent(term)}` : ''}`);
+
+        // ✅ BUILD QUERY (NEW PART)
+        let queryParams = new URLSearchParams();
+
+        if (term) {
+          queryParams.append("search", term);
+        }
+
+        // 👉 ONLY APPLY FOR COMMUNITIES
+        if (config.entity === "communities" && developerFilter) {
+          queryParams.append("developer", developerFilter);
+        }
+
+        const queryString = queryParams.toString();
+
+        const rows = await api.get<CmsItem[]>(
+          `/content/${config.entity}${queryString ? `?${queryString}` : ''}`
+        );
+
         setItems(rows);
       }
     } catch (err) {
@@ -587,8 +655,8 @@ export function GenericCmsPage({ config }: { config: CmsConfig }) {
   };
 
   useEffect(() => {
-    load();
-  }, [config.entity]);
+    load(search);
+  }, [config.entity, developerFilter]);
 
   const groupedFields = useMemo(() => {
     const chunks: CmsField[][] = [];
@@ -690,6 +758,20 @@ export function GenericCmsPage({ config }: { config: CmsConfig }) {
                {config.entity !== "contact-query" && (
                 <ActionButton onClick={() => { setEditingId(null); setForm(blankFromConfig(config)); setOpen(true); }}>{config.addLabel || 'Add New'}</ActionButton>
                )}
+                {config.entity === 'communities' && (
+                  <select
+                    className="input w-56"
+                    value={developerFilter}
+                    onChange={(e) => setDeveloperFilter(e.target.value)}
+                  >
+                    <option value="">All Developers</option>
+                    {developers.map((dev: any) => (
+                      <option key={dev._id} value={dev._id}>
+                        {dev.title}
+                      </option>
+                    ))}
+                  </select>
+                )}
               </div>
             }
           >

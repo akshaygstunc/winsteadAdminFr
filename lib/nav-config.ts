@@ -42,42 +42,42 @@ export const navSections: NavSection[] = [
     items: [
       { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
       { label: "Contact Query", href: "/contact-query", icon: MessageSquare },
-      {
-        label: "App Contact Query",
-        href: "/app-contact-query",
-        icon: MessageSquare,
-      },
-      { label: "App Call Request", href: "/app-call-request", icon: Phone },
-      { label: "Review Request", href: "/review-request", icon: Star },
-      {
-        label: "Sales",
-        href: "/sales",
-        icon: BadgeDollarSign,
-        children: [
-          {
-            label: "Manage Sales",
-            href: "/sales/manage-sales",
-            icon: BadgeDollarSign,
-          },
-          { label: "Clients", href: "/sales/clients", icon: Users },
-        ],
-      },
-      {
-        label: "Helpdesk",
-        href: "/helpdesk",
-        icon: Headset,
-        children: [
-          { label: "Tickets", href: "/helpdesk/tickets", icon: Headset },
-          { label: "FAQs", href: "/helpdesk/faqs", icon: FileText },
-        ],
-      },
+      // {
+      //   label: "App Contact Query",
+      //   href: "/app-contact-query",
+      //   icon: MessageSquare,
+      // },
+      // { label: "App Call Request", href: "/app-call-request", icon: Phone },
+      // { label: "Review Request", href: "/review-request", icon: Star },
+      // {
+      //   label: "Sales",
+      //   href: "/sales",
+      //   icon: BadgeDollarSign,
+      //   children: [
+      //     {
+      //       label: "Manage Sales",
+      //       href: "/sales/manage-sales",
+      //       icon: BadgeDollarSign,
+      //     },
+      //     { label: "Clients", href: "/sales/clients", icon: Users },
+      //   ],
+      // },
+      // {
+      //   label: "Helpdesk",
+      //   href: "/helpdesk",
+      //   icon: Headset,
+      //   children: [
+      //     { label: "Tickets", href: "/helpdesk/tickets", icon: Headset },
+      //     { label: "FAQs", href: "/helpdesk/faqs", icon: FileText },
+      //   ],
+      // },
     ],
   },
   {
     title: "Manage",
     items: [
       { label: "Properties", href: "/properties", icon: Home },
-      { label: "Explore", href: "/explore", icon: Globe },
+      // { label: "Explore", href: "/explore", icon: Globe },
       { label: "Podcast", href: "/podcast", icon: Mic },
       { label: "Blogs", href: "/blogs", icon: PenSquare },
       { label: "Media", href: "/media", icon: Images },
@@ -129,30 +129,13 @@ export const navSections: NavSection[] = [
             href: "/customization/communities",
             icon: Building2,
           },
-          {
-            label: "Mega Category Ads",
-            href: "/customization/mega-category-ads",
-            icon: Images,
-          },
+          // {
+          //   label: "Mega Category Ads",
+          //   href: "/customization/mega-category-ads",
+          //   icon: Images,
+          // },
         ],
       },
-      // {
-      //   label: "App Customization",
-      //   icon: Settings,
-      //   children: [
-      //     {
-      //       label: "Contents",
-      //       href: "/app-customization/contents",
-      //       icon: FileText,
-      //     },
-      //     { label: "Banner", href: "/customization/banner", icon: Images },
-      //     {
-      //       label: "Property Banner",
-      //       href: "/app-customization/property-banner",
-      //       icon: Images,
-      //     },
-      //   ],
-      // },
       {
         label: "Master",
         href: "/master",
@@ -168,7 +151,7 @@ export const navSections: NavSection[] = [
             href: "/amenities",
             icon: Star,
           },
-          { label: "FAQ", href: "/customization/faq", icon: FileText },
+          // { label: "FAQ", href: "/customization/faq", icon: FileText },
           {
             label: "Property Types",
             href: "/customization/property-types",
@@ -179,11 +162,11 @@ export const navSections: NavSection[] = [
             href: "/customization/property-sub-types",
             icon: Building2,
           },
-          {
-            label: "Feature Icons",
-            href: "/customization/feature-icons",
-            icon: FileCode2,
-          },
+          // {
+          //   label: "Feature Icons",
+          //   href: "/customization/feature-icons",
+          //   icon: FileCode2,
+          // },
           {
             label: "Locations",
             href: "/customization/locations",
@@ -194,12 +177,12 @@ export const navSections: NavSection[] = [
             href: "/customization/sublocation",
             icon: MapPin,
           },
-          { label: "Awards", href: "/customization/awards", icon: Star },
-          {
-            label: "Advertisements",
-            href: "/customization/advertisements",
-            icon: Images,
-          },
+          // { label: "Awards", href: "/customization/awards", icon: Star },
+          // {
+          //   label: "Advertisements",
+          //   href: "/customization/advertisements",
+          //   icon: Images,
+          // },
         ],
       },
       {
