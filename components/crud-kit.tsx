@@ -65,8 +65,8 @@ export function FormActions({ onSubmit, onCancel, submitLabel, busy }: { onSubmi
 export function InlineActions({ onEdit, onDelete }: { onEdit: () => void; onDelete: () => void }) {
   return (
     <div className="flex gap-2">
-      <button className="rounded-xl border border-line px-3 py-1 text-xs text-text" onClick={onEdit} type="button">Edit</button>
-      <button className="rounded-xl border border-rose-400/30 px-3 py-1 text-xs text-rose-300" onClick={onDelete} type="button">Delete</button>
+      {onEdit && <button className="rounded-xl border border-line px-3 py-1 text-xs text-text" onClick={onEdit} type="button">Edit</button>}
+      {onDelete && <button className="rounded-xl border border-rose-400/30 px-3 py-1 text-xs text-rose-300" onClick={onDelete} type="button">Delete</button>}
     </div>
   );
 }

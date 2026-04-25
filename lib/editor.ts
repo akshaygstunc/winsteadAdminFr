@@ -306,17 +306,17 @@ export const EditorConfigs: Record<string, CmsConfig> = {
     "Website contact enquiries with owner, priority, and response notes.",
     undefined,
     [
-      // Contact
+      // ✅ CONTACT
       { key: "contact.fullName", label: "Lead Name", type: "text" },
       { key: "contact.email", label: "Email", type: "text" },
       { key: "contact.phone", label: "Phone", type: "text" },
-      { key: "contact.location", label: "Location", type: "text" },
+      { key: "contact.location", label: "Contact Location", type: "text" },
 
-      // Inquiry
+      // ✅ INQUIRY
       { key: "query", label: "Query", type: "textarea" },
       { key: "inquiryType", label: "Inquiry Type", type: "text" },
 
-      // Property
+      // ✅ PROPERTY (UPDATED STRUCTURE)
       { key: "property.propertyTitle", label: "Property Title", type: "text" },
       { key: "property.projectName", label: "Project Name", type: "text" },
       { key: "property.location", label: "Property Location", type: "text" },
@@ -324,19 +324,26 @@ export const EditorConfigs: Record<string, CmsConfig> = {
       { key: "property.configuration", label: "Configuration", type: "text" },
       { key: "property.area", label: "Area", type: "text" },
       { key: "property.price", label: "Price", type: "number" },
+      { key: "property.currency", label: "Currency", type: "text" }, // ✅ NEW
       { key: "property.propertyUrl", label: "Property URL", type: "text" },
 
-      // Source
+      // ✅ SOURCE
       { key: "sourcePage", label: "Source Page", type: "text" },
       { key: "referrer", label: "Referrer", type: "text" },
 
-      // Device
+      // ✅ DEVICE (UPDATED)
       { key: "device.deviceType", label: "Device Type", type: "text" },
       { key: "device.os", label: "Operating System", type: "text" },
       { key: "device.browser", label: "Browser", type: "text" },
+      { key: "device.browserVersion", label: "Browser Version", type: "text" }, // ✅ NEW
       { key: "device.ipAddress", label: "IP Address", type: "text" },
+      { key: "device.userAgent", label: "User Agent", type: "textarea" }, // ✅ NEW (important)
 
-      // Admin
+      // ✅ FLAGS (NEW)
+      { key: "isAppQuery", label: "From App", type: "toggle" },
+      { key: "isDeleted", label: "Deleted", type: "toggle" },
+
+      // ✅ ADMIN
       {
         key: "status",
         label: "Status",
@@ -350,11 +357,18 @@ export const EditorConfigs: Record<string, CmsConfig> = {
       { key: "assignedTo", label: "Assigned To", type: "text" },
       { key: "adminNotes", label: "Admin Notes", type: "textarea" },
 
-      // Dates
+      // ✅ DATES
       { key: "createdAt", label: "Created At", type: "date" },
       { key: "updatedAt", label: "Updated At", type: "date" },
     ],
-    searchMeta("email", "phone", "city", "priority"),
+
+    // ✅ SEARCH META FIX (important)
+    searchMeta(
+      "contact.email",
+      "contact.phone",
+      "contact.location",
+      "property.propertyTitle",
+    ),
   ),
 
   "app-contact-query": collection(

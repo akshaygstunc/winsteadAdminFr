@@ -20,11 +20,19 @@ import { TiptapEditor } from './TextEditor';
 function blankFromConfig(config: CmsConfig): CmsItem {
   const data: Record<string, any> = {};
 
+  const isContactQuery = config.entity === 'contact-query';
+
   for (const field of config.fields) {
     // skip root-level fields
     if (
       ['title', 'subtitle', 'slug', 'status', 'image', 'description', 'sortOrder'].includes(field.key)
     ) {
+      continue;
+    }
+
+    // ✅ SPECIAL CASE: contact-query (no forced defaults)
+    if (isContactQuery) {
+      data[field.key] = '';
       continue;
     }
 
@@ -49,6 +57,7 @@ function blankFromConfig(config: CmsConfig): CmsItem {
         data[field.key] = [];
         break;
 
+      // ✅ FIXED: these should NOT be arrays
       case 'image':
       case 'video':
       case 'text':
@@ -56,9 +65,13 @@ function blankFromConfig(config: CmsConfig): CmsItem {
       case 'editor':
       case 'date':
       case 'select':
+        data[field.key] = '';
+        break;
+
       case 'faq':
         data[field.key] = [];
         break;
+
       default:
         data[field.key] = '';
         break;
@@ -962,10 +975,10 @@ export function GenericCmsPage({ config }: { config: CmsConfig }) {
                             </td>
 
                             <td className="px-4 py-4 text-right">
-                              <InlineActions
+                              {/* <InlineActions
                                 onEdit={() => onEdit(item)}
-                                onDelete={() => onDelete(item._id)}
-                              />
+                                // onDelete={() => ()}
+                              /> */}
                             </td>
                           </tr>
                         ))}
