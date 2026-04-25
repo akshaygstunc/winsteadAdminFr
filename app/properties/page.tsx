@@ -1628,7 +1628,7 @@ export default function PropertiesPage() {
 
                     {/* Location */}
                     <td className="px-4 py-3 text-muted">
-                      {property.location}
+                      {property.location?.title}
                       {property.city ? `, ${property.city}` : ''}
                     </td>
 
