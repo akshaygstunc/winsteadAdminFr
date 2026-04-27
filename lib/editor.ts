@@ -1913,13 +1913,6 @@ export const EditorConfigs: Record<string, CmsConfig> = {
         group: "how-it-works",
         column: "left",
       },
-      {
-        key: "howItWorksImage",
-        label: "How It Works Image",
-        type: "image",
-        group: "how-it-works",
-        column: "right",
-      },
       imageField("How It Works Image", "howItWorksImage", "530x650"),
       {
         key: "howItWorksStep1Number",
