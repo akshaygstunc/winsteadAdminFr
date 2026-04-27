@@ -261,8 +261,8 @@ const propertyFormSections: FieldSection[] = [
     fields: [
       { key: 'price', label: 'Price', type: 'number' },
       { key: 'sortOrder', label: 'Sort Order', type: 'number' },
-      { key: 'thumbnail', label: 'Thumbnail', type: 'image' },
-      { key: 'propertyBanner', label: 'Property Banner', type: 'image' },
+      { key: 'thumbnail', label: 'Thumbnail', type: 'image', note: "Banner Size should be 380x300" },
+      { key: 'propertyBanner', label: 'Property Banner', type: 'image', note: "Banner Size should be 1260x420" },
       { key: 'enquireFormImage', label: 'Enquire Form Image', type: 'image' },
       { key: 'author', label: 'Author', type: 'text' },
     ],
@@ -622,7 +622,8 @@ function GalleryUploader({
       <div>
         <FieldLabel label="Gallery Images" />
         <p className="mt-1 text-xs text-muted">
-          Upload multiple property gallery images or paste image URLs.
+          Upload multiple property gallery images or paste image URLs.<br />
+          <span className='font-bold py-2'>Note: Dimension should be 1260x420</span>
         </p>
       </div>
 
@@ -1239,6 +1240,7 @@ function renderDynamicField(
               className="h-36 w-full rounded-2xl border border-line object-cover"
             />
           ) : null}
+          <p className='text-white text-xs'>Note: {field.note}</p>
         </div>
       );
 

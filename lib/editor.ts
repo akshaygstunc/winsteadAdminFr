@@ -653,7 +653,7 @@ export const EditorConfigs: Record<string, CmsConfig> = {
         { key: "metaTitle", label: "Meta Title", type: "text" },
         { key: "metaKeywords", label: "Meta Keywords", type: "text" },
         { key: "metaDescription", label: "Meta Description", type: "text" },
-        imageField("Cover Image"),
+        imageField("Cover Image","image","1260x420"),
         textArea,
       ],
       searchMeta("category", "metaTitle", "metaKeywords", "status"),
@@ -678,7 +678,7 @@ export const EditorConfigs: Record<string, CmsConfig> = {
       { key: "mediaType", label: "Media Type", type: "text" },
       { key: "altText", label: "Alt Text", type: "text" },
       { key: "sortOrder", label: "Sort Order", type: "number" },
-      imageField("Asset Image"),
+      imageField("Asset Image","image","1260x420"),
       { key: "videoUrl", label: "Video URL", type: "text" },
       textArea,
     ],
@@ -909,14 +909,10 @@ export const EditorConfigs: Record<string, CmsConfig> = {
         options: boolStatus,
       },
 
-      withAssetDimensionNote(
-        {
-          key: "coverImage",
-          label: "Cover Image",
-          type: "image",
-          note: "Main thumbnail for event listing.",
-        },
-        "image",
+      imageField(
+        "Cover Image",
+        "coverImage",
+        "1260x420"
       ),
 
       {
@@ -1092,7 +1088,7 @@ export const EditorConfigs: Record<string, CmsConfig> = {
         group: "banner-section",
         column: "right",
       },
-      imageField("Banner Image", "bannerImage"),
+      imageField("Banner Image", "bannerImage","1260x420"),
 
       // SEO
       {
@@ -1122,7 +1118,7 @@ export const EditorConfigs: Record<string, CmsConfig> = {
         label: "Title",
         type: "text",
       },
-      imageField("Banner Image", "bannerImage"),
+      imageField("Banner Image", "bannerImage","1260x420"),
 
       textArea2("content"),
 
@@ -1153,7 +1149,7 @@ export const EditorConfigs: Record<string, CmsConfig> = {
         label: "Title",
         type: "text",
       },
-      imageField("Banner Image", "bannerImage"),
+      imageField("Banner Image", "bannerImage","1260x420"),
 
       textArea2("content"),
 
@@ -1194,7 +1190,7 @@ export const EditorConfigs: Record<string, CmsConfig> = {
         group: "banner-section",
         column: "left",
       },
-      imageField("Banner Image", "bannerImage"),
+      imageField("Banner Image", "bannerImage","1260x420"),
 
       // GET IN TOUCH SECTION
       {
@@ -1352,7 +1348,7 @@ export const EditorConfigs: Record<string, CmsConfig> = {
         group: "banner-section",
         column: "left",
       },
-      imageField("Banner Image", "bannerImage"),
+      imageField("Banner Image", "bannerImage","1260x420"),
 
       // BREADCRUMB SECTION
       {
@@ -1437,7 +1433,7 @@ export const EditorConfigs: Record<string, CmsConfig> = {
         group: "banner-section",
         column: "left",
       },
-      imageField("Banner Image", "bannerImage"),
+      imageField("Banner Image", "bannerImage","1260x420"),
 
       // SEO
       {
@@ -1491,7 +1487,7 @@ export const EditorConfigs: Record<string, CmsConfig> = {
         group: "banner-section",
         column: "right",
       },
-      imageField("Banner Image", "bannerImage"),
+      imageField("Banner Image", "bannerImage","1260x420"),
 
       // TEAM INTRO SECTION
       {
@@ -1649,7 +1645,7 @@ export const EditorConfigs: Record<string, CmsConfig> = {
         group: "hero-section",
         column: "left",
       },
-      imageField("Hero Image", "heroImage"),
+      imageField("Hero Image", "heroImage", "1260x420"),
 
       // SERVICES OVERVIEW SECTION
       {
@@ -1688,14 +1684,11 @@ export const EditorConfigs: Record<string, CmsConfig> = {
         group: "services-overview",
         column: "right",
       },
-      {
-        key: "overviewService1Image",
-        label: "Overview Service 1 Image",
-        type: "image",
-        group: "services-overview",
-        column: "right",
-      },
-
+      imageField(
+        "Overview Service 1 Image",
+        "overviewService1Image",
+        "435x217",
+      ),
       {
         key: "overviewService2Number",
         label: "Overview Service 2 Number",
@@ -1717,14 +1710,11 @@ export const EditorConfigs: Record<string, CmsConfig> = {
         group: "services-overview",
         column: "right",
       },
-      {
-        key: "overviewService2Image",
-        label: "Overview Service 2 Image",
-        type: "image",
-        group: "services-overview",
-        column: "right",
-      },
-
+      imageField(
+        "Overview Service 2 Image",
+        "overviewService2Image",
+        "435x217",
+      ),
       {
         key: "overviewService3Number",
         label: "Overview Service 3 Number",
@@ -1746,14 +1736,11 @@ export const EditorConfigs: Record<string, CmsConfig> = {
         group: "services-overview",
         column: "right",
       },
-      {
-        key: "overviewService3Image",
-        label: "Overview Service 3 Image",
-        type: "image",
-        group: "services-overview",
-        column: "right",
-      },
-
+      imageField(
+        "Overview Service 3 Image",
+        "overviewService3Image",
+        "435x217",
+      ),
       // DETAILED SERVICES SECTION
       {
         key: "detailedServicesTitle",
@@ -1812,14 +1799,11 @@ export const EditorConfigs: Record<string, CmsConfig> = {
         group: "detailed-services",
         column: "right",
       },
-      {
-        key: "detailedService1Image",
-        label: "Detailed Service 1 Image",
-        type: "image",
-        group: "detailed-services",
-        column: "right",
-      },
-
+      imageField(
+        "Detailed Service 1 Image",
+        "detailedService1Image",
+        "560x520",
+      ),
       {
         key: "detailedService2Title",
         label: "Detailed Service 2 Title",
@@ -1862,14 +1846,11 @@ export const EditorConfigs: Record<string, CmsConfig> = {
         group: "detailed-services",
         column: "right",
       },
-      {
-        key: "detailedService2Image",
-        label: "Detailed Service 2 Image",
-        type: "image",
-        group: "detailed-services",
-        column: "right",
-      },
-
+      imageField(
+        "Detailed Service 2 Image",
+        "detailedService2Image",
+        "560x520",
+      ),
       {
         key: "detailedService3Title",
         label: "Detailed Service 3 Title",
@@ -1912,14 +1893,11 @@ export const EditorConfigs: Record<string, CmsConfig> = {
         group: "detailed-services",
         column: "right",
       },
-      {
-        key: "detailedService3Image",
-        label: "Detailed Service 3 Image",
-        type: "image",
-        group: "detailed-services",
-        column: "right",
-      },
-
+      imageField(
+        "Detailed Service 3 Image",
+        "detailedService3Image",
+        "560x520",
+      ),
       // HOW IT WORKS SECTION
       {
         key: "howItWorksTitle",
@@ -1942,7 +1920,7 @@ export const EditorConfigs: Record<string, CmsConfig> = {
         group: "how-it-works",
         column: "right",
       },
-
+      imageField("How It Works Image", "howItWorksImage", "530x650"),
       {
         key: "howItWorksStep1Number",
         label: "How It Works Step 1 Number",
@@ -2046,13 +2024,11 @@ export const EditorConfigs: Record<string, CmsConfig> = {
         group: "why-choose-winstead",
         column: "left",
       },
-      {
-        key: "whyChooseWinsteadImage",
-        label: "Why Choose Winstead Image",
-        type: "image",
-        group: "why-choose-winstead",
-        column: "right",
-      },
+      imageField(
+        "Why Choose Winstead Image",
+        "whyChooseWinsteadImage",
+        "600x459",
+      ),
       {
         key: "whyChooseWinsteadPoint1",
         label: "Why Choose Winstead Point 1",
@@ -2467,7 +2443,7 @@ export const EditorConfigs: Record<string, CmsConfig> = {
         group: "hero-banner",
         column: "left",
       },
-      imageField("Banner Image", "bannerImage"),
+      imageField("Banner Image", "bannerImage", "1260x420"),
 
       // ABOUT WINSTEAD SECTION
       {
@@ -2484,14 +2460,32 @@ export const EditorConfigs: Record<string, CmsConfig> = {
         group: "about-winstead-section",
         column: "left",
       },
+      // {
+      //   key: "aboutWinsteadImage",
+      //   label: "About Winstead Image",
+      //   type: "image",
+      //   group: "about-winstead-section",
+      //   column: "right",
+      // },
+      imageField("About Winstead Image", "aboutWinsteadImage", "350x300"),
+      // INTRO STORY SECTION (NEW PREMIUM SECTION)
       {
-        key: "aboutWinsteadImage",
-        label: "About Winstead Image",
-        type: "image",
-        group: "about-winstead-section",
+        key: "introTitle",
+        label: "Intro Title",
+        type: "text",
+        group: "intro-section",
         column: "right",
       },
 
+      {
+        key: "introDescription",
+        label: "Intro Description",
+        type: "textarea",
+        group: "intro-section",
+        column: "right",
+      },
+
+      imageField("Intro Image", "introImage", "550x400"),
       // STATS SECTION
       {
         key: "statsTitle",
@@ -2593,13 +2587,15 @@ export const EditorConfigs: Record<string, CmsConfig> = {
         group: "ceo-message-section",
         column: "right",
       },
-      {
-        key: "ceoImage",
-        label: "CEO Image",
-        type: "image",
-        group: "ceo-message-section",
-        column: "right",
-      },
+      imageField("CEO Image", "ceoImage", "525x620"),
+
+      // {
+      //   key: "ceoImage",
+      //   label: "CEO Image",
+      //   type: "image",
+      //   group: "ceo-message-section",
+      //   column: "right",
+      // },
 
       // WHY CLIENTS CHOOSE US SECTION
       {
@@ -2658,14 +2654,14 @@ export const EditorConfigs: Record<string, CmsConfig> = {
         group: "why-choose-section",
         column: "right",
       },
-      {
-        key: "whyChooseImage",
-        label: "Why Choose Us Image",
-        type: "image",
-        group: "why-choose-section",
-        column: "right",
-      },
-
+      // {
+      //   key: "whyChooseImage",
+      //   label: "Why Choose Us Image",
+      //   type: "image",
+      //   group: "why-choose-section",
+      //   column: "right",
+      // },
+      imageField("Why Choose Us Image", "whyChooseImage", "524x745"),
       // HOW WE CAN HELP SECTION
       {
         key: "howWeHelpTitle",
@@ -2681,13 +2677,7 @@ export const EditorConfigs: Record<string, CmsConfig> = {
         group: "how-we-help-section",
         column: "left",
       },
-      {
-        key: "howWeHelpImage",
-        label: "How We Can Help Image",
-        type: "image",
-        group: "how-we-help-section",
-        column: "right",
-      },
+      imageField("How We Can Help Image", "howWeHelpImage", "550x950"),
       {
         key: "point1Text",
         label: "Point 1 Text",
@@ -3065,7 +3055,7 @@ export const EditorConfigs: Record<string, CmsConfig> = {
         options: statusOptions,
       },
       imageField("Logo / Image"),
-      bannerField("Banner Image"),
+      bannerField("Banner Image","image","1260x420"),
       textArea,
       // {
       //   key: "faqs",
@@ -3222,7 +3212,7 @@ export const EditorConfigs: Record<string, CmsConfig> = {
     "property-amenities",
 
     "Property-specific amenities like pool, gym, parking, kids play area, etc.",
-    "crm",
+    undefined,
     [
       { key: "title", label: "Amenity Name", type: "text" },
       { key: "status", label: "Status", type: "select", options: boolStatus },
