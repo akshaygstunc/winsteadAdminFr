@@ -2557,7 +2557,7 @@ export const EditorConfigs: Record<string, CmsConfig> = {
         group: "stats-section",
         column: "right",
       },
-
+      imageField("Stats Image", "statsImage", "500x520"),
       // CEO MESSAGE SECTION
       {
         key: "ceoMessageTitle",
