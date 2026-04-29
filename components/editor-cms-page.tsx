@@ -260,45 +260,58 @@ function renderSimpleField(
         </div>
       );
 
-    case "video":
-    case "image":
+    case 'video':
+    case 'image':
       return (
-        <div className="space-y-3">
+        <div className="space-y-4 w-full">
           <TextInput
             label={field.label}
-            value={value || ""}
+            value={value || ''}
             onChange={onChange}
-            placeholder={field.placeholder || "Paste media URL"}
+            placeholder={`Paste ${field.type} URL or upload below`}
           />
-          <input
-            className="input"
-            type="file"
-            accept={field.type === "video" ? "video/*" : "image/*"}
-            onChange={async (e: ChangeEvent<HTMLInputElement>) => {
-              const file = e.target.files?.[0];
-              if (!file) return;
-              const dataUrl = await uploadAsset(file);
-              onChange(dataUrl);
-            }}
-          />
-          {value ? (
-            field.type === "video" ? (
-              <video
-                src={value}
-                controls
-                className="h-32 w-full rounded-2xl border border-line object-cover"
-              />
-            ) : (
-              <img
-                src={value}
-                alt={field.label}
-                className="h-32 w-full rounded-2xl border border-line object-cover"
-              />
-            )
-          ) : null}
+
+          {/* Upload */}
+          <div>
+            <FieldLabel label={`${field.label} Upload`} />
+            <input
+              className="input"
+              type="file"
+              accept={field.type === 'video' ? 'video/*' : 'image/*'}
+              onChange={async (e: ChangeEvent<HTMLInputElement>) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+
+                const uploadedUrl = await fileToDataUrl(file);
+                onChange(uploadedUrl);
+              }}
+            />
+          </div>
+
+          {/* ✅ PREVIEW FIX */}
+          {value && (
+            <div className="w-full rounded-2xl overflow-hidden border border-line bg-black">
+              {field.type === 'video' ? (
+                <video
+                  src={value}
+                  controls
+                  className="w-full h-[250px] md:h-[350px] object-cover"
+                />
+              ) : (
+                <img
+                  src={value}
+                  alt={field.label}
+                  className="w-full h-[250px] md:h-[350px] object-cover"
+                />
+              )}
+            </div>
+          )}
+
+          {field.note && (
+            <p className="text-xs text-muted">{field.note}</p>
+          )}
         </div>
       );
-
     default:
       return (
         <div>

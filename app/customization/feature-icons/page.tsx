@@ -636,13 +636,13 @@ function renderField(
               <video
                 src={value}
                 controls
-                className="h-36 w-full rounded-2xl border border-line object-cover"
+                className="h-40 w-full rounded-2xl border border-line object-cover"
               />
             ) : (
               <img
                 src={value}
                 alt={field.label}
-                className="h-36 w-full rounded-2xl border border-line object-cover"
+                className="h-40 w-full rounded-2xl border border-line object-cover"
               />
             )
           ) : null}
@@ -1003,7 +1003,7 @@ export default function EditorCmsPage() {
                 key={item._id || item.title}
                 className="grid gap-4 rounded-[28px] border border-line bg-panel/60 p-4 xl:grid-cols-[140px_1fr_auto] xl:items-center"
               >
-                <div className="h-28 overflow-hidden rounded-[22px] border border-line bg-card">
+                <div className="h-40 overflow-hidden rounded-[22px] border border-line bg-card">
                   {item.image ? (
                     <img
                       src={item.image}
