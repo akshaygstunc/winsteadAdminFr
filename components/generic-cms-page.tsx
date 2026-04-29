@@ -531,27 +531,56 @@ function renderField(
     case 'video':
     case 'image':
       return (
-        <div className="space-y-3">
-          <TextInput label={field.label} value={value || ''} onChange={onChange} placeholder="Paste image URL or upload below" />
+        <div className="space-y-4 w-full">
+          <TextInput
+            label={field.label}
+            value={value || ''}
+            onChange={onChange}
+            placeholder={`Paste ${field.type} URL or upload below`}
+          />
+
+          {/* Upload */}
           <div>
             <FieldLabel label={`${field.label} Upload`} />
             <input
               className="input"
               type="file"
-              accept={field.type === 'video' ? 'video/mp4' : 'image/*'}
+              accept={field.type === 'video' ? 'video/*' : 'image/*'}
               onChange={async (e: ChangeEvent<HTMLInputElement>) => {
                 const file = e.target.files?.[0];
                 if (!file) return;
-                const dataUrl = await fileToDataUrl(file);
-                onChange(dataUrl);
+
+                const uploadedUrl = await fileToDataUrl(file);
+                onChange(uploadedUrl);
               }}
             />
           </div>
-          {field.note ? <p className="text-xs text-muted">{field.note}</p> : null}
-          {value ? (field.type === 'video' ? <video src={value} controls className="h-28 w-full rounded-2xl border border-line object-cover" /> : <img src={value} alt={field.label} className="h-28 w-full rounded-2xl border border-line object-cover" />) : null}
+
+          {/* ✅ PREVIEW FIX */}
+          {value && (
+            <div className="w-full rounded-2xl overflow-hidden border border-line bg-black">
+              {field.type === 'video' ? (
+                <video
+                  src={value}
+                  controls
+                  className="w-full h-[250px] md:h-[350px] object-cover"
+                />
+              ) : (
+                <img
+                  src={value}
+                  alt={field.label}
+                  className="w-full h-[250px] md:h-[350px] object-cover"
+                />
+              )}
+            </div>
+          )}
+
+          {field.note && (
+            <p className="text-xs text-muted">{field.note}</p>
+          )}
         </div>
       );
-    default:
+       default:
       return <div><TextInput label={field.label} value={value || ''} onChange={onChange} placeholder={field.placeholder} />{field.note ? <p className="mt-2 text-xs text-muted">{field.note}</p> : null}</div>;
   }
 }
@@ -821,7 +850,7 @@ export function GenericCmsPage({ config }: { config: CmsConfig }) {
                           <th className="px-4 py-4 text-sm font-medium text-gold">URL</th>
 
                           {/* Source */}
-                          <th className="px-4 py-4 text-sm font-medium text-gold">Source</th>
+                          <th className="px-4 py-4 text-sm font-medium text-gold w-20">Source</th>
                           <th className="px-4 py-4 text-sm font-medium text-gold">Referrer</th>
 
                           {/* Device */}
@@ -919,7 +948,7 @@ export function GenericCmsPage({ config }: { config: CmsConfig }) {
                             </td>
 
                             {/* Source */}
-                            <td className="px-4 py-4 text-sm text-muted">
+                            <td className="px-4 py-4 text-sm text-muted max-w-[220px] break-words whitespace-normal">
                               {item?.sourcePage || "-"}
                             </td>
 
@@ -1167,7 +1196,7 @@ export function GenericCmsPage({ config }: { config: CmsConfig }) {
                   <div
                     key={field.key}
                     className={
-                      field.type === 'textarea' || field.type === 'editor' || field.type === 'gallery'
+                      field.type === 'textarea' || field.type === 'editor' || field.type === 'gallery' || field.type === "image"
                         ? 'md:col-span-2 xl:col-span-3'
                         : ''
                     }

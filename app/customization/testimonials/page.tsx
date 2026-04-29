@@ -1,11 +1,11 @@
-'use client';
+"use client";
 
-import { ChangeEvent, useEffect, useMemo, useState } from 'react';
-import { DashboardShell } from '@/components/dashboard-shell';
-import { Header } from '@/components/header';
-import { api } from '@/lib/api';
-import { CmsConfig, CmsField, CmsItem, CmsRepeaterField } from '@/lib/cms';
-import { ActionButton, SectionCard, StatusBadge } from '@/components/ui';
+import { ChangeEvent, useEffect, useMemo, useState } from "react";
+import { DashboardShell } from "@/components/dashboard-shell";
+import { Header } from "@/components/header";
+import { api } from "@/lib/api";
+import { CmsConfig, CmsField, CmsItem, CmsRepeaterField } from "@/lib/cms";
+import { ActionButton, SectionCard, StatusBadge } from "@/components/ui";
 import {
   FieldLabel,
   FormActions,
@@ -14,52 +14,53 @@ import {
   SelectInput,
   TextArea,
   TextInput,
-} from '@/components/crud-kit';
-import { propertyTypeCmsConfig } from '@/configs/cms/property-type.config';
-import test from 'node:test';
-import { testimonialsCmsConfig } from '@/configs/cms/testimonials.config';
+} from "@/components/crud-kit";
+import { propertyTypeCmsConfig } from "@/configs/cms/property-type.config";
+import test from "node:test";
+import { testimonialsCmsConfig } from "@/configs/cms/testimonials.config";
 
 const ROOT_KEYS = [
-  'title',
-  'subtitle',
-  'slug',
-  'status',
-  'pageType',
-  'image',
-  'heroVideo',
-  'heroTitle',
-  'heroSubtitle',
-  'description',
-  'metaTitle',
-  'metaDescription',
-  'sortOrder',
+  "title",
+  "subtitle",
+  "slug",
+  "status",
+  "pageType",
+  "image",
+  "heroVideo",
+  "heroTitle",
+  "heroSubtitle",
+  "description",
+  "metaTitle",
+  "metaDescription",
+  "sortOrder",
 ];
 
 function getDefaultValue(field: CmsField | CmsRepeaterField) {
   if (field.defaultValue !== undefined) return field.defaultValue;
-  if (field.type === 'boolean') return false;
-  if (field.type === 'number') return 0;
-  if (field.type === 'multiselect' || field.type === 'relation-multiselect') return [];
-  if (field.type === 'repeater') return [];
-  return '';
+  if (field.type === "boolean") return false;
+  if (field.type === "number") return 0;
+  if (field.type === "multiselect" || field.type === "relation-multiselect")
+    return [];
+  if (field.type === "repeater") return [];
+  return "";
 }
 
 function blankFromConfig(config: CmsConfig): CmsItem {
   const data: Record<string, any> = {};
 
   const item: CmsItem = {
-    title: '',
-    subtitle: '',
-    slug: '',
-    status: 'draft',
-    pageType: 'standard',
-    image: '',
-    heroVideo: '',
-    heroTitle: '',
-    heroSubtitle: '',
-    description: '',
-    metaTitle: '',
-    metaDescription: '',
+    title: "",
+    subtitle: "",
+    slug: "",
+    status: "draft",
+    pageType: "standard",
+    image: "",
+    heroVideo: "",
+    heroTitle: "",
+    heroSubtitle: "",
+    description: "",
+    metaTitle: "",
+    metaDescription: "",
     sortOrder: 0,
     data: {},
   };
@@ -106,15 +107,18 @@ function isFieldVisible(item: CmsItem, field: CmsField) {
   if (!field.showWhen) return true;
 
   const currentValue = getFieldRawValue(item, field.showWhen.key);
-  const operator = field.showWhen.operator || 'equals';
+  const operator = field.showWhen.operator || "equals";
 
   switch (operator) {
-    case 'equals':
+    case "equals":
       return currentValue === field.showWhen.value;
-    case 'notEquals':
+    case "notEquals":
       return currentValue !== field.showWhen.value;
-    case 'includes':
-      return Array.isArray(currentValue) && currentValue.includes(field.showWhen.value);
+    case "includes":
+      return (
+        Array.isArray(currentValue) &&
+        currentValue.includes(field.showWhen.value)
+      );
     default:
       return true;
   }
@@ -124,14 +128,14 @@ function createSlug(value: string) {
   return value
     .toLowerCase()
     .trim()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/(^-|-$)+/g, '');
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)+/g, "");
 }
 
 async function fileToDataUrl(file: File) {
   return new Promise<string>((resolve, reject) => {
     const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result || ''));
+    reader.onload = () => resolve(String(reader.result || ""));
     reader.onerror = reject;
     reader.readAsDataURL(file);
   });
@@ -144,48 +148,48 @@ function renderSimpleField(
 ) {
   const uploadAsset = async (file: File) => {
     try {
-      const formData = new FormData()
-      formData.append('file', file);
-      const data = await api.post<any[]>(
-        `/content/upload/gallery`,
-        formData,
-
-      );
+      const formData = new FormData();
+      formData.append("file", file);
+      const data = await api.post<any[]>(`/content/upload/gallery`, formData);
 
       return data?.data?.url;
     } catch {
-      alert('Failed to upload asset.');
+      alert("Failed to upload asset.");
       return null;
     }
-  }
+  };
   switch (field.type) {
-    case 'textarea':
+    case "textarea":
       return (
         <div>
           <TextArea
             label={field.label}
-            value={value || ''}
+            value={value || ""}
             onChange={onChange}
             rows={4}
           />
-          {field.note ? <p className="mt-2 text-xs text-muted">{field.note}</p> : null}
+          {field.note ? (
+            <p className="mt-2 text-xs text-muted">{field.note}</p>
+          ) : null}
         </div>
       );
 
-    case 'select':
+    case "select":
       return (
         <div>
           <SelectInput
             label={field.label}
-            value={value || ''}
+            value={value || ""}
             onChange={onChange}
             options={field.options || []}
           />
-          {field.note ? <p className="mt-2 text-xs text-muted">{field.note}</p> : null}
+          {field.note ? (
+            <p className="mt-2 text-xs text-muted">{field.note}</p>
+          ) : null}
         </div>
       );
 
-    case 'number':
+    case "number":
       return (
         <div>
           <TextInput
@@ -194,11 +198,13 @@ function renderSimpleField(
             value={value ?? 0}
             onChange={(v) => onChange(Number(v))}
           />
-          {field.note ? <p className="mt-2 text-xs text-muted">{field.note}</p> : null}
+          {field.note ? (
+            <p className="mt-2 text-xs text-muted">{field.note}</p>
+          ) : null}
         </div>
       );
 
-    case 'boolean':
+    case "boolean":
       return (
         <div>
           <FieldLabel label={field.label} />
@@ -210,33 +216,36 @@ function renderSimpleField(
             />
             <span>Enabled</span>
           </label>
-          {field.note ? <p className="mt-2 text-xs text-muted">{field.note}</p> : null}
+          {field.note ? (
+            <p className="mt-2 text-xs text-muted">{field.note}</p>
+          ) : null}
         </div>
       );
 
-    case 'icon':
+    case "icon":
       return (
         <div>
           <FieldLabel label={field.label} />
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
             {[
-              'building-2',
-              'map-pin',
-              'star',
-              'home',
-              'users',
-              'images',
-              'briefcase-business',
-              'badge-dollar-sign',
+              "building-2",
+              "map-pin",
+              "star",
+              "home",
+              "users",
+              "images",
+              "briefcase-business",
+              "badge-dollar-sign",
             ].map((icon) => (
               <button
                 key={icon}
                 type="button"
                 onClick={() => onChange(icon)}
-                className={`rounded-2xl border px-3 py-3 text-sm ${value === icon
-                  ? 'border-gold bg-gold/10 text-gold'
-                  : 'border-line bg-panel text-text'
-                  }`}
+                className={`rounded-2xl border px-3 py-3 text-sm ${
+                  value === icon
+                    ? "border-gold bg-gold/10 text-gold"
+                    : "border-line bg-panel text-text"
+                }`}
               >
                 {icon}
               </button>
@@ -245,20 +254,20 @@ function renderSimpleField(
         </div>
       );
 
-    case 'video':
-    case 'image':
+    case "video":
+    case "image":
       return (
         <div className="space-y-3">
           <TextInput
             label={field.label}
-            value={value || ''}
+            value={value || ""}
             onChange={onChange}
-            placeholder={field.placeholder || 'Paste media URL'}
+            placeholder={field.placeholder || "Paste media URL"}
           />
           <input
             className="input"
             type="file"
-            accept={field.type === 'video' ? 'video/*' : 'image/*'}
+            accept={field.type === "video" ? "video/*" : "image/*"}
             onChange={async (e: ChangeEvent<HTMLInputElement>) => {
               const file = e.target.files?.[0];
               if (!file) return;
@@ -267,7 +276,7 @@ function renderSimpleField(
             }}
           />
           {value ? (
-            field.type === 'video' ? (
+            field.type === "video" ? (
               <video
                 src={value}
                 controls
@@ -289,11 +298,13 @@ function renderSimpleField(
         <div>
           <TextInput
             label={field.label}
-            value={value || ''}
+            value={value || ""}
             onChange={onChange}
             placeholder={field.placeholder}
           />
-          {field.note ? <p className="mt-2 text-xs text-muted">{field.note}</p> : null}
+          {field.note ? (
+            <p className="mt-2 text-xs text-muted">{field.note}</p>
+          ) : null}
         </div>
       );
   }
@@ -333,9 +344,9 @@ function RepeaterField({
     onChange(items.filter((_, i) => i !== index));
   };
 
-  const moveRow = (index: number, direction: 'up' | 'down') => {
+  const moveRow = (index: number, direction: "up" | "down") => {
     const next = [...items];
-    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    const targetIndex = direction === "up" ? index - 1 : index + 1;
     if (targetIndex < 0 || targetIndex >= next.length) return;
     [next[index], next[targetIndex]] = [next[targetIndex], next[index]];
     onChange(next);
@@ -345,22 +356,27 @@ function RepeaterField({
     <div className="space-y-4">
       <div>
         <FieldLabel label={field.label} />
-        {field.note ? <p className="mt-1 text-xs text-muted">{field.note}</p> : null}
+        {field.note ? (
+          <p className="mt-1 text-xs text-muted">{field.note}</p>
+        ) : null}
       </div>
 
       <div className="space-y-4">
         {items.map((row, index) => (
-          <div key={index} className="space-y-4 rounded-[24px] border border-line bg-panel/40 p-4">
+          <div
+            key={index}
+            className="space-y-4 rounded-[24px] border border-line bg-panel/40 p-4"
+          >
             <div className="flex items-center justify-between gap-2">
               <p className="text-sm font-semibold text-text">
                 {field.label} #{index + 1}
               </p>
 
               <div className="flex gap-2">
-                <ActionButton secondary onClick={() => moveRow(index, 'up')}>
+                <ActionButton secondary onClick={() => moveRow(index, "up")}>
                   ↑
                 </ActionButton>
-                <ActionButton secondary onClick={() => moveRow(index, 'down')}>
+                <ActionButton secondary onClick={() => moveRow(index, "down")}>
                   ↓
                 </ActionButton>
                 <ActionButton secondary onClick={() => removeRow(index)}>
@@ -428,7 +444,9 @@ function RelationMultiSelectField({
           </label>
         ))}
       </div>
-      {field.note ? <p className="mt-2 text-xs text-muted">{field.note}</p> : null}
+      {field.note ? (
+        <p className="mt-2 text-xs text-muted">{field.note}</p>
+      ) : null}
     </div>
   );
 }
@@ -441,25 +459,24 @@ function renderField(
 ) {
   const uploadAsset = async (file: File) => {
     try {
-      const formData = new FormData()
-      formData.append('file', file);
+      const formData = new FormData();
+      formData.append("file", file);
       const data = await await api.post<any[]>(
         `/content/upload/gallery`,
         formData,
-
       );
 
       return data?.data?.url;
     } catch {
-      alert('Failed to upload asset.');
+      alert("Failed to upload asset.");
       return null;
     }
-  }
+  };
   switch (field.type) {
-    case 'repeater':
+    case "repeater":
       return <RepeaterField field={field} value={value} onChange={onChange} />;
 
-    case 'relation-multiselect':
+    case "relation-multiselect":
       return (
         <RelationMultiSelectField
           field={field}
@@ -469,38 +486,42 @@ function renderField(
         />
       );
 
-    case 'textarea':
+    case "textarea":
       return (
         <div>
           <TextArea
             label={field.label}
-            value={value || ''}
+            value={value || ""}
             onChange={onChange}
             rows={
-              field.key.toLowerCase().includes('body') ||
-                field.key.toLowerCase().includes('content')
+              field.key.toLowerCase().includes("body") ||
+              field.key.toLowerCase().includes("content")
                 ? 6
                 : 4
             }
           />
-          {field.note ? <p className="mt-2 text-xs text-muted">{field.note}</p> : null}
+          {field.note ? (
+            <p className="mt-2 text-xs text-muted">{field.note}</p>
+          ) : null}
         </div>
       );
 
-    case 'select':
+    case "select":
       return (
         <div>
           <SelectInput
             label={field.label}
-            value={value || ''}
+            value={value || ""}
             onChange={onChange}
             options={field.options || []}
           />
-          {field.note ? <p className="mt-2 text-xs text-muted">{field.note}</p> : null}
+          {field.note ? (
+            <p className="mt-2 text-xs text-muted">{field.note}</p>
+          ) : null}
         </div>
       );
 
-    case 'number':
+    case "number":
       return (
         <div>
           <TextInput
@@ -509,24 +530,28 @@ function renderField(
             value={value ?? 0}
             onChange={(v) => onChange(Number(v))}
           />
-          {field.note ? <p className="mt-2 text-xs text-muted">{field.note}</p> : null}
+          {field.note ? (
+            <p className="mt-2 text-xs text-muted">{field.note}</p>
+          ) : null}
         </div>
       );
 
-    case 'date':
+    case "date":
       return (
         <div>
           <TextInput
             label={field.label}
             type="date"
-            value={value || ''}
+            value={value || ""}
             onChange={onChange}
           />
-          {field.note ? <p className="mt-2 text-xs text-muted">{field.note}</p> : null}
+          {field.note ? (
+            <p className="mt-2 text-xs text-muted">{field.note}</p>
+          ) : null}
         </div>
       );
 
-    case 'boolean':
+    case "boolean":
       return (
         <div>
           <FieldLabel label={field.label} />
@@ -538,11 +563,13 @@ function renderField(
             />
             <span>Enabled</span>
           </label>
-          {field.note ? <p className="mt-2 text-xs text-muted">{field.note}</p> : null}
+          {field.note ? (
+            <p className="mt-2 text-xs text-muted">{field.note}</p>
+          ) : null}
         </div>
       );
 
-    case 'multiselect': {
+    case "multiselect": {
       const selected = Array.isArray(value) ? value : [];
       return (
         <div>
@@ -568,59 +595,64 @@ function renderField(
               </label>
             ))}
           </div>
-          {field.note ? <p className="mt-2 text-xs text-muted">{field.note}</p> : null}
+          {field.note ? (
+            <p className="mt-2 text-xs text-muted">{field.note}</p>
+          ) : null}
         </div>
       );
     }
 
-    case 'icon':
+    case "icon":
       return (
         <div>
           <FieldLabel label={field.label} />
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
             {[
-              'building-2',
-              'map-pin',
-              'star',
-              'home',
-              'users',
-              'images',
-              'briefcase-business',
-              'badge-dollar-sign',
+              "building-2",
+              "map-pin",
+              "star",
+              "home",
+              "users",
+              "images",
+              "briefcase-business",
+              "badge-dollar-sign",
             ].map((icon) => (
               <button
                 key={icon}
                 type="button"
                 onClick={() => onChange(icon)}
-                className={`rounded-2xl border px-3 py-3 text-sm ${value === icon
-                  ? 'border-gold bg-gold/10 text-gold'
-                  : 'border-line bg-panel text-text'
-                  }`}
+                className={`rounded-2xl border px-3 py-3 text-sm ${
+                  value === icon
+                    ? "border-gold bg-gold/10 text-gold"
+                    : "border-line bg-panel text-text"
+                }`}
               >
                 {icon}
               </button>
             ))}
           </div>
-          {field.note ? <p className="mt-2 text-xs text-muted">{field.note}</p> : null}
+          {field.note ? (
+            <p className="mt-2 text-xs text-muted">{field.note}</p>
+          ) : null}
         </div>
       );
 
-    case 'video':
-    case 'image':
+    case "video":
+    case "image":
       return (
         <div className="space-y-3">
           <TextInput
             label={field.label}
-            value={value || ''}
+            value={value || ""}
             onChange={onChange}
-            placeholder={field.placeholder || 'Paste media URL or upload below'}
+            placeholder={field.placeholder || "Paste media URL or upload below"}
           />
           <div>
             <FieldLabel label={`${field.label} Upload`} />
             <input
               className="input"
               type="file"
-              accept={field.type === 'video' ? 'video/*' : 'image/*'}
+              accept={field.type === "video" ? "video/*" : "image/*"}
               onChange={async (e: ChangeEvent<HTMLInputElement>) => {
                 const file = e.target.files?.[0];
                 if (!file) return;
@@ -631,22 +663,24 @@ function renderField(
           </div>
 
           {value ? (
-            field.type === 'video' ? (
+            field.type === "video" ? (
               <video
                 src={value}
                 controls
-                className="h-36 w-full rounded-2xl border border-line object-cover"
+                className="h-40w-full rounded-2xl border border-line object-cover"
               />
             ) : (
               <img
                 src={value}
                 alt={field.label}
-                className="h-36 w-full rounded-2xl border border-line object-cover"
+                className="h-40w-full rounded-2xl border border-line object-cover"
               />
             )
           ) : null}
 
-          {field.note ? <p className="text-xs text-muted">{field.note}</p> : null}
+          {field.note ? (
+            <p className="text-xs text-muted">{field.note}</p>
+          ) : null}
         </div>
       );
 
@@ -655,11 +689,13 @@ function renderField(
         <div>
           <TextInput
             label={field.label}
-            value={value || ''}
+            value={value || ""}
             onChange={onChange}
             placeholder={field.placeholder}
           />
-          {field.note ? <p className="mt-2 text-xs text-muted">{field.note}</p> : null}
+          {field.note ? (
+            <p className="mt-2 text-xs text-muted">{field.note}</p>
+          ) : null}
         </div>
       );
   }
@@ -694,17 +730,17 @@ function FieldGroup({
                 setForm((prev) => {
                   let next = setValue(prev, field, value);
 
-                  if (field.key === 'title') {
-                    const currentSlug = next.slug || '';
-                    const oldSlug = prev.slug || '';
-                    const generatedOldSlug = createSlug(prev.title || '');
+                  if (field.key === "title") {
+                    const currentSlug = next.slug || "";
+                    const oldSlug = prev.slug || "";
+                    const generatedOldSlug = createSlug(prev.title || "");
 
                     if (
                       !currentSlug ||
                       currentSlug === oldSlug ||
                       currentSlug === generatedOldSlug
                     ) {
-                      next = { ...next, slug: createSlug(String(value || '')) };
+                      next = { ...next, slug: createSlug(String(value || "")) };
                     }
                   }
 
@@ -721,34 +757,35 @@ function FieldGroup({
 
 function sanitizePayload(form: CmsItem) {
   return {
-    title: String(form.title || '').trim(),
-    subtitle: String((form as any).subtitle || '').trim(),
-    slug: String(form.slug || '').trim() || createSlug(String(form.title || '')),
-    status: String((form as any).status || 'draft').trim(),
-    pageType: String((form as any).pageType || 'standard').trim(),
-    image: String((form as any).image || '').trim(),
-    heroVideo: String((form as any).heroVideo || '').trim(),
-    heroTitle: String((form as any).heroTitle || '').trim(),
-    heroSubtitle: String((form as any).heroSubtitle || '').trim(),
-    description: String((form as any).description || '').trim(),
-    metaTitle: String((form as any).metaTitle || '').trim(),
-    metaDescription: String((form as any).metaDescription || '').trim(),
+    title: String(form.title || "").trim(),
+    subtitle: String((form as any).subtitle || "").trim(),
+    slug:
+      String(form.slug || "").trim() || createSlug(String(form.title || "")),
+    status: String((form as any).status || "draft").trim(),
+    pageType: String((form as any).pageType || "standard").trim(),
+    image: String((form as any).image || "").trim(),
+    heroVideo: String((form as any).heroVideo || "").trim(),
+    heroTitle: String((form as any).heroTitle || "").trim(),
+    heroSubtitle: String((form as any).heroSubtitle || "").trim(),
+    description: String((form as any).description || "").trim(),
+    metaTitle: String((form as any).metaTitle || "").trim(),
+    metaDescription: String((form as any).metaDescription || "").trim(),
     sortOrder: Number((form as any).sortOrder || 0),
     data:
-      form.data && typeof form.data === 'object' && !Array.isArray(form.data)
+      form.data && typeof form.data === "object" && !Array.isArray(form.data)
         ? form.data
         : {},
   };
 }
 
 export default function EditorCmsPage() {
-  const config = testimonialsCmsConfig
+  const config = testimonialsCmsConfig;
   const [items, setItems] = useState<CmsItem[]>([]);
   const [form, setForm] = useState<CmsItem>(blankFromConfig(config));
   const [editingId, setEditingId] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState("");
   const [relationOptions, setRelationOptions] = useState<
     Record<string, { label: string; value: string }[]>
   >({});
@@ -759,33 +796,34 @@ export default function EditorCmsPage() {
   );
 
   const leftGroups = useMemo(
-    () => config.groups.filter((group) => group.column === 'left'),
+    () => config.groups.filter((group) => group.column === "left"),
     [config.groups],
   );
 
   const rightGroups = useMemo(
-    () => config.groups.filter((group) => group.column === 'right'),
+    () => config.groups.filter((group) => group.column === "right"),
     [config.groups],
   );
 
   const fieldsByGroup = (groupKey: string) =>
     visibleFields.filter((field) => field.group === groupKey);
 
-  const load = async (term = '') => {
+  const load = async (term = "") => {
     try {
       const rows = await api.get<CmsItem[]>(
-        `/content/${config.entity}${term ? `?search=${encodeURIComponent(term)}` : ''}`,
+        `/content/${config.entity}${term ? `?search=${encodeURIComponent(term)}` : ""}`,
       );
       setItems(rows || []);
     } catch {
-      setError('Failed to load records.');
+      setError("Failed to load records.");
     }
   };
 
   const loadRelations = async () => {
     try {
       const relationFields = config.fields.filter(
-        (field) => field.type === 'relation-multiselect' && field.relation?.endpoint,
+        (field) =>
+          field.type === "relation-multiselect" && field.relation?.endpoint,
       );
 
       const results: Record<string, { label: string; value: string }[]> = {};
@@ -796,11 +834,11 @@ export default function EditorCmsPage() {
             const rows = await api.get<any[]>(field.relation!.endpoint);
             results[field.key] = (rows || []).map((row) => ({
               label:
-                row[field.relation?.labelKey || 'title'] ||
+                row[field.relation?.labelKey || "title"] ||
                 row.title ||
                 row.name ||
-                'Untitled',
-              value: row[field.relation?.valueKey || '_id'] || row._id,
+                "Untitled",
+              value: row[field.relation?.valueKey || "_id"] || row._id,
             }));
           } catch {
             results[field.key] = [];
@@ -828,7 +866,7 @@ export default function EditorCmsPage() {
   };
 
   const edit = (item: CmsItem) => {
-    setaddForm(!adform)
+    setaddForm(!adform);
     setEditingId(item._id || null);
 
     const blank = blankFromConfig(config);
@@ -841,7 +879,7 @@ export default function EditorCmsPage() {
       },
     });
 
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const validate = () => {
@@ -850,7 +888,7 @@ export default function EditorCmsPage() {
       const value = getValue(form, field);
 
       if (
-        value === '' ||
+        value === "" ||
         value === null ||
         value === undefined ||
         (Array.isArray(value) && !value.length)
@@ -881,13 +919,13 @@ export default function EditorCmsPage() {
       }
 
       await load(search);
-      setMessage(editingId ? 'Updated successfully.' : 'Created successfully.');
+      setMessage(editingId ? "Updated successfully." : "Created successfully.");
       reset();
     } catch {
-      setError('Unable to save record.');
+      setError("Unable to save record.");
     }
   };
-  const [adform, setaddForm] = useState(false)
+  const [adform, setaddForm] = useState(false);
   const remove = async (id?: string) => {
     if (!id) return;
 
@@ -899,9 +937,9 @@ export default function EditorCmsPage() {
       }
 
       await load(search);
-      setMessage('Deleted successfully.');
+      setMessage("Deleted successfully.");
     } catch {
-      setError('Unable to delete record.');
+      setError("Unable to delete record.");
     }
   };
 
@@ -912,83 +950,87 @@ export default function EditorCmsPage() {
       <div className="space-y-6">
         <SectionNotice message={message} error={error} />
 
-        {adform && <SectionCard
-          title={
-            editingId
-              ? `Edit ${config.title.slice(0, -1) || config.title}`
-              : config.addLabel || `Add ${config.title}`
-          }
-          subtitle="Frontend-controlled CMS with manual, linked, auto, and repeatable section content."
-          action={
-            <div className="flex gap-3">
-              <ActionButton secondary onClick={() => setaddForm(!adform)}>
-                Cancel
-              </ActionButton>
-              <ActionButton secondary onClick={reset}>
-                Reset
-              </ActionButton>
-              <ActionButton onClick={submit}>
-                {editingId ? 'Update' : 'Save'}
-              </ActionButton>
-            </div>
-          }
-        >
-          <div className="grid gap-6 xl:grid-cols-[1.6fr_0.9fr]">
-            <div className="space-y-5">
-              {leftGroups.map((group) => (
-                <FieldGroup
-                  key={group.key}
-                  title={group.label}
-                  fields={fieldsByGroup(group.key)}
-                  form={form}
-                  setForm={setForm}
-                  relationOptions={relationOptions}
+        {adform && (
+          <SectionCard
+            title={
+              editingId
+                ? `Edit ${config.title.slice(0, -1) || config.title}`
+                : config.addLabel || `Add ${config.title}`
+            }
+            subtitle="Frontend-controlled CMS with manual, linked, auto, and repeatable section content."
+            action={
+              <div className="flex gap-3">
+                <ActionButton secondary onClick={() => setaddForm(!adform)}>
+                  Cancel
+                </ActionButton>
+                <ActionButton secondary onClick={reset}>
+                  Reset
+                </ActionButton>
+                <ActionButton onClick={submit}>
+                  {editingId ? "Update" : "Save"}
+                </ActionButton>
+              </div>
+            }
+          >
+            <div className="grid gap-6 xl:grid-cols-[1.6fr_0.9fr]">
+              <div className="space-y-5">
+                {leftGroups.map((group) => (
+                  <FieldGroup
+                    key={group.key}
+                    title={group.label}
+                    fields={fieldsByGroup(group.key)}
+                    form={form}
+                    setForm={setForm}
+                    relationOptions={relationOptions}
+                  />
+                ))}
+              </div>
+
+              <div className="space-y-4 rounded-[28px] border border-line bg-panel/50 p-4">
+                <p className="text-xs uppercase tracking-[0.24em] text-gold">
+                  Meta & Settings
+                </p>
+
+                {rightGroups.map((group) => (
+                  <FieldGroup
+                    key={group.key}
+                    title={group.label}
+                    fields={fieldsByGroup(group.key)}
+                    form={form}
+                    setForm={setForm}
+                    relationOptions={relationOptions}
+                  />
+                ))}
+
+                <FormActions
+                  onSubmit={submit}
+                  onCancel={reset}
+                  submitLabel={editingId ? "Update Record" : "Create Record"}
                 />
-              ))}
+              </div>
             </div>
-
-            <div className="space-y-4 rounded-[28px] border border-line bg-panel/50 p-4">
-              <p className="text-xs uppercase tracking-[0.24em] text-gold">
-                Meta & Settings
-              </p>
-
-              {rightGroups.map((group) => (
-                <FieldGroup
-                  key={group.key}
-                  title={group.label}
-                  fields={fieldsByGroup(group.key)}
-                  form={form}
-                  setForm={setForm}
-                  relationOptions={relationOptions}
-                />
-              ))}
-
-              <FormActions
-                onSubmit={submit}
-                onCancel={reset}
-                submitLabel={editingId ? 'Update Record' : 'Create Record'}
-              />
-            </div>
-          </div>
-        </SectionCard>}
+          </SectionCard>
+        )}
 
         <SectionCard
           title={`${config.title} Listing`}
           subtitle="Search, review, edit, and remove saved records."
-          action={<div className="flex gap-3">
-            <ActionButton secondary onClick={() => setaddForm(!adform)}>
-              Add Page
-            </ActionButton>
-          </div>}
+          action={
+            <div className="flex gap-3">
+              <ActionButton secondary onClick={() => setaddForm(!adform)}>
+                Add Page
+              </ActionButton>
+            </div>
+          }
         >
           <div className="mb-5 flex flex-wrap gap-3">
             <input
               className="input w-72"
-              placeholder={config.searchPlaceholder || 'Search'}
+              placeholder={config.searchPlaceholder || "Search"}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === 'Enter') load(search);
+                if (e.key === "Enter") load(search);
               }}
             />
             <ActionButton secondary onClick={() => load(search)}>
@@ -1002,7 +1044,7 @@ export default function EditorCmsPage() {
                 key={item._id || item.title}
                 className="grid gap-4 rounded-[28px] border border-line bg-panel/60 p-4 xl:grid-cols-[140px_1fr_auto] xl:items-center"
               >
-                <div className="h-28 overflow-hidden rounded-[22px] border border-line bg-card">
+                <div className="h-40 overflow-hidden rounded-[22px] border border-line bg-card">
                   {item.image ? (
                     <img
                       src={item.image}
@@ -1016,17 +1058,25 @@ export default function EditorCmsPage() {
 
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
-                    <h3 className="text-base font-semibold text-text">{item.title}</h3>
+                    <h3 className="text-base font-semibold text-text">
+                      {item.title}
+                    </h3>
                     <StatusBadge
-                      value={item.status || 'draft'}
-                      tone={item.status === 'published' ? 'green' : 'slate'}
+                      value={item.status || "draft"}
+                      tone={item.status === "published" ? "green" : "slate"}
                     />
                   </div>
 
-                  {item.subtitle ? <p className="mt-2 text-sm text-muted">{item.subtitle}</p> : null}
-                  {item.slug ? <p className="mt-2 text-xs text-muted">/{item.slug}</p> : null}
+                  {item.subtitle ? (
+                    <p className="mt-2 text-sm text-muted">{item.subtitle}</p>
+                  ) : null}
+                  {item.slug ? (
+                    <p className="mt-2 text-xs text-muted">/{item.slug}</p>
+                  ) : null}
                   {(item as any).pageType ? (
-                    <p className="mt-2 text-xs text-muted">Type: {(item as any).pageType}</p>
+                    <p className="mt-2 text-xs text-muted">
+                      Type: {(item as any).pageType}
+                    </p>
                   ) : null}
                   {item.description ? (
                     <p className="mt-3 line-clamp-3 text-sm leading-6 text-muted">
@@ -1036,7 +1086,10 @@ export default function EditorCmsPage() {
                 </div>
 
                 <div className="justify-self-end">
-                  <InlineActions onEdit={() => edit(item)} onDelete={() => remove(item._id)} />
+                  <InlineActions
+                    onEdit={() => edit(item)}
+                    onDelete={() => remove(item._id)}
+                  />
                 </div>
               </div>
             ))}

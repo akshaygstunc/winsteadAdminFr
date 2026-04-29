@@ -653,7 +653,7 @@ export const EditorConfigs: Record<string, CmsConfig> = {
         { key: "metaTitle", label: "Meta Title", type: "text" },
         { key: "metaKeywords", label: "Meta Keywords", type: "text" },
         { key: "metaDescription", label: "Meta Description", type: "text" },
-        imageField("Cover Image","image","1260x420"),
+        imageField("Cover Image", "image", "1260x420"),
         textArea,
       ],
       searchMeta("category", "metaTitle", "metaKeywords", "status"),
@@ -678,7 +678,7 @@ export const EditorConfigs: Record<string, CmsConfig> = {
       { key: "mediaType", label: "Media Type", type: "text" },
       { key: "altText", label: "Alt Text", type: "text" },
       { key: "sortOrder", label: "Sort Order", type: "number" },
-      imageField("Asset Image","image","1260x420"),
+      imageField("Asset Image", "image", "1260x420"),
       { key: "videoUrl", label: "Video URL", type: "text" },
       textArea,
     ],
@@ -909,11 +909,7 @@ export const EditorConfigs: Record<string, CmsConfig> = {
         options: boolStatus,
       },
 
-      imageField(
-        "Cover Image",
-        "coverImage",
-        "1260x420"
-      ),
+      imageField("Cover Image", "coverImage", "1260x420"),
 
       {
         key: "description",
@@ -1088,7 +1084,7 @@ export const EditorConfigs: Record<string, CmsConfig> = {
         group: "banner-section",
         column: "right",
       },
-      imageField("Banner Image", "bannerImage","1260x420"),
+      imageField("Banner Image", "bannerImage", "1260x420"),
 
       // SEO
       {
@@ -1118,7 +1114,7 @@ export const EditorConfigs: Record<string, CmsConfig> = {
         label: "Title",
         type: "text",
       },
-      imageField("Banner Image", "bannerImage","1260x420"),
+      imageField("Banner Image", "bannerImage", "1260x420"),
 
       textArea2("content"),
 
@@ -1149,7 +1145,7 @@ export const EditorConfigs: Record<string, CmsConfig> = {
         label: "Title",
         type: "text",
       },
-      imageField("Banner Image", "bannerImage","1260x420"),
+      imageField("Banner Image", "bannerImage", "1260x420"),
 
       textArea2("content"),
 
@@ -1190,7 +1186,7 @@ export const EditorConfigs: Record<string, CmsConfig> = {
         group: "banner-section",
         column: "left",
       },
-      imageField("Banner Image", "bannerImage","1260x420"),
+      imageField("Banner Image", "bannerImage", "1260x420"),
 
       // GET IN TOUCH SECTION
       {
@@ -1348,7 +1344,7 @@ export const EditorConfigs: Record<string, CmsConfig> = {
         group: "banner-section",
         column: "left",
       },
-      imageField("Banner Image", "bannerImage","1260x420"),
+      imageField("Banner Image", "bannerImage", "1260x420"),
 
       // BREADCRUMB SECTION
       {
@@ -1433,7 +1429,7 @@ export const EditorConfigs: Record<string, CmsConfig> = {
         group: "banner-section",
         column: "left",
       },
-      imageField("Banner Image", "bannerImage","1260x420"),
+      imageField("Banner Image", "bannerImage", "1260x420"),
 
       // SEO
       {
@@ -1487,7 +1483,7 @@ export const EditorConfigs: Record<string, CmsConfig> = {
         group: "banner-section",
         column: "right",
       },
-      imageField("Banner Image", "bannerImage","1260x420"),
+      imageField("Banner Image", "bannerImage", "1260x420"),
 
       // TEAM INTRO SECTION
       {
@@ -3047,8 +3043,8 @@ export const EditorConfigs: Record<string, CmsConfig> = {
         type: "select",
         options: statusOptions,
       },
-      imageField("Logo / Image"),
-      bannerField("Banner Image","image","1260x420"),
+      imageField("Logo / Image", "image"),
+      bannerField("Banner Image", "bannerimage", "1260x420"),
       textArea,
       // {
       //   key: "faqs",

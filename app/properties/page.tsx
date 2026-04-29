@@ -1,12 +1,12 @@
-'use client';
+"use client";
 
-import { ChangeEvent, useEffect, useMemo, useState } from 'react';
-import { DashboardShell } from '@/components/dashboard-shell';
-import { Header } from '@/components/header';
-import { api } from '@/lib/api';
-import { Property, WorkspaceSnapshot } from '@/lib/types';
-import { ActionButton, SectionCard, StatusBadge } from '@/components/ui';
-import { Modal } from '@/components/modal';
+import { ChangeEvent, useEffect, useMemo, useState } from "react";
+import { DashboardShell } from "@/components/dashboard-shell";
+import { Header } from "@/components/header";
+import { api } from "@/lib/api";
+import { Property, WorkspaceSnapshot } from "@/lib/types";
+import { ActionButton, SectionCard, StatusBadge } from "@/components/ui";
+import { Modal } from "@/components/modal";
 import {
   FieldLabel,
   FormActions,
@@ -16,9 +16,10 @@ import {
   SelectInput,
   TextArea,
   TextInput,
-} from '@/components/crud-kit';
-import PropertyImportModal from '@/components/PropertyImport';
-import { TiptapEditor } from '@/components/TextEditor';
+} from "@/components/crud-kit";
+import PropertyImportModal from "@/components/PropertyImport";
+import { TiptapEditor } from "@/components/TextEditor";
+import { GoogleAddressInput } from "@/components/GoogleAutoComplete";
 
 type FieldOption = {
   label: string;
@@ -50,8 +51,8 @@ type FloorPlanItem = {
 };
 
 type PropertyForm = Property & {
-  propertyType?: string;
-  propertySubType?: string;
+  propertyType?: string[];
+  propertySubType?: string[];
   sublocation: string;
   categories?: string;
   propertyBanner?: string;
@@ -59,22 +60,22 @@ type PropertyForm = Property & {
   amenities?: AmenityItem[];
   floorPlans?: FloorPlanItem[];
   communities?: string;
-  faq: any[]
+  faq: any[];
 };
 
 type DynamicField = {
   key: keyof PropertyForm;
   label: string;
   type:
-  | 'text'
-  | 'number'
-  | 'textarea'
-  | 'select'
-  | 'toggle'
-  | 'image'
-  | 'relation-select'
-  | 'relation-multiselect'
-  | 'editor';
+  | "text"
+  | "number"
+  | "textarea"
+  | "select"
+  | "toggle"
+  | "image"
+  | "relation-select"
+  | "relation-multiselect"
+  | "editor";
   options?: FieldOption[];
   relation?: RelationConfig;
 };
@@ -84,144 +85,148 @@ type FieldSection = {
   title: string;
   columns?: 1 | 2 | 3;
   fields?: DynamicField[];
-  custom?: 'gallery' | 'amenities' | 'floorPlans' | 'file' | 'faq';
+  custom?: "gallery" | "amenities" | "floorPlans" | "file" | "faq";
 };
 
 type RelationData = Record<string, FieldOption[]>;
 const emptyForm: PropertyForm = {
-  title: '',
-  buildingName: '',
-  metaTitle: '',
-  slug: '',
-  metaDescription: '',
-  metaKeywords: '',
-  developer: '',
-  developerType: '',
-  shortDescription: '',
-  city: '',
-  fullDescription: '',
-  appDescription: '',
-  location: '',
-  address: '',
-  longitude: '',
-  latitude: '',
-  propertyStatus: 'ready',
-  visibility: 'both',
+  title: "",
+  buildingName: "",
+  metaTitle: "",
+  slug: "",
+  metaDescription: "",
+  metaKeywords: "",
+  developer: "",
+  developerType: "",
+  shortDescription: "",
+  city: "",
+  fullDescription: "",
+  appDescription: "",
+  location: "",
+  address: "",
+  longitude: "",
+  latitude: "",
+  propertyStatus: "ready",
+  visibility: "both",
   price: 0,
-  status: 'active',
+  status: "active",
   bedrooms: 0,
   bathrooms: 0,
-  thumbnail: '',
-  propertyBanner: '',
-  enquireFormImage: '',
+  thumbnail: "",
+  propertyBanner: "",
+  enquireFormImage: "",
   featured: false,
   active: true,
   hotLaunch: false,
   exclusive: false,
   sortOrder: 0,
-  tag: '',
-  url: '',
-  author: 'wasim',
+  tag: "",
+  url: "",
+  author: "wasim",
   gallery: [],
-  propertyType: '',
-  propertySubType: '',
+  propertyType: [],
+  propertySubType: [],
   categories: "",
   faq: [],
-  propertydoc: '',
+  propertydoc: "",
   amenities: [],
   floorPlans: [],
-  type: '',
-  subType: '',
-  category: '',
-  sublocation: ''
+  type: "",
+  subType: "",
+  category: "",
+  sublocation: "",
 };
 
 const propertyFormSections: FieldSection[] = [
   {
-    key: 'basic',
-    title: 'Basic Information',
+    key: "basic",
+    title: "Basic Information",
     columns: 3,
     fields: [
-      { key: 'title', label: 'Property Name', type: 'text' },
-      { key: 'buildingName', label: 'Building / Area Name', type: 'text' },
-      { key: 'slug', label: 'Slug', type: 'text' },
+      { key: "title", label: "Property Name", type: "text" },
+      { key: "buildingName", label: "Building / Area Name", type: "text" },
+      { key: "slug", label: "Slug", type: "text" },
       {
-        key: 'propertyType',
-        label: 'Property Type',
-        type: 'relation-select',
+        key: "type",
+        label: "Property Type",
+        type: "relation-multiselect",
         relation: {
-          entity: 'content/property-types',
-          labelKey: 'name',
-          valueKey: '_id',
+          entity: "content/property-types",
+          labelKey: "name",
+          valueKey: "_id",
         },
       },
       {
-        key: 'propertySubType',
-        label: 'Property Sub-Type',
-        type: 'relation-select',
+        key: "subType",
+        label: "Property Sub-Type",
+        type: "relation-multiselect",
         relation: {
-          entity: 'content/property-sub-types',
-          labelKey: 'name',
-          valueKey: '_id',
+          entity: "content/property-sub-types",
+          labelKey: "name",
+          valueKey: "_id",
         },
       },
       {
-        key: 'communities',
-        label: 'Communities',
-        type: 'relation-select',
+        key: "communities",
+        label: "Communities",
+        type: "relation-select",
         relation: {
-          entity: 'content/developer-communities', // 👈 new endpoint
-          labelKey: 'title',
-          valueKey: '_id',
+          entity: "content/developer-communities", // 👈 new endpoint
+          labelKey: "title",
+          valueKey: "_id",
         },
       },
       {
-        key: 'categories',
-        label: 'Property Categories',
-        type: 'relation-select',
+        key: "categories",
+        label: "Property Categories",
+        type: "relation-select",
         relation: {
-          entity: 'content/categories',
-          labelKey: 'title',
-          valueKey: '_id',
+          entity: "content/categories",
+          labelKey: "title",
+          valueKey: "_id",
         },
       },
       {
-        key: 'developer',
-        label: 'Developer',
-        type: 'relation-select',
+        key: "developer",
+        label: "Developer",
+        type: "relation-select",
         relation: {
-          entity: 'content/developer-community',
-          labelKey: 'name',
-          valueKey: '_id',
+          entity: "content/developer-community",
+          labelKey: "name",
+          valueKey: "_id",
         },
       },
       {
-        key: 'propertyStatus',
-        label: 'Property Status',
-        type: 'select',
+        key: "propertyStatus",
+        label: "Property Status",
+        type: "select",
         options: [
-          { label: 'Off Plan', value: 'off-plan' },
-          { label: 'Ready', value: 'ready' },
-          { label: 'Sold Out', value: 'sold-out' },
+          { label: "Off Plan", value: "off-plan" },
+          { label: "Ready", value: "ready" },
+          { label: "Sold Out", value: "sold-out" },
         ],
       },
       {
-        key: 'location', label: 'Location', type: 'relation-select',
+        key: "location",
+        label: "Location",
+        type: "relation-select",
         relation: {
-          entity: 'content/locations',
-          labelKey: 'name',
-          valueKey: '_id',
+          entity: "content/locations",
+          labelKey: "name",
+          valueKey: "_id",
         },
       },
       {
-        key: 'sublocation', label: 'Sub location', type: 'relation-select',
+        key: "sublocation",
+        label: "Sub location",
+        type: "relation-select",
         relation: {
-          entity: 'content/sub-locations',
-          labelKey: 'name',
-          valueKey: '_id',
+          entity: "content/sub-locations",
+          labelKey: "name",
+          valueKey: "_id",
         },
       },
-      { key: 'address', label: 'Address', type: 'text' },
+      { key: "address", label: "Address", type: "address" },
     ],
   },
   {
@@ -229,7 +234,11 @@ const propertyFormSections: FieldSection[] = [
     title: "Payment Plan",
     columns: 1,
     fields: [
-      { key: "duringconstruction", label: "During Construction", type: "number" },
+      {
+        key: "duringconstruction",
+        label: "During Construction",
+        type: "number",
+      },
       { key: "handover", label: "Handover", type: "number" },
     ],
   },
@@ -237,7 +246,7 @@ const propertyFormSections: FieldSection[] = [
     key: "faq",
     title: "Property FAQ",
     columns: 1,
-    custom: 'faq',
+    custom: "faq",
   },
   {
     key: "propertydoc",
@@ -245,91 +254,101 @@ const propertyFormSections: FieldSection[] = [
     custom: "file",
   },
   {
-    key: 'seo',
-    title: 'SEO',
+    key: "seo",
+    title: "SEO",
     columns: 3,
     fields: [
-      { key: 'metaTitle', label: 'Meta Title', type: 'text' },
-      { key: 'metaDescription', label: 'Meta Description', type: 'textarea' },
-      { key: 'metaKeywords', label: 'Meta Keywords', type: 'text' },
+      { key: "metaTitle", label: "Meta Title", type: "text" },
+      { key: "metaDescription", label: "Meta Description", type: "textarea" },
+      { key: "metaKeywords", label: "Meta Keywords", type: "text" },
     ],
   },
   {
-    key: 'details',
-    title: 'Property Details',
+    key: "details",
+    title: "Property Details",
     columns: 3,
     fields: [
-      { key: 'price', label: 'Price', type: 'number' },
-      { key: 'sortOrder', label: 'Sort Order', type: 'number' },
-      { key: 'thumbnail', label: 'Thumbnail', type: 'image', note: "Banner Size should be 380x300" },
-      { key: 'propertyBanner', label: 'Property Banner', type: 'image', note: "Banner Size should be 1260x420" },
-      { key: 'enquireFormImage', label: 'Enquire Form Image', type: 'image' },
-      { key: 'author', label: 'Author', type: 'text' },
+      { key: "price", label: "Price", type: "number" },
+      { key: "sortOrder", label: "Sort Order", type: "number" },
+      {
+        key: "thumbnail",
+        label: "Thumbnail",
+        type: "image",
+        note: "Banner Size should be 380x300",
+      },
+      {
+        key: "propertyBanner",
+        label: "Property Banner",
+        type: "image",
+        note: "Banner Size should be 1260x420",
+      },
+      { key: "enquireFormImage", label: "Enquire Form Image", type: "image" },
+      { key: "author", label: "Author", type: "text" },
     ],
   },
   {
-    key: 'visibility',
-    title: 'Visibility & Status',
+    key: "visibility",
+    title: "Visibility & Status",
     columns: 3,
     fields: [
       {
-        key: 'visibility',
-        label: 'Visibility',
-        type: 'select',
+        key: "visibility",
+        label: "Visibility",
+        type: "select",
         options: [
-          { label: 'Mobile', value: 'mobile' },
-          { label: 'Web', value: 'web' },
-          { label: 'Both', value: 'both' },
+          { label: "Mobile", value: "mobile" },
+          { label: "Web", value: "web" },
+          { label: "Both", value: "both" },
         ],
       },
       {
-        key: 'status',
-        label: 'Status',
-        type: 'select',
+        key: "status",
+        label: "Status",
+        type: "select",
         options: [
-          { label: 'Active', value: 'active' },
-          { label: 'Inactive', value: 'inactive' },
-          { label: 'Draft', value: 'draft' },
-          { label: 'Ready', value: 'ready' },
-          { label: 'Sold', value: 'sold' },
+          { label: "Active", value: "active" },
+          { label: "Inactive", value: "inactive" },
+          { label: "Draft", value: "draft" },
+          { label: "Ready", value: "ready" },
+          { label: "Sold", value: "sold" },
         ],
       },
     ],
   },
   {
-    key: 'descriptions',
-    title: 'Descriptions',
+    key: "descriptions",
+    title: "Descriptions",
     columns: 2,
     fields: [
-      { key: 'shortDescription', label: 'Short Description', type: 'textarea' },
-      { key: 'appDescription', label: 'App Description', type: 'textarea' },
-      { key: 'fullDescription', label: 'Full Description', type: 'editor' },
+      { key: "shortDescription", label: "Short Description", type: "textarea" },
+      { key: "appDescription", label: "App Description", type: "textarea" },
+      { key: "fullDescription", label: "Full Description", type: "editor" },
     ],
   },
   {
-    key: 'amenities',
-    title: 'Amenities',
-    custom: 'amenities',
+    key: "amenities",
+    title: "Amenities",
+    custom: "amenities",
   },
   {
-    key: 'floorPlans',
-    title: 'Floor Plans',
-    custom: 'floorPlans',
+    key: "floorPlans",
+    title: "Floor Plans",
+    custom: "floorPlans",
   },
   {
-    key: 'gallery',
-    title: 'Gallery Images',
-    custom: 'gallery',
+    key: "gallery",
+    title: "Gallery Images",
+    custom: "gallery",
   },
   {
-    key: 'flags',
-    title: 'Flags',
+    key: "flags",
+    title: "Flags",
     columns: 2,
     fields: [
-      { key: 'active', label: 'Active', type: 'toggle' },
-      { key: 'hotLaunch', label: 'Hot Launch', type: 'toggle' },
-      { key: 'exclusive', label: 'Exclusive', type: 'toggle' },
-      { key: 'featured', label: 'Featured', type: 'toggle' },
+      { key: "active", label: "Active", type: "toggle" },
+      { key: "hotLaunch", label: "Hot Launch", type: "toggle" },
+      { key: "exclusive", label: "Exclusive", type: "toggle" },
+      { key: "featured", label: "Featured", type: "toggle" },
     ],
   },
 ];
@@ -338,14 +357,14 @@ function createSlug(value: string) {
   return value
     .toLowerCase()
     .trim()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/(^-|-$)+/g, '');
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)+/g, "");
 }
 
 async function fileToDataUrl(file: File) {
   return new Promise<string>((resolve, reject) => {
     const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result || ''));
+    reader.onload = () => resolve(String(reader.result || ""));
     reader.onerror = reject;
     reader.readAsDataURL(file);
   });
@@ -400,7 +419,9 @@ function MultiSelectInput({
         multiple
         value={value}
         onChange={(e) => {
-          const next = Array.from(e.target.selectedOptions).map((option) => option.value);
+          const next = Array.from(e.target.selectedOptions).map(
+            (option) => option.value,
+          );
           onChange(next);
         }}
       >
@@ -410,7 +431,9 @@ function MultiSelectInput({
           </option>
         ))}
       </select>
-      <p className="text-xs text-muted">Hold Ctrl / Cmd to select multiple items.</p>
+      <p className="text-xs text-muted">
+        Hold Ctrl / Cmd to select multiple items.
+      </p>
     </div>
   );
 }
@@ -464,19 +487,11 @@ function PdfUploader({
         <div className="rounded-2xl border border-line p-3 text-sm text-muted">
           📄 PDF Uploaded
           <div className="mt-2 flex gap-3">
-            <a
-              href={value}
-              target="_blank"
-              className="text-gold underline"
-            >
+            <a href={value} target="_blank" className="text-gold underline">
               View
             </a>
 
-            <a
-              href={value}
-              download
-              className="text-gold underline"
-            >
+            <a href={value} download className="text-gold underline">
               Download
             </a>
           </div>
@@ -512,7 +527,12 @@ function FAQEditor({
     <div className="space-y-4">
       <div className="flex justify-between">
         <p className="text-sm font-medium text-gold">FAQs</p>
-        <button onClick={addItem} className=" border border-50 border-gold/50 bg-gold/10 text-gold px-4 py-2 rounded-2xl">Add FAQ</button>
+        <button
+          onClick={addItem}
+          className=" border border-50 border-gold/50 bg-gold/10 text-gold px-4 py-2 rounded-2xl"
+        >
+          Add FAQ
+        </button>
       </div>
 
       {items.map((faq, index) => (
@@ -521,17 +541,13 @@ function FAQEditor({
             className="input"
             placeholder="Question"
             value={faq.question}
-            onChange={(e) =>
-              updateItem(index, "question", e.target.value)
-            }
+            onChange={(e) => updateItem(index, "question", e.target.value)}
           />
           <textarea
             className="input"
             placeholder="Answer"
             value={faq.answer}
-            onChange={(e) =>
-              updateItem(index, "answer", e.target.value)
-            }
+            onChange={(e) => updateItem(index, "answer", e.target.value)}
           />
           <button
             className="text-red-500 text-sm"
@@ -552,16 +568,15 @@ function GalleryUploader({
   onChange: (next: string[]) => void;
 }) {
   const images = Array.isArray(value) ? value : [];
-  const [urlInput, setUrlInput] = useState('');
+  const [urlInput, setUrlInput] = useState("");
   const [uploading, setUploading] = useState(false);
 
   const uploadSingleFile = async (file: File): Promise<string> => {
     const formData = new FormData();
-    formData.append('file', file);
+    formData.append("file", file);
 
-    const response = await api.post('/content/upload/gallery', formData, {
-    });
-    console.log(response, 'Upload response');
+    const response = await api.post("/content/upload/gallery", formData, {});
+    console.log(response, "Upload response");
     const uploadedUrl =
       response?.data?.url ||
       response?.data?.data?.url ||
@@ -569,10 +584,10 @@ function GalleryUploader({
       response?.data?.data?.fileUrl ||
       response?.data?.location ||
       response?.data?.data?.location ||
-      '';
+      "";
 
     if (!uploadedUrl) {
-      throw new Error('Upload API did not return image URL');
+      throw new Error("Upload API did not return image URL");
     }
 
     return uploadedUrl;
@@ -593,10 +608,10 @@ function GalleryUploader({
         onChange([...nextImages]);
       }
     } catch (error) {
-      console.error('Gallery upload failed:', error);
+      console.error("Gallery upload failed:", error);
     } finally {
       setUploading(false);
-      e.target.value = '';
+      e.target.value = "";
     }
   };
 
@@ -604,7 +619,7 @@ function GalleryUploader({
     const next = urlInput.trim();
     if (!next) return;
     onChange([...(images || []), next]);
-    setUrlInput('');
+    setUrlInput("");
   };
 
   const updateImage = (index: number, nextValue: string) => {
@@ -622,8 +637,11 @@ function GalleryUploader({
       <div>
         <FieldLabel label="Gallery Images" />
         <p className="mt-1 text-xs text-muted">
-          Upload multiple property gallery images or paste image URLs.<br />
-          <span className='font-bold py-2'>Note: Dimension should be 1260x420</span>
+          Upload multiple property gallery images or paste image URLs.
+          <br />
+          <span className="font-bold py-2">
+            Note: Dimension should be 1260x420
+          </span>
         </p>
       </div>
 
@@ -725,24 +743,24 @@ function AmenitiesEditor({
   const items = Array.isArray(value) ? value : [];
   const [options, setOptions] = useState<AmenityOption[]>([]);
   const [loading, setLoading] = useState(false);
-
+  const [openDropdown, setOpenDropdown] = useState(false);
   useEffect(() => {
     const fetchAmenities = async () => {
       try {
         setLoading(true);
-        const response = await api.get('/content/property-amenities');
+        const response = await api.get("/content/property-amenities");
         const rows = normalizeApiArray(response);
-        console.log(rows, 'Fetched amenities for selection');
+        console.log(rows, "Fetched amenities for selection");
         const nextOptions: AmenityOption[] = rows.map((row: any) => ({
-          _id: String(row?._id ?? row?.id ?? ''),
-          title: String(row?.name ?? row?.title ?? ''),
-          icon: String(row?.data?.icon ?? row?.image ?? ''),
-          description: String(row?.description ?? ''),
+          _id: String(row?._id ?? row?.id ?? ""),
+          title: String(row?.name ?? row?.title ?? ""),
+          icon: String(row?.data?.icon ?? row?.image ?? ""),
+          description: String(row?.description ?? ""),
         }));
 
         setOptions(nextOptions);
       } catch (error) {
-        console.error('Failed to load amenities:', error);
+        console.error("Failed to load amenities:", error);
       } finally {
         setLoading(false);
       }
@@ -759,14 +777,14 @@ function AmenitiesEditor({
     if (checked) {
       const exists = items.some((item) => item._id === option._id);
       if (exists) return;
-      console.log(option, 'Toggling amenity - adding');
+      console.log(option, "Toggling amenity - adding");
       onChange([
         ...items,
         {
           _id: option._id,
           title: option.title,
           icon: option?.icon,
-          description: option.description || '',
+          description: option.description || "",
         },
       ]);
       return;
@@ -780,7 +798,8 @@ function AmenitiesEditor({
       <div>
         <FieldLabel label="Amenities" />
         <p className="mt-1 text-xs text-muted">
-          Select one or more amenities. Selected amenity name and icon will be saved with the property.
+          Select one or more amenities. Selected amenity name and icon will be
+          saved with the property.
         </p>
       </div>
 
@@ -793,53 +812,72 @@ function AmenitiesEditor({
             No amenities found.
         </div>
         ) : (
-          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-            {options.map((option) => {
-              const checked = isChecked(option._id);
-              { console.log(option) }
-              return (
-                <label
-                  key={option._id}
-                  className={`flex cursor-pointer items-start gap-3 rounded-2xl border p-4 transition ${checked
-                    ? 'border-primary bg-panel'
-                    : 'border-line bg-panel/40'
+            <div className="space-y-3">
+              {/* Dropdown Header */}
+              <div
+                onClick={() => setOpenDropdown(!openDropdown)}
+                className="cursor-pointer flex justify-between items-center border border-line rounded-2xl px-4 py-3 bg-panel"
+              >
+                <span className="text-sm text-text">Select Amenities</span>
+                <span className="text-xs text-muted">
+                  {openDropdown ? "▲" : "▼"}
+                </span>
+              </div>
+
+              {/* Dropdown List */}
+              {openDropdown && (
+                <div className="max-h-72 overflow-y-auto border border-line rounded-2xl bg-panel/40 divide-y">
+                  {options.map((option) => {
+                    const checked = isChecked(option._id);
+
+                    return (
+                      <label
+                        key={option._id}
+                        className={`flex items-start gap-3 px-4 py-3 cursor-pointer transition ${checked ? "bg-panel" : ""
                     }`}
-                >
-                  <input
-                    type="checkbox"
-                    className="mt-1"
-                    checked={checked}
-                    onChange={(e) => toggleAmenity(option, e.target.checked)}
-                  />
+                      >
+                        <input
+                          type="checkbox"
+                          className="mt-1"
+                          checked={checked}
+                          onChange={(e) => toggleAmenity(option, e.target.checked)}
+                        />
 
-                  <div className="flex flex-1 items-start gap-3">
+                        <div className="flex items-start gap-3">
+                          {option?.icon ? (
+                            <img
+                              src={option.icon}
+                              alt={option.title}
+                              className="h-8 w-8 rounded object-cover"
+                            />
+                          ) : (
+                            <div className="h-8 w-8 rounded bg-card" />
+                          )}
 
-                    {option?.icon ? (
-                      <img
-                        src={option?.icon}
-                        alt={option.title}
-                        className="h-10 w-10 rounded-xl border border-line object-cover"
-                      />
-                    ) : (
-                      <div className="h-10 w-10 rounded-xl border border-line bg-card" />
-                    )}
-
-                    <div className="min-w-0">
-                      <div className="text-sm font-medium text-text">{option.title}</div>
-                      {option.description ? (
-                        <p className="mt-1 text-xs text-muted">{option.description}</p>
-                      ) : null}
-                    </div>
-                  </div>
-                </label>
-              );
-            })}
+                          <div>
+                            <div className="text-sm text-text font-medium">
+                              {option.title}
+                            </div>
+                            {option.description && (
+                              <p className="text-xs text-muted">
+                                {option.description}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      </label>
+                    );
+                  })}
+                </div>
+              )}
         </div>
       )}
 
       {!!items.length && (
         <div className="rounded-2xl border border-line bg-panel/30 p-4">
-          <p className="mb-3 text-sm font-medium text-text">Selected Amenities</p>
+          <p className="mb-3 text-sm font-medium text-text">
+            Selected Amenities
+          </p>
           <div className="flex flex-wrap gap-2">
             {items.map((item, index) => (
               <div
@@ -859,9 +897,7 @@ function AmenitiesEditor({
                 {/* 🔥 Remove Button */}
                 <button
                   type="button"
-                  onClick={() =>
-                    onChange(items.filter((_, i) => i !== index))
-                  }
+                  onClick={() => onChange(items.filter((_, i) => i !== index))}
                   className="ml-1 text-red-400 hover:text-red-500 text-xs"
                 >
                   ✕
@@ -883,6 +919,7 @@ function FloorPlansEditor({
   onChange: (next: FloorPlanItem[]) => void;
 }) {
   const items = Array.isArray(value) ? value : [];
+  const [openDropdown, setOpenDropdown] = useState(false);
 
   const updateItem = (
     index: number,
@@ -901,14 +938,14 @@ function FloorPlansEditor({
     onChange([
       ...items,
       {
-        unitType: '',
-        title: '',
+        unitType: "",
+        title: "",
         bedrooms: 0,
         bathrooms: 0,
-        size: '',
+        size: "",
         price: 0,
-        image: '',
-        category: '',
+        image: "",
+        category: "",
         sortOrder: items.length + 1,
       },
     ]);
@@ -920,11 +957,13 @@ function FloorPlansEditor({
 
   return (
     <div className="space-y-4">
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <FieldLabel label="Floor Plans" />
           <p className="mt-1 text-xs text-muted">
-            Add unit type, bedrooms, bathrooms, size, pricing and floor plan image.
+            Add unit type, bedrooms, bathrooms, size, pricing and floor plan
+            image.
           </p>
         </div>
         <ActionButton onClick={addItem}>Add Floor Plan</ActionButton>
@@ -936,101 +975,129 @@ function FloorPlansEditor({
         </div>
       ) : null}
 
-      <div className="space-y-4">
-        {items.map((item, index) => (
+      {/* ✅ DROPDOWN HEADER */}
+      {!!items.length && (
+        <div className="space-y-3">
           <div
-            key={`floor-plan-${index}`}
-            className="rounded-[24px] border border-line bg-panel/40 p-4"
+            onClick={() => setOpenDropdown(!openDropdown)}
+            className="cursor-pointer flex justify-between items-center border border-line rounded-2xl px-4 py-3 bg-panel"
           >
-            <div className="mb-4 flex items-center justify-between">
-              <h4 className="text-sm font-semibold text-text">
-                Floor Plan {index + 1}
-              </h4>
-              <ActionButton secondary onClick={() => removeItem(index)}>
-                Remove
-              </ActionButton>
-            </div>
-
-            <FormGrid columns={3}>
-              <TextInput
-                label="Unit Type"
-                value={item.unitType}
-                onChange={(next) => updateItem(index, 'unitType', next)}
-                placeholder="1 Bedroom / 2 Bedroom"
-              />
-              <TextInput
-                label="Plan Title"
-                value={item.title}
-                onChange={(next) => updateItem(index, 'title', next)}
-              />
-              <TextInput
-                label="Category"
-                value={item.category}
-                onChange={(next) => updateItem(index, 'category', next)}
-                placeholder="Apartment / Villa"
-              />
-              <TextInput
-                label="Bedrooms"
-                type="number"
-                value={Number(item.bedrooms || 0)}
-                onChange={(next) => updateItem(index, 'bedrooms', Number(next))}
-              />
-              <TextInput
-                label="Bathrooms"
-                type="number"
-                value={Number(item.bathrooms || 0)}
-                onChange={(next) => updateItem(index, 'bathrooms', Number(next))}
-              />
-              <TextInput
-                label="Sort Order"
-                type="number"
-                value={Number(item.sortOrder || 0)}
-                onChange={(next) => updateItem(index, 'sortOrder', Number(next))}
-              />
-              <TextInput
-                label="Size"
-                value={item.size}
-                onChange={(next) => updateItem(index, 'size', next)}
-                placeholder="850 sq.ft."
-              />
-              <TextInput
-                label="Price"
-                type="number"
-                value={Number(item.price || 0)}
-                onChange={(next) => updateItem(index, 'price', Number(next))}
-              />
-              <div className="space-y-3">
-                <TextInput
-                  label="Floor Plan Image"
-                  value={item.image}
-                  onChange={(next) => updateItem(index, 'image', next)}
-                  placeholder="Paste image URL or upload below"
-                />
-
-                <input
-                  className="input"
-                  type="file"
-                  accept="image/*"
-                  onChange={async (e: ChangeEvent<HTMLInputElement>) => {
-                    const file = e.target.files?.[0];
-                    if (!file) return;
-                    const dataUrl = await fileToDataUrl(file);
-                    updateItem(index, 'image', dataUrl);
-                  }}
-                />
-
-                {item.image ? (
-                  <img
-                    src={item.image}
-                    alt={item.title || `Floor Plan ${index + 1}`}
-                    className="h-32 w-full rounded-2xl border border-line object-cover"
-                  />
-                ) : null}
-              </div>
-            </FormGrid>
+            <span className="text-sm text-text">
+              Floor Plans ({items.length})
+            </span>
+            <span className="text-xs text-muted">
+              {openDropdown ? "▲" : "▼"}
+            </span>
           </div>
-        ))}
-      </div>
+
+          {/* ✅ DROPDOWN CONTENT (your SAME code inside) */}
+          {openDropdown && (
+            <div className="space-y-4 max-h-[500px] overflow-y-auto">
+              {items.map((item, index) => (
+                <div
+                  key={`floor-plan-${index}`}
+                  className="rounded-[24px] border border-line bg-panel/40 p-4"
+                >
+                  <div className="mb-4 flex items-center justify-between">
+                    <h4 className="text-sm font-semibold text-text">
+                      Floor Plan {index + 1}
+                    </h4>
+                    <ActionButton secondary onClick={() => removeItem(index)}>
+                      Remove
+                    </ActionButton>
+                  </div>
+
+                  <FormGrid columns={3}>
+                    <TextInput
+                      label="Unit Type"
+                      value={item.unitType}
+                      onChange={(next) => updateItem(index, "unitType", next)}
+                      placeholder="1 Bedroom / 2 Bedroom"
+                    />
+                    <TextInput
+                      label="Plan Title"
+                      value={item.title}
+                      onChange={(next) => updateItem(index, "title", next)}
+                    />
+                    <TextInput
+                      label="Category"
+                      value={item.category}
+                      onChange={(next) => updateItem(index, "category", next)}
+                      placeholder="Apartment / Villa"
+                    />
+                    <TextInput
+                      label="Bedrooms"
+                      type="number"
+                      value={Number(item.bedrooms || 0)}
+                      onChange={(next) =>
+                        updateItem(index, "bedrooms", Number(next))
+                      }
+                    />
+                    <TextInput
+                      label="Bathrooms"
+                      type="number"
+                      value={Number(item.bathrooms || 0)}
+                      onChange={(next) =>
+                        updateItem(index, "bathrooms", Number(next))
+                      }
+                    />
+                    <TextInput
+                      label="Sort Order"
+                      type="number"
+                      value={Number(item.sortOrder || 0)}
+                      onChange={(next) =>
+                        updateItem(index, "sortOrder", Number(next))
+                      }
+                    />
+                    <TextInput
+                      label="Size"
+                      value={item.size}
+                      onChange={(next) => updateItem(index, "size", next)}
+                      placeholder="850 sq.ft."
+                    />
+                    <TextInput
+                      label="Price"
+                      type="number"
+                      value={Number(item.price || 0)}
+                      onChange={(next) =>
+                        updateItem(index, "price", Number(next))
+                      }
+                    />
+                    <div className="space-y-3">
+                      <TextInput
+                        label="Floor Plan Image"
+                        value={item.image}
+                        onChange={(next) => updateItem(index, "image", next)}
+                        placeholder="Paste image URL or upload below"
+                      />
+
+                      <input
+                        className="input"
+                        type="file"
+                        accept="image/*"
+                        onChange={async (e: ChangeEvent<HTMLInputElement>) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          const dataUrl = await fileToDataUrl(file);
+                          updateItem(index, "image", dataUrl);
+                        }}
+                      />
+
+                      {item.image ? (
+                        <img
+                          src={item.image}
+                          alt={item.title || `Floor Plan ${index + 1}`}
+                          className="h-32 w-full rounded-2xl border border-line object-cover"
+                        />
+                      ) : null}
+                    </div>
+                  </FormGrid>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -1040,7 +1107,7 @@ function getRelationLabel(
   entity: string,
   value?: string | null,
 ) {
-  if (!value) return '';
+  if (!value) return "";
   const option = (relations[entity] || []).find((item) => item.value === value);
   return option?.label || value;
 }
@@ -1055,10 +1122,10 @@ function renderDynamicField(
   const value = form[field.key];
   const uploadSingleFile = async (file: File): Promise<string> => {
     const formData = new FormData();
-    formData.append('file', file);
+    formData.append("file", file);
 
-    const response = await api.post('/content/upload/gallery', formData);
-    console.log(response, 'Upload response');
+    const response = await api.post("/content/upload/gallery", formData);
+    console.log(response, "Upload response");
     const uploadedUrl =
       response?.data?.url ||
       response?.data?.data?.url ||
@@ -1066,27 +1133,27 @@ function renderDynamicField(
       response?.data?.data?.fileUrl ||
       response?.data?.location ||
       response?.data?.data?.location ||
-      '';
+      "";
 
     if (!uploadedUrl) {
-      throw new Error('Upload API did not return image URL');
+      throw new Error("Upload API did not return image URL");
     }
 
     return uploadedUrl;
   };
   switch (field.type) {
-    case 'text':
+    case "text":
       return (
         <TextInput
           label={field.label}
-          value={String(value ?? '')}
+          value={String(value ?? "")}
           onChange={(next) =>
             setForm((prev) => {
               const updated = { ...prev, [field.key]: next };
 
-              if (field.key === 'title') {
-                const oldSlug = prev.slug || '';
-                const generatedOldSlug = createSlug(prev.title || '');
+              if (field.key === "title") {
+                const oldSlug = prev.slug || "";
+                const generatedOldSlug = createSlug(prev.title || "");
                 if (!oldSlug || oldSlug === generatedOldSlug) {
                   updated.slug = createSlug(next);
                 }
@@ -1098,7 +1165,7 @@ function renderDynamicField(
         />
       );
 
-    case 'number':
+    case "number":
       return (
         <TextInput
           label={field.label}
@@ -1113,11 +1180,11 @@ function renderDynamicField(
         />
       );
 
-    case 'textarea':
+    case "textarea":
       return (
         <TextArea
           label={field.label}
-          value={String(value ?? '')}
+          value={String(value ?? "")}
           onChange={(next) =>
             setForm((prev) => ({
               ...prev,
@@ -1126,11 +1193,11 @@ function renderDynamicField(
           }
         />
       );
-    case 'editor':
+    case "editor":
       return (
         <TiptapEditor
           label={field.label}
-          value={String(value ?? '')}
+          value={String(value ?? "")}
           onChange={(next) =>
             setForm((prev) => ({
               ...prev,
@@ -1140,11 +1207,11 @@ function renderDynamicField(
         />
       );
 
-    case 'select':
+    case "select":
       return (
         <SelectInput
           label={field.label}
-          value={String(value ?? '')}
+          value={String(value ?? "")}
           onChange={(next) =>
             setForm((prev) => ({
               ...prev,
@@ -1155,11 +1222,11 @@ function renderDynamicField(
         />
       );
 
-    case 'relation-select':
+    case "relation-select":
       return (
         <SelectInput
           label={field.label}
-          value={String(value ?? '')}
+          value={String(value ?? "")}
           onChange={(next) =>
             setForm((prev) => ({
               ...prev,
@@ -1167,19 +1234,49 @@ function renderDynamicField(
             }))
           }
           options={
-            field.key === 'communities'
+            field.key === "communities"
               ? communityOptions
-              : relations[field.relation?.entity || ''] || []
+              : relations[field.relation?.entity || ""] || []
           }
         />
       );
+    case "address":
+      return (
+        <div className="space-y-2">
+          <FieldLabel label="Address" />
 
-    case 'relation-multiselect':
+          <GoogleAddressInput
+            value={String(form.address || "")}
+            onChange={(val) =>
+              setForm((prev) => ({
+                ...prev,
+                address: val,
+              }))
+            }
+            onSelect={({ address, lat, lng }) =>
+              setForm((prev) => ({
+                ...prev,
+                address,
+                latitude: String(lat),
+                longitude: String(lng),
+              }))
+            }
+          />
+
+          {/* Show lat/lng */}
+          {form.latitude && form.longitude && (
+            <p className="text-xs text-muted">
+              Lat: {form.latitude} | Lng: {form.longitude}
+            </p>
+          )}
+        </div>
+      );
+    case "relation-multiselect":
       return (
         <MultiSelectInput
           label={field.label}
           value={Array.isArray(value) ? (value as string[]) : []}
-          options={relations[field.relation?.entity || ''] || []}
+          options={relations[field.relation?.entity || ""] || []}
           onChange={(next) =>
             setForm((prev) => ({
               ...prev,
@@ -1189,7 +1286,7 @@ function renderDynamicField(
         />
       );
 
-    case 'toggle':
+    case "toggle":
       return (
         <Toggle
           label={field.label}
@@ -1203,12 +1300,12 @@ function renderDynamicField(
         />
       );
 
-    case 'image':
+    case "image":
       return (
         <div className="space-y-3">
           <TextInput
             label={field.label}
-            value={String(value ?? '')}
+            value={String(value ?? "")}
             onChange={(next) =>
               setForm((prev) => ({
                 ...prev,
@@ -1237,10 +1334,10 @@ function renderDynamicField(
             <img
               src={String(value)}
               alt={field.label}
-              className="h-36 w-full rounded-2xl border border-line object-cover"
+              className="h-40w-full rounded-2xl border border-line object-cover"
             />
           ) : null}
-          <p className='text-white text-xs'>Note: {field.note}</p>
+          <p className="text-white text-xs">Note: {field.note}</p>
         </div>
       );
 
@@ -1256,14 +1353,17 @@ export default function PropertiesPage() {
   const [open, setOpen] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [typeFilter, setTypeFilter] = useState('all');
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [typeFilter, setTypeFilter] = useState("all");
   const [relations, setRelations] = useState<RelationData>({});
   const [open2, setOpen2] = useState(false);
   const [communityOptions, setCommunityOptions] = useState<FieldOption[]>([]);
   const [mounted, setMounted] = useState(false);
-
+  const [developerFilter, setDeveloperFilter] = useState("all");
+  const [locationFilter, setLocationFilter] = useState("all");
+  const developerOptions = relations["content/developer-community"] || [];
+  const locationOptions = relations["content/locations"] || [];
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -1276,19 +1376,19 @@ export default function PropertiesPage() {
 
       try {
         const res = await api.get(
-          `/content/communities?developer=${form.developer}`
+          `/content/communities?developer=${form.developer}`,
         );
 
         const rows = normalizeApiArray(res);
 
         const options = rows.map((row: any) => ({
-          label: String(row?.title ?? ''),
-          value: String(row?._id ?? ''),
+          label: String(row?.title ?? ""),
+          value: String(row?._id ?? ""),
         }));
 
         setCommunityOptions(options);
       } catch (err) {
-        console.error('Failed to fetch communities', err);
+        console.error("Failed to fetch communities", err);
         setCommunityOptions([]);
       }
     };
@@ -1297,11 +1397,11 @@ export default function PropertiesPage() {
   }, [form.developer]);
   const load = async () => {
     try {
-      const snapshot = await api.get<WorkspaceSnapshot>('/properties/admin');
-      console.log(snapshot, 'Loaded properties snapshot');
+      const snapshot = await api.get<WorkspaceSnapshot>("/properties/admin");
+      console.log(snapshot, "Loaded properties snapshot");
       setItems(((snapshot as any) || []) as PropertyForm[]);
     } catch {
-      setError('Failed to load properties.');
+      setError("Failed to load properties.");
     }
   };
 
@@ -1311,15 +1411,15 @@ export default function PropertiesPage() {
     const fetchRelations = async () => {
       try {
         const endpoints = [
-          'content/property-types',
-          'content/property-sub-types',
+          "content/property-types",
+          "content/property-sub-types",
           // 'content/property-categories',
-          'content/developer-community',
-          'content/developer-types',
-          'content/locations',
-          'content/property-amenities',
-          'content/categories',
-          'content/sub-locations'
+          "content/developer-community",
+          "content/developer-types",
+          "content/locations",
+          "content/property-amenities",
+          "content/categories",
+          "content/sub-locations",
         ];
 
         const responses = await Promise.all(
@@ -1331,8 +1431,8 @@ export default function PropertiesPage() {
         endpoints.forEach((endpoint, index) => {
           const rows = normalizeApiArray(responses[index]);
           nextRelations[endpoint] = rows.map((row: any) => ({
-            label: String(row?.name ?? row?.title ?? row?.label ?? ''),
-            value: String(row?._id ?? row?.id ?? row?.value ?? ''),
+            label: String(row?.name ?? row?.title ?? row?.label ?? ""),
+            value: String(row?._id ?? row?.id ?? row?.value ?? ""),
           }));
         });
 
@@ -1347,33 +1447,52 @@ export default function PropertiesPage() {
 
   const filtered = useMemo(() => {
     return items.filter((item) => {
-      const categoryText = item.categories;
-
-      const relationText = [
+      const searchText = [
         item.title,
-        item.location,
-        categoryText,
-        item.city || '',
-        item.developer || '',
-        item.propertyType || '',
+        item.city,
+        item.location?.title,
+        item.developer?.title,
       ]
-        .join(' ')
+        .join(" ")
         .toLowerCase();
 
-      const matchesSearch = !search || relationText.includes(search.toLowerCase());
-      const matchesStatus = statusFilter === 'all' || item.status === statusFilter;
+      const matchesSearch =
+        !search || searchText.includes(search.toLowerCase());
 
-      const typeLabel = getRelationLabel(relations, 'property-types', item.propertyType);
+      const matchesStatus =
+        statusFilter === "all" || item.status === statusFilter;
+
       const matchesType =
-        typeFilter === 'all' ||
-        item.propertyType === typeFilter ||
-        item.type === typeFilter ||
-        typeLabel === typeFilter;
+        typeFilter === "all" ||
+        item?.type?._id === typeFilter ||
+        item?.type === typeFilter;
 
-      return matchesSearch && matchesStatus && matchesType;
+      const matchesDeveloper =
+        developerFilter === "all" ||
+        item?.developer?._id === developerFilter ||
+        item?.developer === developerFilter;
+
+      const matchesLocation =
+        locationFilter === "all" ||
+        item?.location?._id === locationFilter ||
+        item?.location === locationFilter;
+
+      return (
+        matchesSearch &&
+        matchesStatus &&
+        matchesType &&
+        matchesDeveloper &&
+        matchesLocation
+      );
     });
-  }, [items, search, statusFilter, typeFilter, relations]);
-
+  }, [
+    items,
+    search,
+    statusFilter,
+    typeFilter,
+    developerFilter,
+    locationFilter,
+  ]);
   const close = () => {
     setOpen(false);
     setEditingId(null);
@@ -1384,7 +1503,7 @@ export default function PropertiesPage() {
     try {
       setError(null);
 
-      const slug = form.slug || createSlug(form.title || '');
+      const slug = form.slug || createSlug(form.title || "");
 
       const payload = {
         ...form,
@@ -1393,10 +1512,11 @@ export default function PropertiesPage() {
         url: form.url || `/property/${slug}`,
 
         // ✅ NORMALIZE RELATIONS
-        propertyType: form.propertyType || '',
-        propertySubType: form.propertySubType || '',
-        developer: form.developer || '',
-        location: form.location || '',
+        // propertyType: form.propertyType || [],
+        type: form.type || [],
+        propertySubType: form.propertySubType || [],
+        developer: form.developer || "",
+        location: form.location || "",
 
         // ✅ FIX CATEGORY
         categories: form.categories,
@@ -1409,11 +1529,7 @@ export default function PropertiesPage() {
         faq: form.faq || [],
 
         // ✅ TAG FIX
-        tag: form.hotLaunch
-          ? 'HOT'
-          : form.exclusive
-            ? 'Exclusive'
-            : form.tag,
+        tag: form.hotLaunch ? "HOT" : form.exclusive ? "Exclusive" : form.tag,
       };
 
       if (editingId) {
@@ -1422,28 +1538,28 @@ export default function PropertiesPage() {
         await api.post(`/properties`, payload);
       }
 
-      setMessage(editingId ? 'Property updated.' : 'Property created.');
+      setMessage(editingId ? "Property updated." : "Property created.");
       close();
       load();
     } catch {
-      setError('Unable to save property.');
+      setError("Unable to save property.");
     }
   };
 
   const edit = (item: any) => {
     const getId = (val: any) => {
-      if (!val) return '';
-      if (typeof val === 'string') return val;
-      return val._id || val.id || '';
+      if (!val) return "";
+      if (typeof val === "string") return val;
+      return val._id || val.id || "";
     };
 
     const normalizeArrayIds = (val: any) => {
       if (!val) return [];
       if (Array.isArray(val)) {
-        return val.map((v) => (typeof v === 'string' ? v : v?._id));
+        return val.map((v) => (typeof v === "string" ? v : v?._id));
       }
       // if single value
-      return [typeof val === 'string' ? val : val?._id];
+      return [typeof val === "string" ? val : val?._id];
     };
 
     setForm({
@@ -1451,8 +1567,8 @@ export default function PropertiesPage() {
       ...item,
       type: item?.type?._id || "",
       // ✅ TYPE FIX (important)
-      propertyType: getId(item.propertyType || item.type),
-      propertySubType: getId(item.propertySubType || item.subType),
+      propertyType: normalizeArrayIds(item.propertyType || item.type),
+      propertySubType: normalizeArrayIds(item.propertySubType || item.subType),
 
       // ✅ DEVELOPER FIX
       developer: getId(item.developer),
@@ -1467,14 +1583,14 @@ export default function PropertiesPage() {
       categories: item.categories,
 
       // ✅ PROPERTY STATUS FIX (case normalize)
-      propertyStatus: (item.propertyStatus || 'ready').toLowerCase(),
+      propertyStatus: (item.propertyStatus || "ready").toLowerCase(),
 
       // ✅ MEDIA SAFE
       gallery: Array.isArray(item.gallery) ? item.gallery : [],
-      thumbnail: item.thumbnail || '',
-      propertyBanner: item.propertyBanner || '',
-      enquireFormImage: item.enquireFormImage || '',
-      propertydoc: item.propertydoc || '',
+      thumbnail: item.thumbnail || "",
+      propertyBanner: item.propertyBanner || "",
+      enquireFormImage: item.enquireFormImage || "",
+      propertydoc: item.propertydoc || "",
 
       // ✅ COMPLEX FIELDS
       amenities: Array.isArray(item.amenities) ? item.amenities : [],
@@ -1507,14 +1623,14 @@ export default function PropertiesPage() {
 
     try {
       await api.delete(`/properties/${id}`);
-      setMessage('Property deleted.');
+      setMessage("Property deleted.");
       load();
     } catch {
-      setError('Unable to delete property.');
+      setError("Unable to delete property.");
     }
   };
 
-  const typeFilterOptions = relations['property-types'] || [];
+  const typeFilterOptions = relations["property-types"] || [];
   if (!mounted) return null;
   return (
     <DashboardShell>
@@ -1530,6 +1646,8 @@ export default function PropertiesPage() {
         subtitle="Filters, actions, and richer property cards closer to the admin product flow."
         action={
           <div className="flex flex-wrap gap-3">
+
+            {/* SEARCH */}
             <input
               className="input w-64"
               placeholder="Search property, city, developer"
@@ -1537,6 +1655,7 @@ export default function PropertiesPage() {
               onChange={(e) => setSearch(e.target.value)}
             />
 
+            {/* PROPERTY TYPE */}
             <select
               className="input w-48"
               value={typeFilter}
@@ -1544,12 +1663,41 @@ export default function PropertiesPage() {
             >
               <option value="all">All Types</option>
               {typeFilterOptions.map((option) => (
-                <option key={`type-filter-${option.value}`} value={option.value}>
+                <option key={option.value} value={option.value}>
                   {option.label}
                 </option>
               ))}
             </select>
 
+            {/* ✅ DEVELOPER FILTER */}
+            <select
+              className="input w-48"
+              value={developerFilter}
+              onChange={(e) => setDeveloperFilter(e.target.value)}
+            >
+              <option value="all">All Developers</option>
+              {developerOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+
+            {/* ✅ LOCATION FILTER */}
+            <select
+              className="input w-48"
+              value={locationFilter}
+              onChange={(e) => setLocationFilter(e.target.value)}
+            >
+              <option value="all">All Locations</option>
+              {locationOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+
+            {/* STATUS */}
             <select
               className="input w-40"
               value={statusFilter}
@@ -1623,25 +1771,23 @@ export default function PropertiesPage() {
                       <div className="font-medium text-text">
                         {property.title}
                       </div>
-                      <div className="text-xs text-muted">
-                        {property.slug}
-                      </div>
+                      <div className="text-xs text-muted">{property.slug}</div>
                     </td>
 
                     {/* Location */}
                     <td className="px-4 py-3 text-muted">
                       {property.location?.title}
-                      {property.city ? `, ${property.city}` : ''}
+                      {property.city ? `, ${property.city}` : ""}
                     </td>
 
                     {/* Type */}
                     <td className="px-4 py-3 text-muted">
-                      {property?.type?.title || '—'}
+                      {property?.type?.title || "—"}
                     </td>
 
                     {/* Developer */}
                     <td className="px-4 py-3 text-muted">
-                      {property?.developer?.title || '—'}
+                      {property?.developer?.title || "—"}
                     </td>
 
                     {/* Beds */}
@@ -1662,13 +1808,13 @@ export default function PropertiesPage() {
                     {/* Status */}
                     <td className="px-4 py-3">
                       <StatusBadge
-                        value={property.status || 'draft'}
+                        value={property.status || "draft"}
                         tone={
-                          property.status === 'active'
-                            ? 'green'
-                            : property.status === 'inactive'
-                              ? 'red'
-                              : 'slate'
+                          property.status === "active"
+                            ? "green"
+                            : property.status === "inactive"
+                              ? "red"
+                              : "slate"
                         }
                       />
                     </td>
@@ -1686,10 +1832,7 @@ export default function PropertiesPage() {
 
               {!filtered.length && (
                 <tr>
-                  <td
-                    colSpan={10}
-                    className="px-4 py-8 text-center text-muted"
-                  >
+                  <td colSpan={10} className="px-4 py-8 text-center text-muted">
                     No properties found.
                   </td>
                 </tr>
@@ -1702,8 +1845,7 @@ export default function PropertiesPage() {
       <Modal
         open={open}
         onClose={close}
-      
-        title={editingId ? 'Edit Property' : 'Add Property'}
+        title={editingId ? "Edit Property" : "Add Property"}
         subtitle="Expanded property form with SEO, geo, visibility, API relations, media, amenities, floor plans, and gallery uploads."
         size="xl"
       >
@@ -1713,26 +1855,31 @@ export default function PropertiesPage() {
               key={section.key}
               className="space-y-4 rounded-[24px] border border-line bg-panel/40 p-4"
             >
-              <h3 className="text-sm font-semibold text-text">{section.title}</h3>
+              <h3 className="text-sm font-semibold text-text">
+                {section.title}
+              </h3>
 
-              {
-                section.custom === 'gallery' ? (
-                  <GalleryUploader
-                    value={Array.isArray(form.gallery) ? form.gallery : []}
-                    onChange={(next) =>
-                      setForm((prev) => ({
-                        ...prev,
-                        gallery: next,
-                      }))
-                    }
-                  />
-                ) : section.custom === "faq" ? <FAQEditor value={Array.isArray(form.faq) ? form.faq : []}
+              {section.custom === "gallery" ? (
+                <GalleryUploader
+                  value={Array.isArray(form.gallery) ? form.gallery : []}
+                  onChange={(next) =>
+                    setForm((prev) => ({
+                      ...prev,
+                      gallery: next,
+                    }))
+                  }
+                />
+              ) : section.custom === "faq" ? (
+                <FAQEditor
+                  value={Array.isArray(form.faq) ? form.faq : []}
                   onChange={(next) =>
                     setForm((prev) => ({
                       ...prev,
                       faq: next,
                     }))
-                  } /> : section.custom === 'amenities' ? (
+                  }
+                  />
+                ) : section.custom === "amenities" ? (
                   <AmenitiesEditor
                     value={Array.isArray(form.amenities) ? form.amenities : []}
                     onChange={(next) =>
@@ -1742,17 +1889,17 @@ export default function PropertiesPage() {
                       }))
                     }
                   />
-                ) : section.custom === 'floorPlans' ? (
-                  <FloorPlansEditor
-                    value={Array.isArray(form.floorPlans) ? form.floorPlans : []}
-                    onChange={(next) =>
-                      setForm((prev) => ({
-                        ...prev,
-                        floorPlans: next,
-                      }))
-                    }
-                  />
-                    ) : section.custom === 'file' ? (   // ✅ NEW
+                  ) : section.custom === "floorPlans" ? (
+                    <FloorPlansEditor
+                      value={Array.isArray(form.floorPlans) ? form.floorPlans : []}
+                      onChange={(next) =>
+                        setForm((prev) => ({
+                          ...prev,
+                          floorPlans: next,
+                        }))
+                      }
+                    />
+                    ) : section.custom === "file" ? ( // ✅ NEW
                       <PdfUploader
                         value={form.propertydoc || ""}
                         onChange={(url) =>
@@ -1766,7 +1913,13 @@ export default function PropertiesPage() {
                 <FormGrid columns={section.columns || 3}>
                   {(section.fields || []).map((field) => (
                     <div key={String(field.key)}>
-                      {renderDynamicField(field, form, setForm, relations, communityOptions)}
+                      {renderDynamicField(
+                        field,
+                        form,
+                        setForm,
+                        relations,
+                        communityOptions,
+                      )}
                     </div>
                   ))}
                 </FormGrid>
@@ -1777,11 +1930,15 @@ export default function PropertiesPage() {
           <FormActions
             onSubmit={submit}
             onCancel={close}
-            submitLabel={editingId ? 'Update Property' : 'Create Property'}
+            submitLabel={editingId ? "Update Property" : "Create Property"}
           />
         </div>
       </Modal>
-      <PropertyImportModal open={open2} onClose={() => setOpen2(false)} fetchProperty={load} />
+      <PropertyImportModal
+        open={open2}
+        onClose={() => setOpen2(false)}
+        fetchProperty={load}
+      />
     </DashboardShell>
   );
 }

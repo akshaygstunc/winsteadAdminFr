@@ -279,12 +279,14 @@ function renderField(
             );
         case 'editor':
             return (
+                <div className='w-full'>
                 <TiptapEditor
                     label={field.label}
                     value={value || ''}
                     onChange={onChange}
                     note={field.note}
                 />
+                </div>
             );
         case 'select':
             return (
@@ -451,49 +453,56 @@ function renderField(
         case 'video':
         case 'image':
             return (
-                <div className="space-y-3">
+                <div className="space-y-4 w-full">
                     <TextInput
                         label={field.label}
                         value={value || ''}
                         onChange={onChange}
-                        multiple={field.multiple}
-                        placeholder="Paste image URL or upload below"
+                        placeholder={`Paste ${field.type} URL or upload below`}
                     />
+
+                    {/* Upload */}
                     <div>
                         <FieldLabel label={`${field.label} Upload`} />
                         <input
                             className="input"
                             type="file"
-                            accept={field.type === 'video' ? 'video/mp4' : 'image/*'}
+                            accept={field.type === 'video' ? 'video/*' : 'image/*'}
                             onChange={async (e: ChangeEvent<HTMLInputElement>) => {
                                 const file = e.target.files?.[0];
                                 if (!file) return;
-                                const dataUrl = await uploadAsset(file);
-                                onChange(dataUrl);
+
+                                const uploadedUrl = await fileToDataUrl(file);
+                                onChange(uploadedUrl);
                             }}
                         />
                     </div>
-                    {field.note ? <p className="text-xs text-muted">{field.note}</p> : null}
-                    {value
-                        ? field.type === 'video'
-                            ? (
+
+                    {/* ✅ PREVIEW FIX */}
+                    {value && (
+                        <div className="w-full rounded-2xl overflow-hidden border border-line bg-black">
+                            {field.type === 'video' ? (
                                 <video
                                     src={value}
                                     controls
-                                    className="h-36 w-full rounded-2xl border border-line object-cover"
+                                    className="w-full h-[250px] md:h-[350px] object-cover"
                                 />
-                            )
-                            : (
+                            ) : (
                                 <img
                                     src={value}
                                     alt={field.label}
-                                    className="h-36 w-full rounded-2xl border border-line object-cover"
+                                    className="w-full h-[250px] md:h-[350px] object-cover"
                                 />
-                            )
-                        : null}
+                            )}
+                        </div>
+                    )}
+
+                    {field.note && (
+                        <p className="text-xs text-muted">{field.note}</p>
+                    )}
                 </div>
-            );
-        case 'gallery':
+            ); 
+            case 'gallery':
             return <GalleryUploader value={value || []} onChange={onChange} />;
 
         default:
