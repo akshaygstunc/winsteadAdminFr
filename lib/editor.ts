@@ -3216,4 +3216,70 @@ export const EditorConfigs: Record<string, CmsConfig> = {
     ],
     searchMeta("iconName", "category", "sortOrder"),
   ),
+  "floor-plans": collection(
+  "Floor Plans",
+  "floor-plans",
+
+  "Property-specific floor plans like studio, 1BHK, 2BHK, etc.",
+  undefined,
+  [
+    { key: "title", label: "Title", type: "text" },
+
+    {
+      key: "unitType",
+      label: "Unit Type",
+      type: "text", // Studio, 1BHK, 2BHK
+    },
+
+    {
+      key: "category",
+      label: "Category",
+      type: "text", // Apartment, Villa etc.
+    },
+
+    {
+      key: "bedrooms",
+      label: "Bedrooms",
+      type: "number",
+    },
+
+    {
+      key: "bathrooms",
+      label: "Bathrooms",
+      type: "number",
+    },
+
+    {
+      key: "size",
+      label: "Size",
+      type: "text", // "650 Sqft"
+    },
+
+    {
+      key: "price",
+      label: "Price",
+      type: "number",
+    },
+
+    {
+      key: "image",
+      label: "Floor Plan Image",
+      type: "image",
+    },
+
+    {
+      key: "sortOrder",
+      label: "Sort Order",
+      type: "number",
+    },
+
+    {
+      key: "status",
+      label: "Status",
+      type: "select",
+      options: boolStatus,
+    },
+  ],
+  searchMeta("title", "unitType", "category", "price"),
+),
 };

@@ -919,183 +919,138 @@ function FloorPlansEditor({
   onChange: (next: FloorPlanItem[]) => void;
 }) {
   const items = Array.isArray(value) ? value : [];
+  const [options, setOptions] = useState<FloorPlanItem & { _id: string }[]>([]);
+  const [loading, setLoading] = useState(false);
   const [openDropdown, setOpenDropdown] = useState(false);
 
-  const updateItem = (
-    index: number,
-    key: keyof FloorPlanItem,
-    nextValue: string | number,
-  ) => {
-    const next = [...items];
-    next[index] = {
-      ...next[index],
-      [key]: nextValue,
+  useEffect(() => {
+    const fetchFloorPlans = async () => {
+      try {
+        setLoading(true);
+        const response = await api.get("/content/floor-plans");
+        const rows = normalizeApiArray(response);
+        const nextOptions = rows.map((row: any) => ({
+          _id: String(row?._id ?? row?.id ?? ""),
+          title: String(row?.title ?? ""),
+          unitType: String(row?.data?.unitType ?? row?.unitType ?? ""),
+          category: String(row?.data?.category ?? row?.category ?? ""),
+          bedrooms: Number(row?.data?.bedrooms ?? row?.bedrooms ?? 0),
+          bathrooms: Number(row?.data?.bathrooms ?? row?.bathrooms ?? 0),
+          size: String(row?.data?.size ?? row?.size ?? ""),
+          price: Number(row?.data?.price ?? row?.price ?? 0),
+          image: String(row?.data?.image ?? row?.image ?? ""),
+          sortOrder: Number(row?.data?.sortOrder ?? row?.sortOrder ?? 0),
+        }));
+        setOptions(nextOptions);
+      } catch (error) {
+        console.error("Failed to load floor plans:", error);
+      } finally {
+        setLoading(false);
+      }
     };
-    onChange(next);
-  };
 
-  const addItem = () => {
-    onChange([
-      ...items,
-      {
-        unitType: "",
-        title: "",
-        bedrooms: 0,
-        bathrooms: 0,
-        size: "",
-        price: 0,
-        image: "",
-        category: "",
-        sortOrder: items.length + 1,
-      },
-    ]);
-  };
+    fetchFloorPlans();
+  }, []);
 
-  const removeItem = (index: number) => {
-    onChange(items.filter((_, i) => i !== index));
+  const isChecked = (optionId: string) =>
+    items.some((item: any) => item._id === optionId);
+
+  const toggleFloorPlan = (option: any, checked: boolean) => {
+    if (checked) {
+      if (items.some((item: any) => item._id === option._id)) return;
+      onChange([...items, { ...option }]);
+    } else {
+      onChange(items.filter((item: any) => item._id !== option._id));
+    }
   };
 
   return (
     <div className="space-y-4">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <FieldLabel label="Floor Plans" />
-          <p className="mt-1 text-xs text-muted">
-            Add unit type, bedrooms, bathrooms, size, pricing and floor plan
-            image.
-          </p>
-        </div>
-        <ActionButton onClick={addItem}>Add Floor Plan</ActionButton>
+      <div>
+        <FieldLabel label="Floor Plans" />
+        <p className="mt-1 text-xs text-muted">
+          Select floor plans to attach to this property.
+        </p>
       </div>
 
-      {!items.length ? (
-        <div className="rounded-2xl border border-dashed border-line p-6 text-sm text-muted">
-          No floor plans added yet.
+      {loading ? (
+        <div className="rounded-2xl border border-line p-6 text-sm text-muted">
+          Loading floor plans...
         </div>
-      ) : null}
-
-      {/* ✅ DROPDOWN HEADER */}
-      {!!items.length && (
+      ) : !options.length ? (
+        <div className="rounded-2xl border border-dashed border-line p-6 text-sm text-muted">
+          No floor plans found. Add them from the Floor Plans section.
+        </div>
+      ) : (
         <div className="space-y-3">
           <div
             onClick={() => setOpenDropdown(!openDropdown)}
             className="cursor-pointer flex justify-between items-center border border-line rounded-2xl px-4 py-3 bg-panel"
           >
-            <span className="text-sm text-text">
-              Floor Plans ({items.length})
-            </span>
-            <span className="text-xs text-muted">
-              {openDropdown ? "▲" : "▼"}
-            </span>
+            <span className="text-sm text-text">Select Floor Plans</span>
+            <span className="text-xs text-muted">{openDropdown ? "▲" : "▼"}</span>
           </div>
 
-          {/* ✅ DROPDOWN CONTENT (your SAME code inside) */}
           {openDropdown && (
-            <div className="space-y-4 max-h-[500px] overflow-y-auto">
-              {items.map((item, index) => (
-                <div
-                  key={`floor-plan-${index}`}
-                  className="rounded-[24px] border border-line bg-panel/40 p-4"
-                >
-                  <div className="mb-4 flex items-center justify-between">
-                    <h4 className="text-sm font-semibold text-text">
-                      Floor Plan {index + 1}
-                    </h4>
-                    <ActionButton secondary onClick={() => removeItem(index)}>
-                      Remove
-                    </ActionButton>
-                  </div>
-
-                  <FormGrid columns={3}>
-                    <TextInput
-                      label="Unit Type"
-                      value={item.unitType}
-                      onChange={(next) => updateItem(index, "unitType", next)}
-                      placeholder="1 Bedroom / 2 Bedroom"
+            <div className="max-h-72 overflow-y-auto border border-line rounded-2xl bg-panel/40 divide-y">
+              {options.map((option) => {
+                const checked = isChecked(option._id);
+                return (
+                  <label
+                    key={option._id}
+                    className={`flex items-start gap-3 px-4 py-3 cursor-pointer transition ${checked ? "bg-panel" : ""}`}
+                  >
+                    <input
+                      type="checkbox"
+                      className="mt-1"
+                      checked={checked}
+                      onChange={(e) => toggleFloorPlan(option, e.target.checked)}
                     />
-                    <TextInput
-                      label="Plan Title"
-                      value={item.title}
-                      onChange={(next) => updateItem(index, "title", next)}
-                    />
-                    <TextInput
-                      label="Category"
-                      value={item.category}
-                      onChange={(next) => updateItem(index, "category", next)}
-                      placeholder="Apartment / Villa"
-                    />
-                    <TextInput
-                      label="Bedrooms"
-                      type="number"
-                      value={Number(item.bedrooms || 0)}
-                      onChange={(next) =>
-                        updateItem(index, "bedrooms", Number(next))
-                      }
-                    />
-                    <TextInput
-                      label="Bathrooms"
-                      type="number"
-                      value={Number(item.bathrooms || 0)}
-                      onChange={(next) =>
-                        updateItem(index, "bathrooms", Number(next))
-                      }
-                    />
-                    <TextInput
-                      label="Sort Order"
-                      type="number"
-                      value={Number(item.sortOrder || 0)}
-                      onChange={(next) =>
-                        updateItem(index, "sortOrder", Number(next))
-                      }
-                    />
-                    <TextInput
-                      label="Size"
-                      value={item.size}
-                      onChange={(next) => updateItem(index, "size", next)}
-                      placeholder="850 sq.ft."
-                    />
-                    <TextInput
-                      label="Price"
-                      type="number"
-                      value={Number(item.price || 0)}
-                      onChange={(next) =>
-                        updateItem(index, "price", Number(next))
-                      }
-                    />
-                    <div className="space-y-3">
-                      <TextInput
-                        label="Floor Plan Image"
-                        value={item.image}
-                        onChange={(next) => updateItem(index, "image", next)}
-                        placeholder="Paste image URL or upload below"
-                      />
-
-                      <input
-                        className="input"
-                        type="file"
-                        accept="image/*"
-                        onChange={async (e: ChangeEvent<HTMLInputElement>) => {
-                          const file = e.target.files?.[0];
-                          if (!file) return;
-                          const dataUrl = await fileToDataUrl(file);
-                          updateItem(index, "image", dataUrl);
-                        }}
-                      />
-
-                      {item.image ? (
+                    <div className="flex items-start gap-3">
+                      {option.image ? (
                         <img
-                          src={item.image}
-                          alt={item.title || `Floor Plan ${index + 1}`}
-                          className="h-32 w-full rounded-2xl border border-line object-cover"
+                          src={option.image}
+                          alt={option.title}
+                          className="h-10 w-10 rounded object-cover border border-line"
                         />
-                      ) : null}
+                      ) : (
+                        <div className="h-10 w-10 rounded bg-card" />
+                      )}
+                      <div>
+                        <div className="text-sm text-text font-medium">{option.title}</div>
+                        <p className="text-xs text-muted">
+                          {option.unitType} · {option.bedrooms}B {option.bathrooms}Ba · {option.size} · ₹{Number(option.price).toLocaleString()}
+                        </p>
+                      </div>
                     </div>
-                  </FormGrid>
-                </div>
-              ))}
+                  </label>
+                );
+              })}
             </div>
           )}
+        </div>
+      )}
+
+      {!!items.length && (
+        <div className="rounded-2xl border border-line bg-panel/30 p-4">
+          <p className="mb-3 text-sm font-medium text-text">Selected Floor Plans</p>
+          <div className="flex flex-wrap gap-2">
+            {items.map((item: any, index) => (
+              <div
+                key={`${item._id || item.title}-${index}`}
+                className="flex items-center gap-2 rounded-full border border-line bg-card px-3 py-2 text-xs text-text"
+              >
+                <span>{item.title} — {item.unitType}</span>
+                <button
+                  type="button"
+                  onClick={() => onChange(items.filter((_, i) => i !== index))}
+                  className="ml-1 text-red-400 hover:text-red-500 text-xs"
+                >
+                  ✕
+                </button>
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </div>
@@ -1224,23 +1179,32 @@ function renderDynamicField(
       );
 
     case "relation-select":
-      return (
-        <SelectInput
-          label={field.label}
-          value={String(value ?? "")}
-          onChange={(next) =>
-            setForm((prev) => ({
-              ...prev,
-              [field.key]: next as never,
-            }))
-          }
-          options={
-            field.key === "communities"
-              ? communityOptions
-              : relations[field.relation?.entity || ""] || []
-          }
-        />
-      );
+  return (
+    <div className="space-y-2">
+      <FieldLabel label={field.label} />
+      <select
+        className="input w-full"
+        value={String(value ?? "")}
+        onChange={(e) => {
+          console.log(`Setting ${field.key} =`, e.target.value); // ✅ raw value
+          setForm((prev) => ({
+            ...prev,
+            [field.key]: e.target.value,
+          }));
+        }}
+      >
+        <option value="">-- Select --</option>
+        {(field.key === "communities"
+          ? communityOptions
+          : relations[field.relation?.entity || ""] || []
+        ).map((opt) => (
+          <option key={opt.value} value={opt.value}>
+            {opt.label} 
+          </option>
+        ))}
+      </select>
+    </div>
+  );
     case "address":
       return (
         <div className="space-y-2">
@@ -1499,7 +1463,7 @@ export default function PropertiesPage() {
     setEditingId(null);
     setForm(emptyForm);
   };
-
+console.log("FORM LOCATION:", form.location);
   const submit = async () => {
     try {
       setError(null);
@@ -1532,6 +1496,8 @@ export default function PropertiesPage() {
         // ✅ TAG FIX
         tag: form.hotLaunch ? "HOT" : form.exclusive ? "Exclusive" : form.tag,
       };
+      console.log("Submitting payload location:", payload.location);
+console.log("Submitting payload developer:", payload.developer);
 
       if (editingId) {
         await api.patch(`/properties/${editingId}`, payload);
@@ -1588,6 +1554,7 @@ export default function PropertiesPage() {
 
       // ✅ LOCATION FIX
       location: getId(item.location),
+      // sublocation: getId(item.sublocation),
 
       // ✅ COMMUNITY (if exists)
       communities: getId(item.communities),
@@ -1705,7 +1672,7 @@ export default function PropertiesPage() {
               <option value="all">All Locations</option>
               {locationOptions.map((option) => (
                 <option key={option.value} value={option.value}>
-                  {option.label}
+                  {option.label}--
                 </option>
               ))}
             </select>

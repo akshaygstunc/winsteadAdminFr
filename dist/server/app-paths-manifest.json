@@ -1,7 +1,0 @@
-{
-  "/blogs/page": "app/blogs/page.js",
-  "/sales/manage-sales/page": "app/sales/manage-sales/page.js",
-  "/sales/clients/page": "app/sales/clients/page.js",
-  "/properties/page": "app/properties/page.js",
-  "/relationship-manager/page": "app/relationship-manager/page.js"
-}
