@@ -102,7 +102,7 @@ export function ActionButton({
   return (
     <button
       className={clsx(
-        'rounded-2xl border px-4 py-2 text-sm font-medium transition',
+        'rounded-2xl border px-4 py-2 text-sm font-medium transition bg-white',
         secondary
           ? 'border-line bg-panel text-text hover:border-gold/40'
           : 'border-gold/50 bg-gold/10 text-gold hover:bg-gold/20',

@@ -2,16 +2,26 @@
 @tailwind components;
 @tailwind utilities;
 
+/* 🌞 LIGHT THEME */
 :root {
-  color-scheme: light;
-   --panel: #ffffff;
+  --bg: #ffffff;
+  --panel: #ffffff;
   --card: #ffffff;
-  --line: #e5e7eb;       /* gray-200 */
-  --text: #0f172a;       /* slate-900 */
-  --muted: #64748b;      /* slate-500 */
-  --gold: #c9a96e;
+  --line: #e5e7eb;
+  --text: #0f172a;
+  --muted: #64748b;
+  background: #ffffff;
 }
-
+/* 🌙 DARK MODE */
+.dark {
+  --panel: #0b1220;
+  --card: #0f1729;
+  --line: #1e2a42;
+  --text: #e8edf7;
+  --muted: #8ea0c5;
+  --gold: #d8b46a;
+  background: #070b14;
+}
 html,
 body {
   background: #ffff; /* light gray base */
@@ -20,12 +30,17 @@ body {
 
 body {
   min-height: 100vh;
-  background-image:
+  /* background-image:
+    radial-gradient(circle at top left, rgba(123, 92, 255, 0.18), transparent 22%),
+    radial-gradient(circle at 82% 12%, rgba(255, 199, 77, 0.09), transparent 18%),
+    linear-gradient(180deg, #05070f 0%, #08101b 100%); */
+}
+.logo-bg{
+   background-image:
     radial-gradient(circle at top left, rgba(123, 92, 255, 0.18), transparent 22%),
     radial-gradient(circle at 82% 12%, rgba(255, 199, 77, 0.09), transparent 18%),
     linear-gradient(180deg, #05070f 0%, #08101b 100%);
 }
-
 * {
   border-color: #1b2840;
 }
@@ -35,7 +50,9 @@ body {
 }
 
 .card {
-  @apply rounded-[28px] border border-line bg-card/90 shadow-luxury backdrop-blur;
+  @apply rounded-[28px] border border-line shadow-luxury backdrop-blur;
+  background-color: var(--card);
+  opacity: 0.9;
 }
 
 .panel-grid {

@@ -22,7 +22,7 @@ import {
   Star,
   Users,
   Wrench,
-} from 'lucide-react';
+} from "lucide-react";
 
 export type NavItem = {
   label: string;
@@ -84,11 +84,13 @@ export const navSections: NavSection[] = [
       { label: "Events", href: "/customization/events", icon: Images },
       { label: "Pages", href: "/pages", icon: FileText },
       // {
+      // {
       //   label: "Relationship Manager",
       //   href: "/relationship-manager",
       //   icon: BookUser,
       // },
       { label: "Careers", href: "/careers", icon: BriefcaseBusiness },
+      { label: "Assets", href: "/assets", icon: FileText },
     ],
   },
   {
@@ -149,6 +151,11 @@ export const navSections: NavSection[] = [
           {
             label: "Amenities",
             href: "/amenities",
+            icon: Star,
+          },
+          {
+            label: "Floor Plans",
+            href: "/floor-plans",
             icon: Star,
           },
           // { label: "FAQ", href: "/customization/faq", icon: FileText },
@@ -223,6 +230,12 @@ export const navSections: NavSection[] = [
 ];
 
 export function itemMatchesPath(item: NavItem, pathname: string): boolean {
-  if (item.href && (pathname === item.href || pathname.startsWith(item.href + '/'))) return true;
-  return item.children?.some((child) => itemMatchesPath(child, pathname)) ?? false;
+  if (
+    item.href &&
+    (pathname === item.href || pathname.startsWith(item.href + "/"))
+  )
+    return true;
+  return (
+    item.children?.some((child) => itemMatchesPath(child, pathname)) ?? false
+  );
 }
