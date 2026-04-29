@@ -1229,11 +1229,10 @@ function renderDynamicField(
           label={field.label}
           value={String(value ?? "")}
           onChange={(next) =>
-            // setForm((prev) => ({
-            //   ...prev,
-            //   [field.key]: next as never,
-            // }))
-            console.log(field.key, next, "NEC")
+            setForm((prev) => ({
+              ...prev,
+              [field.key]: next as never,
+            }))
           }
           options={
             field.key === "communities"
