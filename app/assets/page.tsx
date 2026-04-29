@@ -77,14 +77,14 @@ function AssetCard({
       }`}
     >
       {/* Checkbox */}
-      <div className="absolute top-2 left-2 z-10">
+      {/* <div className="absolute top-2 left-2 z-10">
         <input
           type="checkbox"
           checked={selected}
           onChange={() => onSelect(asset._id)}
           className="h-4 w-4 accent-gold cursor-pointer"
         />
-      </div>
+      </div> */}
 
       {/* Duplicate Badge */}
       {isDuplicate && (
@@ -312,7 +312,7 @@ export default function AssetsPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await api.get<any>("/content/assets");
+      const res = await api.get<any>("/properties/assets");
       const rows = normalizeApiArray(res);
       setAssets(rows);
     } catch {
@@ -357,12 +357,12 @@ export default function AssetsPage() {
     if (!deleteAsset) return;
     setDeleteLoading(true);
     try {
-      await api.delete(`/content/assets/${deleteAsset._id}`);
+      await api.delete(`/media-assets/assets?path=${deleteAsset.path}`);
       setMessage("Asset deleted successfully.");
-      setAssets((prev) => prev.filter((a) => a._id !== deleteAsset._id));
+      setAssets((prev) => prev.filter((a) => a.path !== deleteAsset.path));
       setSelected((prev) => {
         const next = new Set(prev);
-        next.delete(deleteAsset._id);
+        next.delete(deleteAsset.path);
         return next;
       });
     } catch {

@@ -72,12 +72,19 @@ function setValue(item: CmsItem, field: CmsField, value: any): CmsItem {
 }
 
 async function fileToDataUrl(file: File) {
-    return new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(String(reader.result || ''));
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-    });
+    const formData = new FormData();
+    formData.append("file", file);
+    const response = await api.post("/content/upload/gallery", formData, {});
+    console.log(response, "Upload response");
+    const uploadedUrl =
+        response?.data?.url ||
+        response?.data?.data?.url ||
+        response?.data?.fileUrl ||
+        response?.data?.data?.fileUrl ||
+        response?.data?.location ||
+        response?.data?.data?.location ||
+        "";
+    return uploadedUrl;
 }
 const uploadAsset = async (file: File) => {
     try {

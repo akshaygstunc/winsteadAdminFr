@@ -30,12 +30,17 @@ body {
 
 body {
   min-height: 100vh;
-  background-image:
+  /* background-image:
+    radial-gradient(circle at top left, rgba(123, 92, 255, 0.18), transparent 22%),
+    radial-gradient(circle at 82% 12%, rgba(255, 199, 77, 0.09), transparent 18%),
+    linear-gradient(180deg, #05070f 0%, #08101b 100%); */
+}
+.logo-bg{
+   background-image:
     radial-gradient(circle at top left, rgba(123, 92, 255, 0.18), transparent 22%),
     radial-gradient(circle at 82% 12%, rgba(255, 199, 77, 0.09), transparent 18%),
     linear-gradient(180deg, #05070f 0%, #08101b 100%);
 }
-
 * {
   border-color: #1b2840;
 }

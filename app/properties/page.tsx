@@ -20,7 +20,7 @@ import {
 import PropertyImportModal from "@/components/PropertyImport";
 import { TiptapEditor } from "@/components/TextEditor";
 import { GoogleAddressInput } from "@/components/GoogleAutoComplete";
-
+import {  useRef } from "react";
 type FieldOption = {
   label: string;
   value: string;
@@ -400,6 +400,7 @@ function Toggle({
   );
 }
 
+
 function MultiSelectInput({
   label,
   value,
@@ -411,29 +412,84 @@ function MultiSelectInput({
   options: FieldOption[];
   onChange: (next: string[]) => void;
 }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  // close on outside click
+  useEffect(() => {
+    const handleClick = (e: any) => {
+      if (!ref.current?.contains(e.target)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
+
+  const toggleValue = (val: string) => {
+    if (value.includes(val)) {
+      onChange(value.filter((v) => v !== val));
+    } else {
+      onChange([...value, val]);
+    }
+  };
+
   return (
-    <div className="space-y-2">
+    <div className="space-y-2" ref={ref}>
       <FieldLabel label={label} />
-      <select
-        className="input min-h-[140px] w-full"
-        multiple
-        value={value}
-        onChange={(e) => {
-          const next = Array.from(e.target.selectedOptions).map(
-            (option) => option.value,
-          );
-          onChange(next);
-        }}
+
+      {/* Selected Chips */}
+      <div
+        onClick={() => setOpen(!open)}
+        className="input w-full min-h-[44px] flex flex-wrap gap-2 items-center cursor-pointer"
       >
-        {options.map((option) => (
-          <option key={`${label}-${option.value}`} value={option.value}>
-            {option.label}
-          </option>
-        ))}
-      </select>
-      <p className="text-xs text-muted">
-        Hold Ctrl / Cmd to select multiple items.
-      </p>
+        {value.length > 0 ? (
+          value.map((val) => {
+            const item = options.find((o) => o.value === val);
+            return (
+              <span
+                key={val}
+                className="px-2 py-1 text-xs rounded bg-yellow-500 text-black flex items-center gap-1"
+              >
+                {item?.label || val}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleValue(val);
+                  }}
+                  className="text-black font-bold"
+                >
+                  ×
+                </button>
+              </span>
+            );
+          })
+        ) : (
+          <span className="text-muted text-sm">Select {label}</span>
+        )}
+      </div>
+
+      {/* Dropdown */}
+      {open && (
+        <div className="border rounded-lg bg-black max-h-60 overflow-auto shadow-lg">
+          {options.map((option) => {
+            const selected = value.includes(option.value);
+            return (
+              <div
+                key={option.value}
+                onClick={() => toggleValue(option.value)}
+                className={`px-3 py-2 cursor-pointer flex justify-between items-center text-sm ${selected
+                  ? "bg-white text-black"
+                  : "text-white hover:bg-white/10"
+                  }`}
+              >
+                {option.label}
+                {selected && "✔"}
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
