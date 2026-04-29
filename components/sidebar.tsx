@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import clsx from "clsx";
 import { ChevronDown } from "lucide-react";
 import { itemMatchesPath, NavItem, navSections } from "@/lib/nav-config";
+import { ThemeToggle } from "./ThemeToggle";
 
 const STORAGE_KEY = "luxury-admin-nav-state";
 
@@ -154,7 +155,7 @@ function NavEntry({
       className={clsx(
         "group flex items-center gap-3 rounded-2xl border px-4 py-3 transition",
         pathname === item.href || pathname.startsWith((item.href || "") + "/")
-          ? "border-gold/60 bg-gradient-to-r from-gold/10 via-violet-500/10 to-transparent text-white"
+          ? "border-gold/60 bg-gradient-to-r from-gold/10 via-violet-500/10 to-transparent text-gold"
           : "border-transparent text-muted hover:border-line hover:bg-panel/70 hover:text-text",
         depth > 0 && "ml-3 rounded-xl py-2.5",
       )}
@@ -202,6 +203,9 @@ export function Sidebar() {
               height={200}
             />
           </p>
+        </div>
+        <div className="p-2">
+        <ThemeToggle />
         </div>
       </div>
 
