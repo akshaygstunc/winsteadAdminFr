@@ -1148,6 +1148,7 @@ function renderDynamicField(
           label={field.label}
           value={String(value ?? "")}
           onChange={(next) =>
+
             setForm((prev) => {
               const updated = { ...prev, [field.key]: next };
 
@@ -1228,10 +1229,11 @@ function renderDynamicField(
           label={field.label}
           value={String(value ?? "")}
           onChange={(next) =>
-            setForm((prev) => ({
-              ...prev,
-              [field.key]: next as never,
-            }))
+            // setForm((prev) => ({
+            //   ...prev,
+            //   [field.key]: next as never,
+            // }))
+            console.log(field.key, next, "NEC")
           }
           options={
             field.key === "communities"
@@ -1555,17 +1557,29 @@ export default function PropertiesPage() {
 
     const normalizeArrayIds = (val: any) => {
       if (!val) return [];
+
       if (Array.isArray(val)) {
-        return val.map((v) => (typeof v === "string" ? v : v?._id));
+        return val
+          .map((v) =>
+            typeof v === "string"
+              ? v
+              : v?._id || v?.id || ""
+          )
+          .filter(Boolean);
       }
-      // if single value
-      return [typeof val === "string" ? val : val?._id];
+      console.log(item)
+      return [
+        typeof val === "string"
+          ? val
+          : val?._id || val?.id || "",
+      ].filter(Boolean);
     };
 
     setForm({
       ...emptyForm,
       ...item,
-      type: item?.type?._id || "",
+      type: normalizeArrayIds(item.type),
+      subType: normalizeArrayIds(item.subType),
       // ✅ TYPE FIX (important)
       propertyType: normalizeArrayIds(item.propertyType || item.type),
       propertySubType: normalizeArrayIds(item.propertySubType || item.subType),
