@@ -113,7 +113,7 @@ function NavEntry({
           className={clsx(
             "flex w-full items-center justify-between rounded-2xl border px-4 py-3 text-left transition",
             active
-              ? "border-gold/50 bg-white/[0.04] text-white"
+              ? "border-gold/50 bg-white/[0.04] text-gold"
               : "border-transparent text-muted hover:border-line hover:bg-panel/70 hover:text-text",
             depth > 0 && "ml-3 rounded-xl py-2.5",
           )}
@@ -213,7 +213,7 @@ export function Sidebar() {
       <nav className="flex-1 space-y-6 overflow-y-auto px-4 py-4">
         {allSections.map((section) => (
           <div key={section.title}>
-            <p className="mb-2 px-2 text-xs uppercase tracking-[0.24em] text-gold/90">
+            <p className="mb-2 px-2 text-xs uppercase tracking-[0.24em] text-gold">
               {section.title}
             </p>
 

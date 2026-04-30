@@ -20,7 +20,7 @@ import {
 import PropertyImportModal from "@/components/PropertyImport";
 import { TiptapEditor } from "@/components/TextEditor";
 import { GoogleAddressInput } from "@/components/GoogleAutoComplete";
-import {  useRef } from "react";
+import { useRef } from "react";
 type FieldOption = {
   label: string;
   value: string;
@@ -67,15 +67,15 @@ type DynamicField = {
   key: keyof PropertyForm;
   label: string;
   type:
-  | "text"
-  | "number"
-  | "textarea"
-  | "select"
-  | "toggle"
-  | "image"
-  | "relation-select"
-  | "relation-multiselect"
-  | "editor";
+    | "text"
+    | "number"
+    | "textarea"
+    | "select"
+    | "toggle"
+    | "image"
+    | "relation-select"
+    | "relation-multiselect"
+    | "editor";
   options?: FieldOption[];
   relation?: RelationConfig;
 };
@@ -400,7 +400,6 @@ function Toggle({
   );
 }
 
-
 function MultiSelectInput({
   label,
   value,
@@ -478,10 +477,11 @@ function MultiSelectInput({
               <div
                 key={option.value}
                 onClick={() => toggleValue(option.value)}
-                className={`px-3 py-2 cursor-pointer flex justify-between items-center text-sm ${selected
-                  ? "bg-white text-black"
-                  : "text-white hover:bg-white/10"
-                  }`}
+                className={`px-3 py-2 cursor-pointer flex justify-between items-center text-sm ${
+                  selected
+                    ? "bg-white text-black"
+                    : "text-gold hover:bg-white/10"
+                }`}
               >
                 {option.label}
                 {selected && "✔"}
@@ -865,67 +865,68 @@ function AmenitiesEditor({
         </div>
       ) : !options.length ? (
         <div className="rounded-2xl border border-dashed border-line p-6 text-sm text-muted">
-            No amenities found.
+          No amenities found.
         </div>
-        ) : (
-            <div className="space-y-3">
-              {/* Dropdown Header */}
-              <div
-                onClick={() => setOpenDropdown(!openDropdown)}
-                className="cursor-pointer flex justify-between items-center border border-line rounded-2xl px-4 py-3 bg-panel"
-              >
-                <span className="text-sm text-text">Select Amenities</span>
-                <span className="text-xs text-muted">
-                  {openDropdown ? "▲" : "▼"}
-                </span>
-              </div>
+      ) : (
+        <div className="space-y-3">
+          {/* Dropdown Header */}
+          <div
+            onClick={() => setOpenDropdown(!openDropdown)}
+            className="cursor-pointer flex justify-between items-center border border-line rounded-2xl px-4 py-3 bg-panel"
+          >
+            <span className="text-sm text-text">Select Amenities</span>
+            <span className="text-xs text-muted">
+              {openDropdown ? "▲" : "▼"}
+            </span>
+          </div>
 
-              {/* Dropdown List */}
-              {openDropdown && (
-                <div className="max-h-72 overflow-y-auto border border-line rounded-2xl bg-panel/40 divide-y">
-                  {options.map((option) => {
-                    const checked = isChecked(option._id);
+          {/* Dropdown List */}
+          {openDropdown && (
+            <div className="max-h-72 overflow-y-auto border border-line rounded-2xl bg-panel/40 divide-y">
+              {options.map((option) => {
+                const checked = isChecked(option._id);
 
-                    return (
-                      <label
-                        key={option._id}
-                        className={`flex items-start gap-3 px-4 py-3 cursor-pointer transition ${checked ? "bg-panel" : ""
+                return (
+                  <label
+                    key={option._id}
+                    className={`flex items-start gap-3 px-4 py-3 cursor-pointer transition ${
+                      checked ? "bg-panel" : ""
                     }`}
-                      >
-                        <input
-                          type="checkbox"
-                          className="mt-1"
-                          checked={checked}
-                          onChange={(e) => toggleAmenity(option, e.target.checked)}
+                  >
+                    <input
+                      type="checkbox"
+                      className="mt-1"
+                      checked={checked}
+                      onChange={(e) => toggleAmenity(option, e.target.checked)}
+                    />
+
+                    <div className="flex items-start gap-3">
+                      {option?.icon ? (
+                        <img
+                          src={option.icon}
+                          alt={option.title}
+                          className="h-8 w-8 rounded object-cover"
                         />
+                      ) : (
+                        <div className="h-8 w-8 rounded bg-card" />
+                      )}
 
-                        <div className="flex items-start gap-3">
-                          {option?.icon ? (
-                            <img
-                              src={option.icon}
-                              alt={option.title}
-                              className="h-8 w-8 rounded object-cover"
-                            />
-                          ) : (
-                            <div className="h-8 w-8 rounded bg-card" />
-                          )}
-
-                          <div>
-                            <div className="text-sm text-text font-medium">
-                              {option.title}
-                            </div>
-                            {option.description && (
-                              <p className="text-xs text-muted">
-                                {option.description}
-                              </p>
-                            )}
-                          </div>
+                      <div>
+                        <div className="text-sm text-text font-medium">
+                          {option.title}
                         </div>
-                      </label>
-                    );
-                  })}
-                </div>
-              )}
+                        {option.description && (
+                          <p className="text-xs text-muted">
+                            {option.description}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </label>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
 
@@ -1044,7 +1045,9 @@ function FloorPlansEditor({
             className="cursor-pointer flex justify-between items-center border border-line rounded-2xl px-4 py-3 bg-panel"
           >
             <span className="text-sm text-text">Select Floor Plans</span>
-            <span className="text-xs text-muted">{openDropdown ? "▲" : "▼"}</span>
+            <span className="text-xs text-muted">
+              {openDropdown ? "▲" : "▼"}
+            </span>
           </div>
 
           {openDropdown && (
@@ -1060,7 +1063,9 @@ function FloorPlansEditor({
                       type="checkbox"
                       className="mt-1"
                       checked={checked}
-                      onChange={(e) => toggleFloorPlan(option, e.target.checked)}
+                      onChange={(e) =>
+                        toggleFloorPlan(option, e.target.checked)
+                      }
                     />
                     <div className="flex items-start gap-3">
                       {option.image ? (
@@ -1073,9 +1078,13 @@ function FloorPlansEditor({
                         <div className="h-10 w-10 rounded bg-card" />
                       )}
                       <div>
-                        <div className="text-sm text-text font-medium">{option.title}</div>
+                        <div className="text-sm text-text font-medium">
+                          {option.title}
+                        </div>
                         <p className="text-xs text-muted">
-                          {option.unitType} · {option.bedrooms}B {option.bathrooms}Ba · {option.size} · ₹{Number(option.price).toLocaleString()}
+                          {option.unitType} · {option.bedrooms}B{" "}
+                          {option.bathrooms}Ba · {option.size} · ₹
+                          {Number(option.price).toLocaleString()}
                         </p>
                       </div>
                     </div>
@@ -1089,14 +1098,18 @@ function FloorPlansEditor({
 
       {!!items.length && (
         <div className="rounded-2xl border border-line bg-panel/30 p-4">
-          <p className="mb-3 text-sm font-medium text-text">Selected Floor Plans</p>
+          <p className="mb-3 text-sm font-medium text-text">
+            Selected Floor Plans
+          </p>
           <div className="flex flex-wrap gap-2">
             {items.map((item: any, index) => (
               <div
                 key={`${item._id || item.title}-${index}`}
                 className="flex items-center gap-2 rounded-full border border-line bg-card px-3 py-2 text-xs text-text"
               >
-                <span>{item.title} — {item.unitType}</span>
+                <span>
+                  {item.title} — {item.unitType}
+                </span>
                 <button
                   type="button"
                   onClick={() => onChange(items.filter((_, i) => i !== index))}
@@ -1159,7 +1172,6 @@ function renderDynamicField(
           label={field.label}
           value={String(value ?? "")}
           onChange={(next) =>
-
             setForm((prev) => {
               const updated = { ...prev, [field.key]: next };
 
@@ -1235,32 +1247,32 @@ function renderDynamicField(
       );
 
     case "relation-select":
-  return (
-    <div className="space-y-2">
-      <FieldLabel label={field.label} />
-      <select
-        className="input w-full"
-        value={String(value ?? "")}
-        onChange={(e) => {
-          console.log(`Setting ${field.key} =`, e.target.value); // ✅ raw value
-          setForm((prev) => ({
-            ...prev,
-            [field.key]: e.target.value,
-          }));
-        }}
-      >
-        <option value="">-- Select --</option>
-        {(field.key === "communities"
-          ? communityOptions
-          : relations[field.relation?.entity || ""] || []
-        ).map((opt) => (
-          <option key={opt.value} value={opt.value}>
-            {opt.label} 
-          </option>
-        ))}
-      </select>
-    </div>
-  );
+      return (
+        <div className="space-y-2">
+          <FieldLabel label={field.label} />
+          <select
+            className="input w-full"
+            value={String(value ?? "")}
+            onChange={(e) => {
+              console.log(`Setting ${field.key} =`, e.target.value); // ✅ raw value
+              setForm((prev) => ({
+                ...prev,
+                [field.key]: e.target.value,
+              }));
+            }}
+          >
+            <option value="">-- Select --</option>
+            {(field.key === "communities"
+              ? communityOptions
+              : relations[field.relation?.entity || ""] || []
+            ).map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+        </div>
+      );
     case "address":
       return (
         <div className="space-y-2">
@@ -1358,7 +1370,7 @@ function renderDynamicField(
               className="h-40w-full rounded-2xl border border-line object-cover"
             />
           ) : null}
-          <p className="text-white text-xs">Note: {field.note}</p>
+          <p className="text-gold text-xs">Note: {field.note}</p>
         </div>
       );
 
@@ -1519,7 +1531,7 @@ export default function PropertiesPage() {
     setEditingId(null);
     setForm(emptyForm);
   };
-console.log("FORM LOCATION:", form.location);
+  console.log("FORM LOCATION:", form.location);
   const submit = async () => {
     try {
       setError(null);
@@ -1553,7 +1565,7 @@ console.log("FORM LOCATION:", form.location);
         tag: form.hotLaunch ? "HOT" : form.exclusive ? "Exclusive" : form.tag,
       };
       console.log("Submitting payload location:", payload.location);
-console.log("Submitting payload developer:", payload.developer);
+      console.log("Submitting payload developer:", payload.developer);
 
       if (editingId) {
         await api.patch(`/properties/${editingId}`, payload);
@@ -1581,19 +1593,13 @@ console.log("Submitting payload developer:", payload.developer);
 
       if (Array.isArray(val)) {
         return val
-          .map((v) =>
-            typeof v === "string"
-              ? v
-              : v?._id || v?.id || ""
-          )
+          .map((v) => (typeof v === "string" ? v : v?._id || v?.id || ""))
           .filter(Boolean);
       }
-      console.log(item)
-      return [
-        typeof val === "string"
-          ? val
-          : val?._id || val?.id || "",
-      ].filter(Boolean);
+      console.log(item);
+      return [typeof val === "string" ? val : val?._id || val?.id || ""].filter(
+        Boolean,
+      );
     };
 
     setForm({
@@ -1682,10 +1688,9 @@ console.log("Submitting payload developer:", payload.developer);
         subtitle="Filters, actions, and richer property cards closer to the admin product flow."
         action={
           <div className="flex flex-wrap gap-3">
-
             {/* SEARCH */}
             <input
-              className="input w-64"
+              className="input max-w-64"
               placeholder="Search property, city, developer"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -1693,7 +1698,7 @@ console.log("Submitting payload developer:", payload.developer);
 
             {/* PROPERTY TYPE */}
             <select
-              className="input w-48"
+              className="input max-w-48"
               value={typeFilter}
               onChange={(e) => setTypeFilter(e.target.value)}
             >
@@ -1707,7 +1712,7 @@ console.log("Submitting payload developer:", payload.developer);
 
             {/* ✅ DEVELOPER FILTER */}
             <select
-              className="input w-48"
+              className="input max-w-48"
               value={developerFilter}
               onChange={(e) => setDeveloperFilter(e.target.value)}
             >
@@ -1721,7 +1726,7 @@ console.log("Submitting payload developer:", payload.developer);
 
             {/* ✅ LOCATION FILTER */}
             <select
-              className="input w-48"
+              className="input max-w-48"
               value={locationFilter}
               onChange={(e) => setLocationFilter(e.target.value)}
             >
@@ -1735,7 +1740,7 @@ console.log("Submitting payload developer:", payload.developer);
 
             {/* STATUS */}
             <select
-              className="input w-40"
+              className="input max-w-40"
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
             >
@@ -1747,9 +1752,13 @@ console.log("Submitting payload developer:", payload.developer);
               <option value="sold">Sold</option>
             </select>
 
-            <ActionButton secondary>Manage FAQ</ActionButton>
-            <ActionButton onClick={() => setOpen(true)}>Add Property</ActionButton>
-            <ActionButton onClick={() => setOpen2(!open2)}>Import CSV</ActionButton>
+            <ActionButton>Manage FAQ</ActionButton>
+            <ActionButton onClick={() => setOpen(true)}>
+              Add Property
+            </ActionButton>
+            <ActionButton onClick={() => setOpen2(!open2)}>
+              Import CSV
+            </ActionButton>
           </div>
         }
       >
@@ -1757,92 +1766,84 @@ console.log("Submitting payload developer:", payload.developer);
           <table className="min-w-full text-sm">
             <thead className="bg-card/80 text-left text-xs uppercase tracking-wider text-muted">
               <tr>
-                <th className="px-4 py-3">Image</th>
-                <th className="px-4 py-3">Title</th>
-                <th className="px-4 py-3">Location</th>
+                <th className="px-4 py-3">SNO.</th>
+                <th className="px-4 py-3">Property</th>
                 <th className="px-4 py-3">Type</th>
-                <th className="px-4 py-3">Developer</th>
-                <th className="px-4 py-3">Beds</th>
-                <th className="px-4 py-3">Baths</th>
-                <th className="px-4 py-3">Price</th>
-                <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3 text-right">Actions</th>
+                <th className="px-4 py-3">Developer / Bed-Bath</th>
+                <th className="px-4 py-3">Price / Status</th>
+                <th className="px-4 py-3 text-center">Actions</th>
               </tr>
             </thead>
 
             <tbody>
-              {filtered.map((property) => {
-                // const developerLabel = getRelationLabel(
-                //   relations,
-                //   'developers',
-                //   property.developer,
-                // );
-
-                // const typeLabel = getRelationLabel(
-                //   relations,
-                //   'property-types',
-                //   property.propertyType || property.type,
-                // );
-
+              {filtered.map((property, index) => {
                 return (
                   <tr
                     key={property._id || property.title}
                     className="border-t border-line hover:bg-card/50"
                   >
-                    {/* Image */}
-                    <td className="px-4 py-3">
+                    {/* SNO */}
+                    <td className="px-4 py-3 text-muted font-medium align-top w-10">
+                      {index + 1}
+                    </td>
+
+                    {/* Property */}
+                    <td className="px-4 py-3 align-top">
+                      {/* Title */}
+                      <div className="font-medium text-text mb-1">
+                        {property.title}
+                      </div>
+
+                      {/* Location */}
+                      <div className="text-xs text-muted mb-1">
+                        {property.location?.title}
+                        {property.city ? `, ${property.city}` : ""}
+                      </div>
+
+                      {/* Slug */}
+                      <div className="text-xs text-muted mb-2">
+                        {property.slug}
+                      </div>
+
+                      {/* Thumbnail */}
                       {property.thumbnail ? (
                         <img
                           src={property.thumbnail}
                           alt={property.title}
-                          className="h-12 w-12 rounded-lg object-cover"
+                          className="h-10 w-10 rounded object-cover border border-line bg-lightgray"
                         />
                       ) : (
-                        <div className="h-12 w-12 rounded-lg bg-muted" />
+                        <div className="h-9 w-11 rounded-lg bg-muted" />
                       )}
                     </td>
+                    <td className="px-4 py-3 text-muted">
+                      {Array.isArray(property?.type)
+                        ? property.type.map((t: any) => t.title).join(", ")
+                        : property?.type?.title || "—"}
+                    </td>
 
-                    {/* Title */}
-                    <td className="px-4 py-3">
-                      <div className="font-medium text-text">
-                        {property.title}
+                    {/* Action — Type & Developer as badges */}
+                    <td className="px-4 py-3 align-top">
+                      <div className="flex flex-wrap gap-1.5">
+                        {property?.developer?.title && (
+                          <span className="inline-flex items-center rounded px-2 py-1 text-xs font-medium bg-green-50 text-green-700 border border-green-200">
+                            {property.developer.title}
+                          </span>
+                        )}
+                        <span className="inline-flex items-center rounded px-2 py-1 text-xs font-medium bg-card text-muted border border-line">
+                          Beds: {property.bedrooms || 0}
+                        </span>
+                        <span className="inline-flex items-center rounded px-2 py-1 text-xs font-medium bg-card text-muted border border-line">
+                          Baths: {property.bathrooms || 0}
+                        </span>
                       </div>
-                      <div className="text-xs text-muted">{property.slug}</div>
                     </td>
 
-                    {/* Location */}
-                    <td className="px-4 py-3 text-muted">
-                      {property.location?.title}
-                      {property.city ? `, ${property.city}` : ""}
-                    </td>
-
-                    {/* Type */}
-                    <td className="px-4 py-3 text-muted">
-                      {property?.type?.title || "—"}
-                    </td>
-
-                    {/* Developer */}
-                    <td className="px-4 py-3 text-muted">
-                      {property?.developer?.title || "—"}
-                    </td>
-
-                    {/* Beds */}
-                    <td className="px-4 py-3 text-white">
-                      {property.bedrooms || 0}
-                    </td>
-
-                    {/* Baths */}
-                    <td className="px-4 py-3 text-white">
-                      {property.bathrooms || 0}
-                    </td>
-
-                    {/* Price */}
-                    <td className="px-4 py-3 font-medium text-white">
-                      ₹{Number(property.price || 0).toLocaleString()}
-                    </td>
-
-                    {/* Status */}
-                    <td className="px-4 py-3">
+                    {/* Added At / Status */}
+                    <td className="px-4 py-3 align-top">
+                      <div className="font-medium text-text text-sm mb-0.5">
+                        ₹{Number(property.price || 0).toLocaleString()}
+                      </div>
                       <StatusBadge
                         value={property.status || "draft"}
                         tone={
@@ -1856,7 +1857,7 @@ console.log("Submitting payload developer:", payload.developer);
                     </td>
 
                     {/* Actions */}
-                    <td className="px-4 py-3 text-right">
+                    <td className="px-4 py-3 text-right align-top">
                       <InlineActions
                         onEdit={() => edit(property)}
                         onDelete={() => remove(property._id)}
@@ -1868,7 +1869,7 @@ console.log("Submitting payload developer:", payload.developer);
 
               {!filtered.length && (
                 <tr>
-                  <td colSpan={10} className="px-4 py-8 text-center text-muted">
+                  <td colSpan={5} className="px-4 py-8 text-center text-muted">
                     No properties found.
                   </td>
                 </tr>
@@ -1914,38 +1915,38 @@ console.log("Submitting payload developer:", payload.developer);
                       faq: next,
                     }))
                   }
-                  />
-                ) : section.custom === "amenities" ? (
-                  <AmenitiesEditor
-                    value={Array.isArray(form.amenities) ? form.amenities : []}
-                    onChange={(next) =>
-                      setForm((prev) => ({
-                        ...prev,
-                        amenities: next,
-                      }))
-                    }
-                  />
-                  ) : section.custom === "floorPlans" ? (
-                    <FloorPlansEditor
-                      value={Array.isArray(form.floorPlans) ? form.floorPlans : []}
-                      onChange={(next) =>
-                        setForm((prev) => ({
-                          ...prev,
-                          floorPlans: next,
-                        }))
-                      }
-                    />
-                    ) : section.custom === "file" ? ( // ✅ NEW
-                      <PdfUploader
-                        value={form.propertydoc || ""}
-                        onChange={(url) =>
-                          setForm((prev) => ({
-                            ...prev,
-                            propertydoc: url,
-                          }))
-                        }
-                      />
-                      ) : (
+                />
+              ) : section.custom === "amenities" ? (
+                <AmenitiesEditor
+                  value={Array.isArray(form.amenities) ? form.amenities : []}
+                  onChange={(next) =>
+                    setForm((prev) => ({
+                      ...prev,
+                      amenities: next,
+                    }))
+                  }
+                />
+              ) : section.custom === "floorPlans" ? (
+                <FloorPlansEditor
+                  value={Array.isArray(form.floorPlans) ? form.floorPlans : []}
+                  onChange={(next) =>
+                    setForm((prev) => ({
+                      ...prev,
+                      floorPlans: next,
+                    }))
+                  }
+                />
+              ) : section.custom === "file" ? ( // ✅ NEW
+                <PdfUploader
+                  value={form.propertydoc || ""}
+                  onChange={(url) =>
+                    setForm((prev) => ({
+                      ...prev,
+                      propertydoc: url,
+                    }))
+                  }
+                />
+              ) : (
                 <FormGrid columns={section.columns || 3}>
                   {(section.fields || []).map((field) => (
                     <div key={String(field.key)}>

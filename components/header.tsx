@@ -7,7 +7,7 @@ export function Header({ title, subtitle }: { title: string; subtitle: string })
         <div className="flex flex-col gap-5 p-6 md:flex-row md:items-center md:justify-between">
           <div>
             <h1 className="text-3xl font-semibold tracking-tight text-text">{title}</h1>
-            <p className="mt-3 max-w-2xl text-sm leading-6 text-muted">{subtitle}</p>
+            <p className="mt-3 max-w-xl text-sm leading-6 text-muted">{subtitle}</p>
           </div>
           {/* <div className="flex gap-3">
             <div className="flex items-center gap-3 rounded-2xl border border-line bg-panel px-4 py-3 text-sm text-muted">

@@ -25,6 +25,7 @@ import {
   TextInput,
 } from "@/components/crud-kit";
 import { TiptapEditor } from "./TextEditor";
+import { ExternalLink, Pencil, Trash2 } from "lucide-react";
 
 function blankFromConfig(config: CmsConfig): CmsItem {
   const data: Record<string, any> = {};
@@ -938,90 +939,47 @@ export function GenericCmsPage({ config }: { config: CmsConfig }) {
               {config.entity === "contact-query" ? (
                 <div className="overflow-hidden rounded-[28px] border border-line bg-panel/70">
                   <div className="overflow-x-auto">
-                    <table className="w-full min-w-[1800px] text-left">
+                    <table className="w-full min-w-[1400px] text-left">
                       <thead className="border-b border-line bg-card/50">
                         <tr>
-                          <th className="px-4 py-4 text-sm font-medium text-gold">
-                            Lead
+                          {/* ── Primary columns (matching image order) ── */}
+                          <th className="px-4 py-4 text-sm font-medium text-gold w-14">
+                            SNO.
                           </th>
                           <th className="px-4 py-4 text-sm font-medium text-gold">
-                            Email
+                            Contact
                           </th>
-                          <th className="px-4 py-4 text-sm font-medium text-gold">
-                            Phone
-                          </th>
-                          <th className="px-4 py-4 text-sm font-medium text-gold">
-                            Location
-                          </th>
-
                           <th className="px-4 py-4 text-sm font-medium text-gold">
                             Query
                           </th>
                           <th className="px-4 py-4 text-sm font-medium text-gold">
+                            Property
+                          </th>
+                          <th className="px-4 py-4 text-sm font-medium text-gold">
+                            Device
+                          </th>
+                          <th className="px-4 py-4 text-sm font-medium text-gold">
+                            Added At
+                          </th>
+
+                          {/* ── Secondary columns ── */}
+                          <th className="px-4 py-4 text-sm font-medium text-gold">
                             Inquiry Type
                           </th>
-
-                          {/* Property */}
                           <th className="px-4 py-4 text-sm font-medium text-gold">
-                            Property Title
-                          </th>
-                          <th className="px-4 py-4 text-sm font-medium text-gold">
-                            Project
-                          </th>
-                          <th className="px-4 py-4 text-sm font-medium text-gold">
-                            Property Location
-                          </th>
-                          <th className="px-4 py-4 text-sm font-medium text-gold">
-                            Unit
-                          </th>
-                          <th className="px-4 py-4 text-sm font-medium text-gold">
-                            Config
-                          </th>
-                          <th className="px-4 py-4 text-sm font-medium text-gold">
-                            Area
-                          </th>
-                          <th className="px-4 py-4 text-sm font-medium text-gold">
-                            Price
-                          </th>
-                          <th className="px-4 py-4 text-sm font-medium text-gold">
-                            URL
-                          </th>
-
-                          {/* Source */}
-                          <th className="px-4 py-4 text-sm font-medium text-gold w-20">
                             Source
                           </th>
                           <th className="px-4 py-4 text-sm font-medium text-gold">
                             Referrer
                           </th>
-
-                          {/* Device */}
-                          <th className="px-4 py-4 text-sm font-medium text-gold">
-                            Device
-                          </th>
-                          <th className="px-4 py-4 text-sm font-medium text-gold">
-                            OS
-                          </th>
-                          <th className="px-4 py-4 text-sm font-medium text-gold">
-                            Browser
-                          </th>
-                          <th className="px-4 py-4 text-sm font-medium text-gold">
-                            IP
-                          </th>
-
-                          {/* Admin */}
                           <th className="px-4 py-4 text-sm font-medium text-gold">
                             Assigned
                           </th>
                           <th className="px-4 py-4 text-sm font-medium text-gold">
                             Notes
                           </th>
-
                           <th className="px-4 py-4 text-sm font-medium text-gold">
                             Status
-                          </th>
-                          <th className="px-4 py-4 text-sm font-medium text-gold">
-                            Created
                           </th>
                           <th className="px-4 py-4 text-sm font-medium text-gold">
                             Updated
@@ -1034,116 +992,162 @@ export function GenericCmsPage({ config }: { config: CmsConfig }) {
                       </thead>
 
                       <tbody>
-                        {items.map((item) => (
+                        {items.map((item, index) => (
                           <tr
                             key={item._id}
-                            className="border-b border-line last:border-none hover:bg-card/40"
+                            className="border-b border-line last:border-none hover:bg-card/40 align-top"
                           >
-                            <td className="px-4 py-4 text-text font-medium">
-                              {item?.contact?.fullName}
+                            {/* SNO */}
+                            <td className="px-4 py-4 text-sm text-muted">
+                              {index + 1}
                             </td>
 
-                            <td className="px-4 py-4 text-sm text-muted">
-                              {item?.contact?.email}
+                            {/* Contact — name + phone + email + source URL stacked */}
+                            <td className="px-4 py-4 min-w-[220px]">
+                              <p className="text-text font-medium leading-snug">
+                                {item?.contact?.fullName}
+                                {item?.contact?.location
+                                  ? ` (${item.contact.location})`
+                                  : ""}
+                              </p>
+                              {item?.contact?.phone && (
+                                <p className="text-xs text-gold mt-0.5">
+                                  {item.contact.phone}
+                                  {item?.contact?.email
+                                    ? `, ${item.contact.email}`
+                                    : ""}
+                                </p>
+                              )}
+                              {item?.sourcePage && (
+                                <p className="text-xs text-muted mt-0.5 truncate max-w-[260px]">
+                                  {item.sourcePage}
+                                </p>
+                              )}
                             </td>
 
-                            <td className="px-4 py-4 text-sm text-muted">
-                              {item?.contact?.phone}
-                            </td>
-
-                            <td className="px-4 py-4 text-sm text-muted">
-                              {item?.contact?.location || "-"}
-                            </td>
-
-                            <td className="px-4 py-4 text-sm text-muted">
+                            {/* Query */}
+                            <td className="px-4 py-4 text-sm text-muted max-w-[160px]">
                               {item?.query || "-"}
                             </td>
 
+                            {/* Property — title + project + details stacked */}
+                            <td className="px-4 py-4 min-w-[260px]">
+                              {item?.property?.propertyTitle ? (
+                                <>
+                                  <div className="flex items-center gap-1">
+                                    <p className="text-text font-medium text-sm leading-snug">
+                                      {item.property.propertyTitle}
+                                      {item?.property?.projectName
+                                        ? ` (${item.property.projectName})`
+                                        : ""}
+                                    </p>
+                                    {item?.property?.propertyUrl && (
+                                      <a
+                                        href={item.property.propertyUrl}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="text-muted hover:text-gold transition-colors shrink-0"
+                                      >
+                                        <ExternalLink size={13} />
+                                      </a>
+                                    )}
+                                  </div>
+                                  {item?.property?.location && (
+                                    <p className="text-xs text-gold mt-0.5">
+                                      {item.property.location}
+                                    </p>
+                                  )}
+                                  {/* Config line: BR count, beds, baths, area, price */}
+                                  <p className="text-xs text-muted mt-0.5 leading-relaxed">
+                                    {[
+                                      item?.property?.unitLabel
+                                        ? `${item.property.unitLabel}`
+                                        : null,
+                                      item?.property?.configuration
+                                        ? item.property.configuration
+                                        : null,
+                                      item?.property?.area
+                                        ? `${item.property.area}`
+                                        : null,
+                                      item?.property?.price
+                                        ? `₹ ${item.property.price.toLocaleString()} AED`
+                                        : null,
+                                    ]
+                                      .filter(Boolean)
+                                      .join(", ")}
+                                  </p>
+                                </>
+                              ) : (
+                                <span className="text-muted text-sm">-</span>
+                              )}
+                            </td>
+
+                            {/* Device — type + browser + IPs stacked */}
+                            <td className="px-4 py-4 min-w-[180px]">
+                              <p className="text-sm text-muted leading-snug">
+                                {[
+                                  item?.device?.deviceType,
+                                  item?.device?.os,
+                                  item?.device?.browser,
+                                ]
+                                  .filter(Boolean)
+                                  .join(", ") || "-"}
+                              </p>
+                              {item?.device?.ipAddress && (
+                                <p className="text-xs text-muted/60 mt-0.5">
+                                  {item.device.ipAddress}
+                                </p>
+                              )}
+                            </td>
+
+                            {/* Added At */}
+                            <td className="px-4 py-4 text-sm text-muted whitespace-nowrap">
+                              {new Date(item.createdAt).toLocaleDateString(
+                                "en-GB",
+                                {
+                                  day: "2-digit",
+                                  month: "2-digit",
+                                  year: "2-digit",
+                                },
+                              )}{" "}
+                              {new Date(item.createdAt).toLocaleTimeString(
+                                "en-GB",
+                                {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                  hour12: true,
+                                },
+                              )}
+                            </td>
+
+                            {/* ── Secondary columns ── */}
+
+                            {/* Inquiry Type */}
                             <td className="px-4 py-4 text-sm text-muted">
                               {item?.inquiryType || "-"}
                             </td>
 
-                            {/* Property */}
-                            <td className="px-4 py-4 text-sm text-muted">
-                              {item?.property?.propertyTitle || "-"}
-                            </td>
-
-                            <td className="px-4 py-4 text-sm text-muted">
-                              {item?.property?.projectName || "-"}
-                            </td>
-
-                            <td className="px-4 py-4 text-sm text-muted">
-                              {item?.property?.location || "-"}
-                            </td>
-
-                            <td className="px-4 py-4 text-sm text-muted">
-                              {item?.property?.unitLabel || "-"}
-                            </td>
-
-                            <td className="px-4 py-4 text-sm text-muted">
-                              {item?.property?.configuration || "-"}
-                            </td>
-
-                            <td className="px-4 py-4 text-sm text-muted">
-                              {item?.property?.area || "-"}
-                            </td>
-
-                            <td className="px-4 py-4 text-sm text-muted">
-                              {item?.property?.price
-                                ? `₹ ${item.property.price.toLocaleString()}`
-                                : "-"}
-                            </td>
-
-                            <td className="px-4 py-4 text-sm text-muted">
-                              {item?.property?.propertyUrl ? (
-                                <a
-                                  href={item.property.propertyUrl}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  className="text-blue-500 underline"
-                                >
-                                  View
-                                </a>
-                              ) : (
-                                "-"
-                              )}
-                            </td>
-
                             {/* Source */}
-                            <td className="px-4 py-4 text-sm text-muted max-w-[220px] break-words whitespace-normal">
+                            <td className="px-4 py-4 text-sm text-muted max-w-[200px] break-words whitespace-normal">
                               {item?.sourcePage || "-"}
                             </td>
 
+                            {/* Referrer */}
                             <td className="px-4 py-4 text-sm text-muted">
                               {item?.referrer || "-"}
                             </td>
 
-                            {/* Device */}
-                            <td className="px-4 py-4 text-sm text-muted">
-                              {item?.device?.deviceType || "-"}
-                            </td>
-
-                            <td className="px-4 py-4 text-sm text-muted">
-                              {item?.device?.os || "-"}
-                            </td>
-
-                            <td className="px-4 py-4 text-sm text-muted truncate max-w-[200px]">
-                              {item?.device?.browser || "-"}
-                            </td>
-
-                            <td className="px-4 py-4 text-sm text-muted">
-                              {item?.device?.ipAddress || "-"}
-                            </td>
-
-                            {/* Admin */}
+                            {/* Assigned */}
                             <td className="px-4 py-4 text-sm text-muted">
                               {item?.assignedTo || "-"}
                             </td>
 
+                            {/* Notes */}
                             <td className="px-4 py-4 text-sm text-muted truncate max-w-[200px]">
                               {item?.adminNotes || "-"}
                             </td>
 
+                            {/* Status */}
                             <td className="px-4 py-4">
                               <StatusBadge
                                 value={item.status || "new"}
@@ -1158,19 +1162,19 @@ export function GenericCmsPage({ config }: { config: CmsConfig }) {
                               />
                             </td>
 
-                            <td className="px-4 py-4 text-sm text-muted">
-                              {new Date(item.createdAt).toLocaleDateString()}
-                            </td>
-
-                            <td className="px-4 py-4 text-sm text-muted">
+                            {/* Updated */}
+                            <td className="px-4 py-4 text-sm text-muted whitespace-nowrap">
                               {new Date(item.updatedAt).toLocaleDateString()}
                             </td>
 
+                            {/* Actions */}
                             <td className="px-4 py-4 text-right">
-                              {/* <InlineActions
-                                onEdit={() => onEdit(item)}
-                                // onDelete={() => ()}
-                              /> */}
+                              <button
+                                onClick={() => onDelete?.(item._id)}
+                                className="text-red-400 hover:text-red-300 transition-colors"
+                              >
+                                <Trash2 size={15} />
+                              </button>
                             </td>
                           </tr>
                         ))}
