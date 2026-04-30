@@ -45,7 +45,7 @@ export function TiptapEditor({
         immediatelyRender: false,
         editorProps: {
             attributes: {
-                class: 'tiptap min-h-[260px] px-4 py-3 text-sm text-text focus:outline-none',
+                class: 'tiptap px-4 py-3 text-sm text-text focus:outline-none',
             },
         },
         onUpdate: ({ editor }) => {
@@ -98,7 +98,7 @@ export function TiptapEditor({
                     <button type="button" onClick={() => editor.chain().focus().redo().run()} className={btnClass(false)}>Redo</button>
                 </div>
 
-                <EditorContent editor={editor} />
+                <EditorContent editor={editor} style={{ minHeight: '80px' }} />
             </div>
 
             {note ? <p className="text-xs text-muted">{note}</p> : null}

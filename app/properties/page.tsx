@@ -412,13 +412,14 @@ function MultiSelectInput({
   onChange: (next: string[]) => void;
 }) {
   const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
   const ref = useRef<HTMLDivElement>(null);
 
-  // close on outside click
   useEffect(() => {
     const handleClick = (e: any) => {
       if (!ref.current?.contains(e.target)) {
         setOpen(false);
+        setSearch("");
       }
     };
     document.addEventListener("mousedown", handleClick);
@@ -433,61 +434,86 @@ function MultiSelectInput({
     }
   };
 
+  const filteredOptions = options.filter((opt) =>
+    opt.label.toLowerCase().includes(search.toLowerCase()),
+  );
+
   return (
-    <div className="space-y-2" ref={ref}>
+    <div className="space-y-1.5" ref={ref}>
       <FieldLabel label={label} />
 
-      {/* Selected Chips */}
+      {/* Input box with tags */}
       <div
-        onClick={() => setOpen(!open)}
-        className="input w-full min-h-[44px] flex flex-wrap gap-2 items-center cursor-pointer"
+        className="input w-full min-h-[44px] flex flex-wrap gap-1.5 items-center cursor-text"
+        onClick={() => setOpen(true)}
       >
-        {value.length > 0 ? (
-          value.map((val) => {
-            const item = options.find((o) => o.value === val);
-            return (
-              <span
-                key={val}
-                className="px-2 py-1 text-xs rounded bg-yellow-500 text-black flex items-center gap-1"
+        {/* Selected tags */}
+        {value.map((val) => {
+          const item = options.find((o) => o.value === val);
+          return (
+            <span
+              key={val}
+              className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-md bg-gold/20 text-gold border border-gold/30"
+            >
+              {item?.label || val}
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toggleValue(val);
+                }}
+                className="text-gold/70 hover:text-gold font-bold leading-none"
               >
-                {item?.label || val}
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    toggleValue(val);
-                  }}
-                  className="text-black font-bold"
-                >
-                  ×
-                </button>
-              </span>
-            );
-          })
-        ) : (
-          <span className="text-muted text-sm">Select {label}</span>
-        )}
+                ×
+              </button>
+            </span>
+          );
+        })}
+
+        {/* Search input */}
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => {
+            setSearch(e.target.value);
+            setOpen(true);
+          }}
+          onFocus={() => setOpen(true)}
+          placeholder={value.length === 0 ? `Select ${label}` : ""}
+          className="flex-1 min-w-[80px] bg-transparent text-sm text-text placeholder:text-muted outline-none border-none"
+        />
       </div>
 
       {/* Dropdown */}
       {open && (
-        <div className="border rounded-lg bg-black max-h-60 overflow-auto shadow-lg">
-          {options.map((option) => {
-            const selected = value.includes(option.value);
-            return (
-              <div
-                key={option.value}
-                onClick={() => toggleValue(option.value)}
-                className={`px-3 py-2 cursor-pointer flex justify-between items-center text-sm ${
-                  selected
-                    ? "bg-white text-black"
-                    : "text-gold hover:bg-white/10"
-                }`}
-              >
-                {option.label}
-                {selected && "✔"}
+        <div className="relative z-50">
+          <div className="absolute top-0 left-0 right-0 border border-line rounded-xl bg-panel shadow-lg max-h-56 overflow-y-auto">
+            {filteredOptions.length === 0 ? (
+              <div className="px-3 py-3 text-sm text-muted">
+                No options found.
               </div>
-            );
-          })}
+            ) : (
+              filteredOptions.map((option) => {
+                const selected = value.includes(option.value);
+                return (
+                  <div
+                    key={option.value}
+                    onClick={() => toggleValue(option.value)}
+                    className={`px-4 py-2.5 cursor-pointer flex justify-between items-center text-sm transition-colors ${
+                      selected
+                        ? "bg-card text-muted line-through"
+                        : "text-text hover:bg-card/60"
+                    }`}
+                  >
+                    <span>{option.label}</span>
+                    {selected && (
+                      <span className="text-xs text-gold ml-2">✓</span>
+                    )}
+                  </div>
+                );
+              })
+            )}
+          </div>
         </div>
       )}
     </div>
@@ -745,15 +771,15 @@ function GalleryUploader({
                 onChange={(next) => updateImage(index, next)}
               />
 
-              {image ? (
-                <img
-                  src={image}
-                  alt={`Gallery ${index + 1}`}
-                  className="h-40 w-full rounded-2xl border border-line object-cover"
-                />
-              ) : null}
+              <div className="flex justify-between items-center">
+                {image ? (
+                  <img
+                    src={image}
+                    alt={`Gallery ${index + 1}`}
+                    className="h-20 w-20 rounded-2xl border border-line object-cover"
+                  />
+                ) : null}
 
-              <div className="flex justify-end">
                 <ActionButton
                   secondary
                   onClick={() => removeImage(index)}
@@ -799,21 +825,33 @@ function AmenitiesEditor({
   const items = Array.isArray(value) ? value : [];
   const [options, setOptions] = useState<AmenityOption[]>([]);
   const [loading, setLoading] = useState(false);
-  const [openDropdown, setOpenDropdown] = useState(false);
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClick = (e: any) => {
+      if (!ref.current?.contains(e.target)) {
+        setOpen(false);
+        setSearch("");
+      }
+    };
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
+
   useEffect(() => {
     const fetchAmenities = async () => {
       try {
         setLoading(true);
         const response = await api.get("/content/property-amenities");
         const rows = normalizeApiArray(response);
-        console.log(rows, "Fetched amenities for selection");
         const nextOptions: AmenityOption[] = rows.map((row: any) => ({
           _id: String(row?._id ?? row?.id ?? ""),
           title: String(row?.name ?? row?.title ?? ""),
           icon: String(row?.data?.icon ?? row?.image ?? ""),
           description: String(row?.description ?? ""),
         }));
-
         setOptions(nextOptions);
       } catch (error) {
         console.error("Failed to load amenities:", error);
@@ -821,146 +859,119 @@ function AmenitiesEditor({
         setLoading(false);
       }
     };
-
     fetchAmenities();
   }, []);
 
-  const isChecked = (optionId: string) => {
-    return items.some((item) => item._id === optionId);
-  };
+  const isSelected = (id: string) => items.some((item) => item._id === id);
 
-  const toggleAmenity = (option: AmenityOption, checked: boolean) => {
-    if (checked) {
-      const exists = items.some((item) => item._id === option._id);
-      if (exists) return;
-      console.log(option, "Toggling amenity - adding");
+  const toggle = (option: AmenityOption) => {
+    if (isSelected(option._id)) {
+      onChange(items.filter((item) => item._id !== option._id));
+    } else {
       onChange([
         ...items,
         {
           _id: option._id,
           title: option.title,
-          icon: option?.icon,
+          icon: option.icon,
           description: option.description || "",
         },
       ]);
-      return;
     }
-
-    onChange(items.filter((item) => item._id !== option._id));
   };
 
+  const filteredOptions = options.filter((opt) =>
+    opt.title.toLowerCase().includes(search.toLowerCase()),
+  );
+
   return (
-    <div className="space-y-4">
-      <div>
-        <FieldLabel label="Amenities" />
-        <p className="mt-1 text-xs text-muted">
-          Select one or more amenities. Selected amenity name and icon will be
-          saved with the property.
-        </p>
+    <div className="space-y-1.5" ref={ref}>
+      <FieldLabel label="Amenities" />
+
+      <div
+        className="input w-full min-h-[44px] flex flex-wrap gap-1.5 items-center cursor-text"
+        onClick={() => setOpen(true)}
+      >
+        {items.map((item) => (
+          <span
+            key={item._id || item.title}
+            className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-md bg-gold/20 text-gold border border-gold/30"
+          >
+            {item.icon && (
+              <img
+                src={item.icon}
+                alt={item.title}
+                className="h-3.5 w-3.5 rounded object-cover"
+              />
+            )}
+            {item.title}
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                toggle({
+                  _id: item._id!,
+                  title: item.title,
+                  icon: item.icon,
+                  description: item.description,
+                });
+              }}
+              className="text-gold/70 hover:text-gold font-bold leading-none"
+            >
+              ×
+            </button>
+          </span>
+        ))}
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => {
+            setSearch(e.target.value);
+            setOpen(true);
+          }}
+          onFocus={() => setOpen(true)}
+          placeholder={items.length === 0 ? "Select Amenities" : ""}
+          className="flex-1 min-w-[80px] bg-transparent text-sm text-text placeholder:text-muted outline-none border-none"
+        />
       </div>
 
-      {loading ? (
-        <div className="rounded-2xl border border-line p-6 text-sm text-muted">
-          Loading amenities...
-        </div>
-      ) : !options.length ? (
-        <div className="rounded-2xl border border-dashed border-line p-6 text-sm text-muted">
-          No amenities found.
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {/* Dropdown Header */}
-          <div
-            onClick={() => setOpenDropdown(!openDropdown)}
-            className="cursor-pointer flex justify-between items-center border border-line rounded-2xl px-4 py-3 bg-panel"
-          >
-            <span className="text-sm text-text">Select Amenities</span>
-            <span className="text-xs text-muted">
-              {openDropdown ? "▲" : "▼"}
-            </span>
-          </div>
-
-          {/* Dropdown List */}
-          {openDropdown && (
-            <div className="max-h-72 overflow-y-auto border border-line rounded-2xl bg-panel/40 divide-y">
-              {options.map((option) => {
-                const checked = isChecked(option._id);
-
+      {open && (
+        <div className="relative z-50">
+          <div className="absolute top-0 left-0 right-0 border border-line rounded-xl bg-panel shadow-lg max-h-56 overflow-y-auto">
+            {loading ? (
+              <div className="px-3 py-3 text-sm text-muted">Loading...</div>
+            ) : filteredOptions.length === 0 ? (
+              <div className="px-3 py-3 text-sm text-muted">
+                No amenities found.
+              </div>
+            ) : (
+              filteredOptions.map((option) => {
+                const selected = isSelected(option._id);
                 return (
-                  <label
+                  <div
                     key={option._id}
-                    className={`flex items-start gap-3 px-4 py-3 cursor-pointer transition ${
-                      checked ? "bg-panel" : ""
+                    onClick={() => toggle(option)}
+                    className={`px-4 py-2.5 cursor-pointer flex justify-between items-center gap-3 text-sm transition-colors ${
+                      selected
+                        ? "bg-card text-muted line-through"
+                        : "text-text hover:bg-card/60"
                     }`}
                   >
-                    <input
-                      type="checkbox"
-                      className="mt-1"
-                      checked={checked}
-                      onChange={(e) => toggleAmenity(option, e.target.checked)}
-                    />
-
-                    <div className="flex items-start gap-3">
-                      {option?.icon ? (
+                    <div className="flex items-center gap-2">
+                      {option.icon && (
                         <img
                           src={option.icon}
                           alt={option.title}
-                          className="h-8 w-8 rounded object-cover"
+                          className="h-5 w-5 rounded object-cover shrink-0"
                         />
-                      ) : (
-                        <div className="h-8 w-8 rounded bg-card" />
                       )}
-
-                      <div>
-                        <div className="text-sm text-text font-medium">
-                          {option.title}
-                        </div>
-                        {option.description && (
-                          <p className="text-xs text-muted">
-                            {option.description}
-                          </p>
-                        )}
-                      </div>
+                      <span>{option.title}</span>
                     </div>
-                  </label>
+                    {selected && <span className="text-xs text-gold">✓</span>}
+                  </div>
                 );
-              })}
-            </div>
-          )}
-        </div>
-      )}
-
-      {!!items.length && (
-        <div className="rounded-2xl border border-line bg-panel/30 p-4">
-          <p className="mb-3 text-sm font-medium text-text">
-            Selected Amenities
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {items.map((item, index) => (
-              <div
-                key={`${item._id || item.title}-${index}`}
-                className="flex items-center gap-2 rounded-full border border-line bg-card px-3 py-2 text-xs text-text"
-              >
-                {item.icon ? (
-                  <img
-                    src={item.icon}
-                    alt={item.title}
-                    className="h-5 w-5 rounded object-cover"
-                  />
-                ) : null}
-
-                <span>{item.title}</span>
-
-                {/* 🔥 Remove Button */}
-                <button
-                  type="button"
-                  onClick={() => onChange(items.filter((_, i) => i !== index))}
-                  className="ml-1 text-red-400 hover:text-red-500 text-xs"
-                >
-                  ✕
-                </button>
-              </div>
-            ))}
+              })
+            )}
           </div>
         </div>
       )}
@@ -976,9 +987,22 @@ function FloorPlansEditor({
   onChange: (next: FloorPlanItem[]) => void;
 }) {
   const items = Array.isArray(value) ? value : [];
-  const [options, setOptions] = useState<FloorPlanItem & { _id: string }[]>([]);
+  const [options, setOptions] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
-  const [openDropdown, setOpenDropdown] = useState(false);
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClick = (e: any) => {
+      if (!ref.current?.contains(e.target)) {
+        setOpen(false);
+        setSearch("");
+      }
+    };
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
 
   useEffect(() => {
     const fetchFloorPlans = async () => {
@@ -1005,120 +1029,110 @@ function FloorPlansEditor({
         setLoading(false);
       }
     };
-
     fetchFloorPlans();
   }, []);
 
-  const isChecked = (optionId: string) =>
-    items.some((item: any) => item._id === optionId);
+  const isSelected = (id: string) => items.some((item: any) => item._id === id);
 
-  const toggleFloorPlan = (option: any, checked: boolean) => {
-    if (checked) {
-      if (items.some((item: any) => item._id === option._id)) return;
-      onChange([...items, { ...option }]);
-    } else {
+  const toggle = (option: any) => {
+    if (isSelected(option._id)) {
       onChange(items.filter((item: any) => item._id !== option._id));
+    } else {
+      onChange([...items, { ...option }]);
     }
   };
 
+  const filteredOptions = options.filter(
+    (opt) =>
+      opt.title.toLowerCase().includes(search.toLowerCase()) ||
+      opt.unitType.toLowerCase().includes(search.toLowerCase()),
+  );
+
   return (
-    <div className="space-y-4">
-      <div>
-        <FieldLabel label="Floor Plans" />
-        <p className="mt-1 text-xs text-muted">
-          Select floor plans to attach to this property.
-        </p>
+    <div className="space-y-1.5" ref={ref}>
+      <FieldLabel label="Floor Plans" />
+
+      <div
+        className="input w-full min-h-[44px] flex flex-wrap gap-1.5 items-center cursor-text"
+        onClick={() => setOpen(true)}
+      >
+        {items.map((item: any) => (
+          <span
+            key={item._id || item.title}
+            className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-md bg-gold/20 text-gold border border-gold/30"
+          >
+            {item.title}
+            {item.unitType ? (
+              <span className="opacity-60">· {item.unitType}</span>
+            ) : null}
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                toggle(item);
+              }}
+              className="text-gold/70 hover:text-gold font-bold leading-none"
+            >
+              ×
+            </button>
+          </span>
+        ))}
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => {
+            setSearch(e.target.value);
+            setOpen(true);
+          }}
+          onFocus={() => setOpen(true)}
+          placeholder={items.length === 0 ? "Select Floor Plans" : ""}
+          className="flex-1 min-w-[80px] bg-transparent text-sm text-text placeholder:text-muted outline-none border-none"
+        />
       </div>
 
-      {loading ? (
-        <div className="rounded-2xl border border-line p-6 text-sm text-muted">
-          Loading floor plans...
-        </div>
-      ) : !options.length ? (
-        <div className="rounded-2xl border border-dashed border-line p-6 text-sm text-muted">
-          No floor plans found. Add them from the Floor Plans section.
-        </div>
-      ) : (
-        <div className="space-y-3">
-          <div
-            onClick={() => setOpenDropdown(!openDropdown)}
-            className="cursor-pointer flex justify-between items-center border border-line rounded-2xl px-4 py-3 bg-panel"
-          >
-            <span className="text-sm text-text">Select Floor Plans</span>
-            <span className="text-xs text-muted">
-              {openDropdown ? "▲" : "▼"}
-            </span>
-          </div>
-
-          {openDropdown && (
-            <div className="max-h-72 overflow-y-auto border border-line rounded-2xl bg-panel/40 divide-y">
-              {options.map((option) => {
-                const checked = isChecked(option._id);
+      {open && (
+        <div className="relative z-50">
+          <div className="absolute top-0 left-0 right-0 border border-line rounded-xl bg-panel shadow-lg max-h-56 overflow-y-auto">
+            {loading ? (
+              <div className="px-3 py-3 text-sm text-muted">Loading...</div>
+            ) : filteredOptions.length === 0 ? (
+              <div className="px-3 py-3 text-sm text-muted">
+                No floor plans found.
+              </div>
+            ) : (
+              filteredOptions.map((option) => {
+                const selected = isSelected(option._id);
                 return (
-                  <label
+                  <div
                     key={option._id}
-                    className={`flex items-start gap-3 px-4 py-3 cursor-pointer transition ${checked ? "bg-panel" : ""}`}
+                    onClick={() => toggle(option)}
+                    className={`px-4 py-2.5 cursor-pointer flex justify-between items-center gap-3 text-sm transition-colors ${
+                      selected
+                        ? "bg-card text-muted line-through"
+                        : "text-text hover:bg-card/60"
+                    }`}
                   >
-                    <input
-                      type="checkbox"
-                      className="mt-1"
-                      checked={checked}
-                      onChange={(e) =>
-                        toggleFloorPlan(option, e.target.checked)
-                      }
-                    />
-                    <div className="flex items-start gap-3">
-                      {option.image ? (
+                    <div className="flex items-center gap-2">
+                      {option.image && (
                         <img
                           src={option.image}
                           alt={option.title}
-                          className="h-10 w-10 rounded object-cover border border-line"
+                          className="h-6 w-6 rounded object-cover shrink-0 border border-line"
                         />
-                      ) : (
-                        <div className="h-10 w-10 rounded bg-card" />
                       )}
                       <div>
-                        <div className="text-sm text-text font-medium">
-                          {option.title}
-                        </div>
-                        <p className="text-xs text-muted">
+                        <span className="font-medium">{option.title}</span>
+                        <span className="ml-2 text-xs text-muted">
                           {option.unitType} · {option.bedrooms}B{" "}
-                          {option.bathrooms}Ba · {option.size} · ₹
-                          {Number(option.price).toLocaleString()}
-                        </p>
+                          {option.bathrooms}Ba
+                        </span>
                       </div>
                     </div>
-                  </label>
+                    {selected && <span className="text-xs text-gold">✓</span>}
+                  </div>
                 );
-              })}
-            </div>
-          )}
-        </div>
-      )}
-
-      {!!items.length && (
-        <div className="rounded-2xl border border-line bg-panel/30 p-4">
-          <p className="mb-3 text-sm font-medium text-text">
-            Selected Floor Plans
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {items.map((item: any, index) => (
-              <div
-                key={`${item._id || item.title}-${index}`}
-                className="flex items-center gap-2 rounded-full border border-line bg-card px-3 py-2 text-xs text-text"
-              >
-                <span>
-                  {item.title} — {item.unitType}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => onChange(items.filter((_, i) => i !== index))}
-                  className="ml-1 text-red-400 hover:text-red-500 text-xs"
-                >
-                  ✕
-                </button>
-              </div>
-            ))}
+              })
+            )}
           </div>
         </div>
       )}
@@ -1347,29 +1361,30 @@ function renderDynamicField(
             }
             placeholder="Paste image URL or upload below"
           />
-
-          <input
-            className="input"
-            type="file"
-            accept="image/*"
-            onChange={async (e: ChangeEvent<HTMLInputElement>) => {
-              const file = e.target.files?.[0];
-              if (!file) return;
-              const dataUrl = await uploadSingleFile(file);
-              setForm((prev) => ({
-                ...prev,
-                [field.key]: dataUrl,
-              }));
-            }}
-          />
-
-          {value ? (
-            <img
-              src={String(value)}
-              alt={field.label}
-              className="h-40w-full rounded-2xl border border-line object-cover"
+          <div className="flex justify-between items-center">
+            <input
+              className="input"
+              type="file"
+              accept="image/*"
+              onChange={async (e: ChangeEvent<HTMLInputElement>) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                const dataUrl = await uploadSingleFile(file);
+                setForm((prev) => ({
+                  ...prev,
+                  [field.key]: dataUrl,
+                }));
+              }}
             />
-          ) : null}
+
+            {value ? (
+              <img
+                src={String(value)}
+                alt={field.label}
+                className="h-16 w-16 rounded-2xl border border-line object-cover m-1"
+              />
+            ) : null}
+          </div>
           <p className="text-gold text-xs">Note: {field.note}</p>
         </div>
       );
