@@ -1671,7 +1671,11 @@ export default function PropertiesPage() {
       setError("Unable to delete property.");
     }
   };
-
+  // Add these state variables inside PropertiesPage() — near your other useState hooks
+  const [previewModal, setPreviewModal] = useState<{
+    type: "floorPlans" | "amenities" | "faq";
+    property: PropertyForm;
+  } | null>(null);
   const typeFilterOptions = relations["property-types"] || [];
   if (!mounted) return null;
   return (
@@ -1769,8 +1773,8 @@ export default function PropertiesPage() {
                 <th className="px-4 py-3">SNO.</th>
                 <th className="px-4 py-3">Property</th>
                 <th className="px-4 py-3">Type</th>
-                <th className="px-4 py-3">Developer / Bed-Bath</th>
-                <th className="px-4 py-3">Price / Status</th>
+                <th className="px-4 py-3">Developer / Features</th>
+                <th className="px-4 py-3">Added At / Status</th>
                 <th className="px-4 py-3 text-center">Actions</th>
               </tr>
             </thead>
@@ -1806,12 +1810,28 @@ export default function PropertiesPage() {
                       </div>
 
                       {/* Thumbnail */}
-                      {property.thumbnail ? (
-                        <img
-                          src={property.thumbnail}
-                          alt={property.title}
-                          className="h-10 w-10 rounded object-cover border border-line bg-lightgray"
-                        />
+
+                      {Array.isArray(property?.gallery) &&
+                      property.gallery.length > 0 ? (
+                        <div className="flex items-center -space-x-2">
+                          {property.gallery
+                            .slice(0, 5)
+                            .map((img: string, i: number) => (
+                              <img
+                                key={i}
+                                src={img}
+                                alt={property.title}
+                                className="h-10 w-10 rounded object-cover border border-line bg-lightgray"
+                              />
+                            ))}
+
+                          {/* +count badge */}
+                          {property.gallery.length > 5 && (
+                            <div className="h-10 w-10 flex items-center justify-center rounded bg-black text-white text-xs border border-line">
+                              +{property.gallery.length - 5}
+                            </div>
+                          )}
+                        </div>
                       ) : (
                         <div className="h-9 w-11 rounded-lg bg-muted" />
                       )}
@@ -1821,28 +1841,95 @@ export default function PropertiesPage() {
                         ? property.type.map((t: any) => t.title).join(", ")
                         : property?.type?.title || "—"}
                     </td>
-
-                    {/* Action — Type & Developer as badges */}
-                    <td className="px-4 py-3 align-top">
+                    {/* Action — Developer / Floor Plans / Features / FAQ */}
+                    <td className="px-4 py-3 align-top max-w-[200px]">
                       <div className="flex flex-wrap gap-1.5">
                         {property?.developer?.title && (
                           <span className="inline-flex items-center rounded px-2 py-1 text-xs font-medium bg-green-50 text-green-700 border border-green-200">
                             {property.developer.title}
                           </span>
                         )}
-                        <span className="inline-flex items-center rounded px-2 py-1 text-xs font-medium bg-card text-muted border border-line">
+
+                        {/* Clickable Floor Plans badge */}
+                        {property.floorPlans &&
+                          property.floorPlans.length > 0 && (
+                            <button
+                              onClick={() =>
+                                setPreviewModal({
+                                  type: "floorPlans",
+                                  property,
+                                })
+                              }
+                              className="inline-flex items-center rounded px-2 py-1 text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 transition-colors cursor-pointer"
+                            >
+                              Floor Plans ({property.floorPlans.length})
+                            </button>
+                          )}
+
+                        {/* Clickable Features / Amenities badge */}
+                        {property.amenities &&
+                          property.amenities.length > 0 && (
+                            <button
+                              onClick={() =>
+                                setPreviewModal({ type: "amenities", property })
+                              }
+                              className="inline-flex items-center rounded px-2 py-1 text-xs font-medium bg-purple-50 text-purple-700 border border-purple-200 hover:bg-purple-100 transition-colors cursor-pointer"
+                            >
+                              Features ({property.amenities.length})
+                            </button>
+                          )}
+
+                        {/* Clickable FAQ badge */}
+                        {property.faq && property.faq.length > 0 && (
+                          <button
+                            onClick={() =>
+                              setPreviewModal({ type: "faq", property })
+                            }
+                            className="inline-flex items-center rounded px-2 py-1 text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100 transition-colors cursor-pointer"
+                          >
+                            FAQ ({property.faq.length})
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                    {/* Action — Type & Developer as badges */}
+                    {/* <td className="px-4 py-3 align-top max-w-[200px]">
+                      <div className="flex flex-wrap gap-1.5">
+                        {property?.developer?.title && (
+                          <span className="inline-flex items-center rounded px-2 py-1 text-xs font-medium bg-green-50 text-green-700 border border-green-200">
+                            {property.developer.title}
+                          </span>
+                        )}
+                        {property.floorPlans && (
+                          <span className="inline-flex items-center rounded px-2 py-1 text-xs font-medium bg-green-50 text-green-700 border border-green-200">
+                            Floor Plans ({property?.floorPlans?.length})
+                          </span>
+                        )}
+                        {property.faq && (
+                          <span className="inline-flex items-center rounded px-2 py-1 text-xs font-medium bg-green-50 text-green-700 border border-green-200">
+                            FAQ ({property?.faq?.length})
+                          </span>
+                        )}
+                        {property.amenities && (
+                          <span className="inline-flex items-center rounded px-2 py-1 text-xs font-medium bg-green-50 text-green-700 border border-green-200">
+                            Features ({property?.amenities?.length})
+                          </span>
+                        )}
+                        {/* <span className="inline-flex items-center rounded px-2 py-1 text-xs font-medium bg-card text-muted border border-line">
                           Beds: {property.bedrooms || 0}
                         </span>
                         <span className="inline-flex items-center rounded px-2 py-1 text-xs font-medium bg-card text-muted border border-line">
                           Baths: {property.bathrooms || 0}
-                        </span>
+                        </span> 
                       </div>
-                    </td>
+                    </td>  */}
 
                     {/* Added At / Status */}
                     <td className="px-4 py-3 align-top">
-                      <div className="font-medium text-text text-sm mb-0.5">
-                        ₹{Number(property.price || 0).toLocaleString()}
+                      <div className="font-medium text-text text-sm mb-1">
+                        {property?.createdAt
+                          ? new Date(property.createdAt).toLocaleDateString()
+                          : "—"}
                       </div>
                       <StatusBadge
                         value={property.status || "draft"}
@@ -1976,6 +2063,148 @@ export default function PropertiesPage() {
         onClose={() => setOpen2(false)}
         fetchProperty={load}
       />
+      {/* Floor Plans / Amenities Preview Modal */}
+      {previewModal && (
+        <Modal
+          open={!!previewModal}
+          onClose={() => setPreviewModal(null)}
+          title={
+            previewModal.type === "floorPlans"
+              ? `Floor Plans — ${previewModal.property.title}`
+              : `Features / Amenities — ${previewModal.property.title}`
+          }
+          subtitle={
+            previewModal.type === "floorPlans"
+              ? "All floor plans attached to this property."
+              : "All amenities attached to this property."
+          }
+          size="xl"
+        >
+          {previewModal.type === "floorPlans" ? (
+            // ── FLOOR PLANS LIST ──
+            <div className="space-y-3">
+              {(previewModal.property.floorPlans || []).length === 0 ? (
+                <p className="text-sm text-muted">No floor plans added.</p>
+              ) : (
+                (previewModal.property.floorPlans || []).map((fp, i) => (
+                  <div
+                    key={fp._id || i}
+                    className="flex items-start gap-4 rounded-2xl border border-line bg-panel/60 p-4"
+                  >
+                    {/* Image */}
+                    {fp.image ? (
+                      <img
+                        src={fp.image}
+                        alt={fp.title}
+                        className="h-20 w-24 rounded-xl object-cover border border-line shrink-0"
+                      />
+                    ) : (
+                      <div className="h-20 w-24 rounded-xl bg-card border border-line shrink-0" />
+                    )}
+
+                    {/* Details */}
+                    <div className="flex-1 space-y-1">
+                      <div className="font-medium text-text">{fp.title}</div>
+                      <div className="text-xs text-muted">
+                        Unit Type:{" "}
+                        <span className="text-text">{fp.unitType || "—"}</span>
+                        {fp.category ? (
+                          <>
+                            {" "}
+                            &nbsp;·&nbsp; Category:{" "}
+                            <span className="text-text">{fp.category}</span>
+                          </>
+                        ) : null}
+                      </div>
+                      <div className="flex flex-wrap gap-3 text-xs text-muted mt-1">
+                        <span>🛏 {fp.bedrooms ?? 0} Beds</span>
+                        <span>🚿 {fp.bathrooms ?? 0} Baths</span>
+                        {fp.size ? <span>📐 {fp.size}</span> : null}
+                        {fp.price ? (
+                          <span className="text-gold font-medium">
+                            ₹{Number(fp.price).toLocaleString()}
+                          </span>
+                        ) : null}
+                      </div>
+                    </div>
+
+                    {/* Sort Order */}
+                    {fp.sortOrder !== undefined && (
+                      <div className="text-xs text-muted shrink-0">
+                        #{fp.sortOrder}
+                      </div>
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
+          ) : previewModal.type === "amenities" ? (
+            // ── AMENITIES LIST ──
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+              {(previewModal.property.amenities || []).length === 0 ? (
+                <p className="text-sm text-muted col-span-full">
+                  No amenities added.
+                </p>
+              ) : (
+                (previewModal.property.amenities || []).map((amenity, i) => (
+                  <div
+                    key={amenity._id || i}
+                    className="flex items-center gap-3 rounded-2xl border border-line bg-panel/60 px-4 py-3"
+                  >
+                    {amenity.icon ? (
+                      <img
+                        src={amenity.icon}
+                        alt={amenity.title}
+                        className="h-9 w-9 rounded-lg object-cover border border-line shrink-0"
+                      />
+                    ) : (
+                      <div className="h-9 w-9 rounded-lg bg-card border border-line shrink-0" />
+                    )}
+                    <div>
+                      <div className="text-sm font-medium text-text">
+                        {amenity.title}
+                      </div>
+                      {amenity.description ? (
+                        <div className="text-xs text-muted mt-0.5">
+                          {amenity.description}
+                        </div>
+                      ) : null}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          ) : (
+            // ── FAQ LIST ──
+            <div className="space-y-3">
+              {(previewModal.property.faq || []).length === 0 ? (
+                <p className="text-sm text-muted">No FAQs added.</p>
+              ) : (
+                (previewModal.property.faq || []).map((item, i) => (
+                  <div
+                    key={i}
+                    className="rounded-2xl border border-line bg-panel/60 p-4 space-y-2"
+                  >
+                    <div className="flex items-start gap-3">
+                      <span className="shrink-0 mt-0.5 flex h-6 w-6 items-center justify-center rounded-full bg-amber-100 text-amber-700 text-xs font-semibold">
+                        {i + 1}
+                      </span>
+                      <div className="font-medium text-text text-sm leading-snug">
+                        {item.question}
+                      </div>
+                    </div>
+                    {item.answer && (
+                      <div className="ml-9 text-sm text-muted leading-relaxed">
+                        {item.answer}
+                      </div>
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
+          )}
+        </Modal>
+      )}
     </DashboardShell>
   );
 }
