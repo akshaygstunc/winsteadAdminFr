@@ -21,6 +21,8 @@ import PropertyImportModal from "@/components/PropertyImport";
 import { TiptapEditor } from "@/components/TextEditor";
 import { GoogleAddressInput } from "@/components/GoogleAutoComplete";
 import { useRef } from "react";
+import ImagePickerModal from "./ImagePicker";
+import { Upload, UploadCloud } from "lucide-react";
 type FieldOption = {
   label: string;
   value: string;
@@ -141,7 +143,7 @@ const propertyFormSections: FieldSection[] = [
   {
     key: "basic",
     title: "Basic Information",
-    columns: 3,
+    columns: 2,
     fields: [
       { key: "title", label: "Property Name", type: "text" },
       { key: "buildingName", label: "Building / Area Name", type: "text" },
@@ -229,68 +231,15 @@ const propertyFormSections: FieldSection[] = [
       { key: "address", label: "Address", type: "address" },
     ],
   },
-  {
-    key: "payment-plan",
-    title: "Payment Plan",
-    columns: 1,
-    fields: [
-      {
-        key: "duringconstruction",
-        label: "During Construction",
-        type: "number",
-      },
-      { key: "handover", label: "Handover", type: "number" },
-    ],
-  },
-  {
-    key: "faq",
-    title: "Property FAQ",
-    columns: 1,
-    custom: "faq",
-  },
-  {
-    key: "propertydoc",
-    title: "Property Document",
-    custom: "file",
-  },
+
   {
     key: "seo",
     title: "SEO",
-    columns: 3,
+    columns: 1,
     fields: [
       { key: "metaTitle", label: "Meta Title", type: "text" },
       { key: "metaDescription", label: "Meta Description", type: "textarea" },
       { key: "metaKeywords", label: "Meta Keywords", type: "text" },
-    ],
-  },
-  {
-    key: "details",
-    title: "Property Details",
-    columns: 3,
-    fields: [
-      { key: "price", label: "Price", type: "number" },
-      { key: "sortOrder", label: "Sort Order", type: "number" },
-      {
-        key: "thumbnail",
-        label: "Thumbnail",
-        type: "image",
-        note: "Banner Size should be 380x300",
-      },
-      {
-        key: "propertyBanner",
-        label: "Property Banner",
-        type: "image",
-        note: "Banner Size should be 1260x420",
-      },
-      { key: "enquireFormImage", label: "Enquire Form Image", type: "image" },
-      { key: "author", label: "Author", type: "text" },
-    ],
-  },
-  {
-    key: "visibility",
-    title: "Visibility & Status",
-    columns: 3,
-    fields: [
       {
         key: "visibility",
         label: "Visibility",
@@ -316,30 +265,56 @@ const propertyFormSections: FieldSection[] = [
     ],
   },
   {
+    key: "details",
+    title: "Property Details",
+    columns: 2,
+    fields: [
+      { key: "price", label: "Price", type: "number" },
+      { key: "sortOrder", label: "Sort Order", type: "number" },
+      {
+        key: "thumbnail",
+        label: "Thumbnail",
+        type: "image",
+        note: "Banner Size should be 380x300",
+      },
+      {
+        key: "propertyBanner",
+        label: "Property Banner",
+        type: "image",
+        note: "Banner Size should be 1260x420",
+      },
+      { key: "enquireFormImage", label: "Enquire Form Image", type: "image" },
+      { key: "author", label: "Author", type: "text" },
+
+      {
+        key: "duringconstruction",
+        label: "During Construction",
+        type: "number",
+      },
+      { key: "handover", label: "Handover", type: "number" },
+      {
+        key: "propertydoc",
+        title: "Property Document",
+        custom: "file",
+      },
+
+    ],
+  },
+  {
     key: "descriptions",
     title: "Descriptions",
-    columns: 2,
+    columns: 1,
     fields: [
       { key: "shortDescription", label: "Short Description", type: "textarea" },
       { key: "appDescription", label: "App Description", type: "textarea" },
       { key: "fullDescription", label: "Full Description", type: "editor" },
     ],
   },
-  {
-    key: "amenities",
-    title: "Amenities",
-    custom: "amenities",
-  },
-  {
-    key: "floorPlans",
-    title: "Floor Plans",
-    custom: "floorPlans",
-  },
-  {
-    key: "gallery",
-    title: "Gallery Images",
-    custom: "gallery",
-  },
+  // {
+  //   key: "gallery",
+  //   title: "Gallery Images",
+  //   custom: "gallery",
+  // },
   {
     key: "flags",
     title: "Flags",
@@ -1686,8 +1661,21 @@ export default function PropertiesPage() {
       setError("Unable to delete property.");
     }
   };
+  const [imagePicker, setImagePicker] = useState<{
+    open: boolean;
+    type: "gallery";
+    propertyId?: string;
+  }>({
+    open: false,
+    type: "gallery",
+  });
+
   // Add these state variables inside PropertiesPage() — near your other useState hooks
   const [previewModal, setPreviewModal] = useState<{
+    type: "floorPlans" | "amenities" | "faq";
+    property: PropertyForm;
+  } | null>(null);
+  const [manageModal, setManageModal] = useState<{
     type: "floorPlans" | "amenities" | "faq";
     property: PropertyForm;
   } | null>(null);
@@ -1826,30 +1814,48 @@ export default function PropertiesPage() {
 
                       {/* Thumbnail */}
 
-                      {Array.isArray(property?.gallery) &&
-                      property.gallery.length > 0 ? (
-                        <div className="flex items-center -space-x-2">
-                          {property.gallery
-                            .slice(0, 5)
-                            .map((img: string, i: number) => (
+                      <div
+                      // className="cursor-pointer"
+
+                      >
+                        {Array.isArray(property?.gallery) && property.gallery.length > 0 ? (
+                          <div className="flex">
+
+
+                            <div className="flex items-center overflow-x-scroll">
+                              {property.gallery.slice(0, 5).map((img: string, i: number) => (
                               <img
                                 key={i}
                                 src={img}
                                 alt={property.title}
-                                className="h-10 w-10 rounded object-cover border border-line bg-lightgray"
+                                  className="h-8 w-8 rounded object-cover border border-line bg-lightgray hover:scale-105 transition"
                               />
                             ))}
 
-                          {/* +count badge */}
-                          {property.gallery.length > 5 && (
-                            <div className="h-10 w-10 flex items-center justify-center rounded bg-black text-white text-xs border border-line">
-                              +{property.gallery.length - 5}
                             </div>
-                          )}
-                        </div>
-                      ) : (
-                        <div className="h-9 w-11 rounded-lg bg-muted" />
-                      )}
+                            <div className="h-15 w-15   rounded-lg px-4  flex items-center justify-center text-xs" cursor-pointer onClick={() =>
+                              setImagePicker({
+                                open: true,
+                                type: "gallery",
+                                propertyId: property._id,
+                              })
+                            }>
+                              <Upload size={20} />
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="h-10 w-10 bg-black rounded-lg bg-muted flex items-center justify-center text-xs" cursor-pointer onClick={() =>
+                            setImagePicker({
+                              open: true,
+                              type: "gallery",
+                              propertyId: property._id,
+                            })
+                          }>
+                            <UploadCloud />
+                          </div>
+                        )}
+
+                      </div>
                     </td>
                     <td className="px-4 py-3 text-muted">
                       {Array.isArray(property?.type)
@@ -1870,7 +1876,7 @@ export default function PropertiesPage() {
                           property.floorPlans.length > 0 && (
                             <button
                               onClick={() =>
-                                setPreviewModal({
+                              setManageModal({
                                   type: "floorPlans",
                                   property,
                                 })
@@ -1882,27 +1888,30 @@ export default function PropertiesPage() {
                           )}
 
                         {/* Clickable Features / Amenities badge */}
-                        {property.amenities &&
-                          property.amenities.length > 0 && (
+                        {(
                             <button
                               onClick={() =>
-                                setPreviewModal({ type: "amenities", property })
+                              setManageModal({
+                                type: "amenities",
+                                property,
+                              })
                               }
                               className="inline-flex items-center rounded px-2 py-1 text-xs font-medium bg-purple-50 text-purple-700 border border-purple-200 hover:bg-purple-100 transition-colors cursor-pointer"
                             >
-                              Features ({property.amenities.length})
-                            </button>
-                          )}
+                            Features ({property?.amenities?.length})
+                          </button>
+                        )}
+
 
                         {/* Clickable FAQ badge */}
-                        {property.faq && property.faq.length > 0 && (
+                        {(
                           <button
                             onClick={() =>
-                              setPreviewModal({ type: "faq", property })
+                              setManageModal({ type: "faq", property })
                             }
                             className="inline-flex items-center rounded px-2 py-1 text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100 transition-colors cursor-pointer"
                           >
-                            FAQ ({property.faq.length})
+                            FAQ ({property?.faq?.length})
                           </button>
                         )}
                       </div>
@@ -1988,7 +1997,7 @@ export default function PropertiesPage() {
         subtitle="Expanded property form with SEO, geo, visibility, API relations, media, amenities, floor plans, and gallery uploads."
         size="xl"
       >
-        <div className="space-y-5">
+        <div className="space-y-5 grid grid-cols-2">
           {propertyFormSections.map((section) => (
             <div
               key={section.key}
@@ -1998,17 +2007,7 @@ export default function PropertiesPage() {
                 {section.title}
               </h3>
 
-              {section.custom === "gallery" ? (
-                <GalleryUploader
-                  value={Array.isArray(form.gallery) ? form.gallery : []}
-                  onChange={(next) =>
-                    setForm((prev) => ({
-                      ...prev,
-                      gallery: next,
-                    }))
-                  }
-                />
-              ) : section.custom === "faq" ? (
+              {section.custom === "faq" ? (
                 <FAQEditor
                   value={Array.isArray(form.faq) ? form.faq : []}
                   onChange={(next) =>
@@ -2049,7 +2048,7 @@ export default function PropertiesPage() {
                   }
                 />
               ) : (
-                <FormGrid columns={section.columns || 3}>
+                        <FormGrid columns={section.columns}>
                   {(section.fields || []).map((field) => (
                     <div key={String(field.key)}>
                       {renderDynamicField(
@@ -2066,12 +2065,13 @@ export default function PropertiesPage() {
             </div>
           ))}
 
-          <FormActions
-            onSubmit={submit}
-            onCancel={close}
-            submitLabel={editingId ? "Update Property" : "Create Property"}
-          />
+
         </div>
+        <FormActions
+          onSubmit={submit}
+          onCancel={close}
+          submitLabel={editingId ? "Update Property" : "Create Property"}
+        />
       </Modal>
       <PropertyImportModal
         open={open2}
@@ -2218,6 +2218,127 @@ export default function PropertiesPage() {
               )}
             </div>
           )}
+        </Modal>
+      )}
+      <ImagePickerModal
+        open={imagePicker.open}
+        onClose={() => setImagePicker({ open: false })}
+        onSelect={async (images) => {
+          if (!imagePicker.propertyId || images.length === 0) return;
+
+          try {
+            // 🔹 get current property
+            const current = items.find(
+              (p) => p._id === imagePicker.propertyId
+            );
+            console.log(current)
+            // 🔹 append new images
+            const updatedGallery = [
+              ...(current?.gallery || []),
+              ...images,
+            ];
+            const type = current?.type?.map((ty) => ty?._id)
+            const subType = current?.subType?.map((ty) => ty?._id)
+            // 🔹 OPTIONAL: remove duplicates
+            const uniqueGallery = Array.from(new Set(updatedGallery));
+
+            // 🔹 call update API
+            await api.patch(`/properties/${imagePicker.propertyId}`, {
+              ...current,
+              developer: current?.developer?._id,
+              location: current?.location?._id,
+              type,
+              subType,
+              gallery: uniqueGallery,
+            });
+
+            // 🔹 refresh table
+            await load();
+
+          } catch (err) {
+            console.error("Gallery update failed", err);
+          }
+        }}
+      />
+      {manageModal && (
+        <Modal
+          open={!!manageModal}
+          onClose={() => setManageModal(null)}
+          title={`Manage ${manageModal.type}`}
+          size="xl"
+        >
+          {manageModal.type === "floorPlans" && (
+            <FloorPlansEditor
+              value={manageModal.property.floorPlans || []}
+              onChange={(next) =>
+                setManageModal((prev) =>
+                  prev
+                    ? {
+                      ...prev,
+                      property: { ...prev.property, floorPlans: next },
+                    }
+                    : null
+                )
+              }
+            />
+          )}
+
+          {manageModal.type === "amenities" && (
+            <AmenitiesEditor
+              value={manageModal.property.amenities || []}
+              onChange={(next) =>
+                setManageModal((prev) =>
+                  prev
+                    ? {
+                      ...prev,
+                      property: { ...prev.property, amenities: next },
+                    }
+                    : null
+                )
+              }
+            />
+          )}
+
+          {manageModal.type === "faq" && (
+            <FAQEditor
+              value={manageModal.property.faq || []}
+              onChange={(next) =>
+                setManageModal((prev) =>
+                  prev
+                    ? {
+                      ...prev,
+                      property: { ...prev.property, faq: next },
+                    }
+                    : null
+                )
+              }
+            />
+          )}
+
+          <div className="flex justify-end mt-4">
+            <ActionButton
+              onClick={async () => {
+                const p = manageModal.property
+                const type = p?.type?.map((ty) => ty?._id)
+                const subType = p?.subType?.map((ty) => ty?._id)
+                await api.patch(`/properties/${p._id}`, {
+                  ...p,
+                  developer: p?.developer?._id,
+                  location: p?.location?._id,
+                  amenities: p.amenities,
+                  floorPlans: p.floorPlans,
+                  type,
+                  subType,
+                  faq: p.faq,
+                });
+
+                await load();
+                setManageModal(null);
+              }}
+            >
+              Save Changes
+            </ActionButton>
+          </div>
         </Modal>
       )}
     </DashboardShell>
