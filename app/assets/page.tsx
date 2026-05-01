@@ -51,6 +51,7 @@ function findDuplicates(assets: Asset[]): Set<string> {
 
 function AssetCard({
   asset,
+  index,
   isDuplicate,
   onView,
   onDelete,
@@ -58,6 +59,7 @@ function AssetCard({
   onSelect,
 }: {
   asset: Asset;
+  index: number;
   isDuplicate: boolean;
   onView: (asset: Asset) => void;
   onDelete: (asset: Asset) => void;
@@ -67,77 +69,97 @@ function AssetCard({
   const [imgError, setImgError] = useState(false);
 
   return (
-    <div
-      className={`group relative rounded-[20px] border overflow-hidden bg-panel/60 transition-all duration-200 ${
-        selected
-          ? "border-gold ring-1 ring-gold/40"
-          : isDuplicate
-          ? "border-red-500/50"
-          : "border-line hover:border-line/80"
+    <tr
+      className={`border-b border-line last:border-none transition-colors hover:bg-card/40 ${
+        selected ? "bg-gold/5" : isDuplicate ? "bg-red-500/5" : ""
       }`}
     >
-      {/* Checkbox */}
-      {/* <div className="absolute top-2 left-2 z-10">
-        <input
-          type="checkbox"
-          checked={selected}
-          onChange={() => onSelect(asset._id)}
-          className="h-4 w-4 accent-gold cursor-pointer"
-        />
-      </div> */}
-
-      {/* Duplicate Badge */}
-      {isDuplicate && (
-        <div className="absolute top-2 right-2 z-10 rounded-full bg-red-500/90 px-2 py-0.5 text-[10px] font-semibold text-white">
-          Duplicate
-        </div>
-      )}
+      {/* SNO */}
+      <td className="px-4 py-4 text-sm text-muted w-12">{index + 1}</td>
 
       {/* Image */}
-      <div className="h-40 w-full bg-card overflow-hidden">
-        {!imgError ? (
-          <img
-            src={asset.url}
-            alt={asset.name}
-            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-            onError={() => setImgError(true)}
-          />
-        ) : (
-          <div className="h-full w-full flex items-center justify-center text-muted text-xs">
-            No Preview
-          </div>
-        )}
-      </div>
-
-      {/* Info */}
-      <div className="p-3 space-y-2">
-        <p className="text-xs font-medium text-text truncate" title={asset.name}>
-          {asset.name || "Unnamed"}
-        </p>
-        <div className="flex items-center justify-between text-[10px] text-muted">
-          <span>{formatBytes(asset.size)}</span>
-          {asset.uploadedAt && (
-            <span>{new Date(asset.uploadedAt).toLocaleDateString()}</span>
+      <td className="px-4 py-4 w-20">
+        <div className="h-11 w-11 overflow-hidden rounded-xl border border-line bg-card shrink-0">
+          {!imgError ? (
+            <img
+              src={asset.url}
+              alt={asset.name}
+              className="h-full w-full object-cover"
+              onError={() => setImgError(true)}
+            />
+          ) : (
+            <div className="h-full w-full flex items-center justify-center text-muted text-[9px]">
+              N/A
+            </div>
           )}
         </div>
+      </td>
 
-        {/* Actions */}
-        <div className="flex gap-2 pt-1">
+      {/* Name */}
+      <td className="px-4 py-4">
+        <p className="text-sm font-medium text-text truncate max-w-[320px]" title={asset.name}>
+          {asset.name || "Unnamed"}
+        </p>
+      </td>
+
+      {/* Size */}
+      <td className="px-4 py-4 text-sm text-muted whitespace-nowrap">
+        {formatBytes(asset.size)}
+      </td>
+
+      {/* Uploaded At */}
+      <td className="px-4 py-4 min-w-[150px]">
+        <p className="text-sm text-muted">
+          {asset.uploadedAt
+            ? new Date(asset.uploadedAt).toLocaleDateString("en-GB", {
+                day: "2-digit",
+                month: "2-digit",
+                year: "2-digit",
+              })
+            : "-"}
+        </p>
+        <p className="text-xs text-muted/60 mt-0.5">
+          {asset.uploadedAt
+            ? new Date(asset.uploadedAt).toLocaleTimeString("en-GB", {
+                hour: "2-digit",
+                minute: "2-digit",
+                hour12: true,
+              })
+            : ""}
+        </p>
+      </td>
+
+      {/* Status */}
+      <td className="px-4 py-4">
+        {isDuplicate ? (
+          <span className="inline-flex items-center rounded-full bg-red-500/15 px-3 py-1 text-xs font-semibold text-red-400 border border-red-500/30">
+            Duplicate
+          </span>
+        ) : (
+          <span className="inline-flex items-center rounded-full bg-green-500/15 px-3 py-1 text-xs font-semibold text-green-400 border border-green-500/30">
+            Active
+          </span>
+        )}
+      </td>
+
+      {/* Actions */}
+      <td className="px-4 py-4 text-right">
+        <div className="flex items-center justify-end gap-2">
           <button
             onClick={() => onView(asset)}
-            className="flex-1 rounded-xl border border-line bg-card/60 py-1.5 text-[11px] text-text hover:border-gold/50 hover:text-gold transition"
+            className="rounded-xl border border-line bg-card/60 px-3 py-1.5 text-xs text-text hover:border-gold/50 hover:text-gold transition"
           >
             View
           </button>
           <button
             onClick={() => onDelete(asset)}
-            className="flex-1 rounded-xl border border-red-500/30 bg-red-500/10 py-1.5 text-[11px] text-red-400 hover:bg-red-500/20 transition"
+            className="rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-1.5 text-xs text-red-400 hover:bg-red-500/20 transition"
           >
             Delete
           </button>
         </div>
-      </div>
-    </div>
+      </td>
+    </tr>
   );
 }
 
@@ -412,7 +434,7 @@ export default function AssetsPage() {
           ].map((stat) => (
             <div
               key={stat.label}
-              className="rounded-[20px] border border-line bg-panel/60 px-4 py-4"
+              className="card rounded-[20px] border border-line bg-panel/60 px-4 py-4"
             >
               <p className="text-xs text-muted">{stat.label}</p>
               <p className={`mt-1 text-2xl font-semibold ${stat.highlight ? "text-red-400" : "text-text"}`}>
@@ -426,15 +448,15 @@ export default function AssetsPage() {
           title="All Assets"
           subtitle="Images stored in your cloud storage bucket."
           action={
-            <div className="flex flex-wrap gap-3">
+            <div className="flex gap-3">
               <input
-                className="input w-56"
+                className="input min-w-36"
                 placeholder="Search by name or URL"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
               <select
-                className="input w-40"
+                className="input min-w-40"
                 value={filter}
                 onChange={(e) => setFilter(e.target.value as any)}
               >
@@ -471,19 +493,43 @@ export default function AssetsPage() {
                 : "No assets found."}
             </div>
           ) : (
-            <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
-              {filtered.map((asset) => (
-                <AssetCard
-                  key={asset._id}
-                  asset={asset}
-                  isDuplicate={duplicateUrls.has(asset.url)}
-                  onView={setViewAsset}
-                  onDelete={setDeleteAsset}
-                  selected={selected.has(asset._id)}
-                  onSelect={toggleSelect}
-                />
-              ))}
-            </div>
+            <div className="overflow-hidden rounded-[28px] border border-line bg-panel/70">
+  <p className="px-5 pt-4 pb-2 text-xs text-muted">
+    Showing {filtered.length} of {filtered.length} entries
+  </p>
+  <div className="overflow-x-auto">
+    <table className="w-full text-left">
+      <thead className="border-b border-line bg-card/50">
+        <tr>
+          <th className="px-4 py-3 text-xs font-medium text-muted uppercase tracking-wider w-12">SNO.</th>
+          <th className="px-4 py-3 text-xs font-medium text-muted uppercase tracking-wider w-20">Image</th>
+          <th className="px-4 py-3 text-xs font-medium text-muted uppercase tracking-wider">Name</th>
+          <th className="px-4 py-3 text-xs font-medium text-muted uppercase tracking-wider">Size</th>
+          <th className="px-4 py-3 text-xs font-medium text-muted uppercase tracking-wider">Uploaded At</th>
+          <th className="px-4 py-3 text-xs font-medium text-muted uppercase tracking-wider">Status</th>
+          <th className="px-4 py-3 text-xs font-medium text-muted uppercase tracking-wider text-right">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {filtered.map((asset, index) => (
+          <AssetCard
+            key={asset._id}
+            index={index}
+            asset={asset}
+            isDuplicate={duplicateUrls.has(asset.url)}
+            onView={setViewAsset}
+            onDelete={setDeleteAsset}
+            selected={selected.has(asset._id)}
+            onSelect={toggleSelect}
+          />
+        ))}
+      </tbody>
+    </table>
+  </div>
+  {!filtered.length && (
+    <div className="p-8 text-sm text-muted">No assets found.</div>
+  )}
+</div>
           )}
         </SectionCard>
       </div>

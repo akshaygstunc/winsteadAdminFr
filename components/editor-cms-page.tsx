@@ -248,10 +248,11 @@ function renderSimpleField(
                 key={icon}
                 type="button"
                 onClick={() => onChange(icon)}
-                className={`rounded-2xl border px-3 py-3 text-sm ${value === icon
-                  ? "border-gold bg-gold/10 text-gold"
-                  : "border-line bg-panel text-text"
-                  }`}
+                className={`rounded-2xl border px-3 py-3 text-sm ${
+                  value === icon
+                    ? "border-gold bg-gold/10 text-gold"
+                    : "border-line bg-panel text-text"
+                }`}
               >
                 {icon}
               </button>
@@ -260,13 +261,13 @@ function renderSimpleField(
         </div>
       );
 
-    case 'video':
-    case 'image':
+    case "video":
+    case "image":
       return (
         <div className="space-y-4 w-full">
           <TextInput
             label={field.label}
-            value={value || ''}
+            value={value || ""}
             onChange={onChange}
             placeholder={`Paste ${field.type} URL or upload below`}
           />
@@ -277,7 +278,7 @@ function renderSimpleField(
             <input
               className="input"
               type="file"
-              accept={field.type === 'video' ? 'video/*' : 'image/*'}
+              accept={field.type === "video" ? "video/*" : "image/*"}
               onChange={async (e: ChangeEvent<HTMLInputElement>) => {
                 const file = e.target.files?.[0];
                 if (!file) return;
@@ -291,7 +292,7 @@ function renderSimpleField(
           {/* ✅ PREVIEW FIX */}
           {value && (
             <div className="w-full rounded-2xl overflow-hidden border border-line bg-black">
-              {field.type === 'video' ? (
+              {field.type === "video" ? (
                 <video
                   src={value}
                   controls
@@ -307,9 +308,7 @@ function renderSimpleField(
             </div>
           )}
 
-          {field.note && (
-            <p className="text-xs text-muted">{field.note}</p>
-          )}
+          {field.note && <p className="text-xs text-muted">{field.note}</p>}
         </div>
       );
     default:
@@ -496,7 +495,9 @@ function FAQEditor({
     <div className="space-y-4">
       <div className="flex justify-between">
         <p className="text-sm font-medium">FAQs</p>
-        <button onClick={addItem} className="btn-secondary">Add FAQ</button>
+        <button onClick={addItem} className="btn-secondary">
+          Add FAQ
+        </button>
       </div>
 
       {items.map((faq, index) => (
@@ -505,17 +506,13 @@ function FAQEditor({
             className="input"
             placeholder="Question"
             value={faq.question}
-            onChange={(e) =>
-              updateItem(index, "question", e.target.value)
-            }
+            onChange={(e) => updateItem(index, "question", e.target.value)}
           />
           <textarea
             className="input"
             placeholder="Answer"
             value={faq.answer}
-            onChange={(e) =>
-              updateItem(index, "answer", e.target.value)
-            }
+            onChange={(e) => updateItem(index, "answer", e.target.value)}
           />
           <button
             className="text-red-500 text-sm"
@@ -585,7 +582,7 @@ function renderField(
             onChange={onChange}
             rows={
               field.key.toLowerCase().includes("body") ||
-                field.key.toLowerCase().includes("content")
+              field.key.toLowerCase().includes("content")
                 ? 6
                 : 4
             }
@@ -640,8 +637,8 @@ function renderField(
           ) : null}
         </div>
       );
-    case 'faq':
-      console.log('Rendering FAQEditor with value:', value);
+    case "faq":
+      console.log("Rendering FAQEditor with value:", value);
       return (
         <div>
           <FieldLabel label={field.label} />
@@ -718,10 +715,11 @@ function renderField(
                 key={icon}
                 type="button"
                 onClick={() => onChange(icon)}
-                className={`rounded-2xl border px-3 py-3 text-sm ${value === icon
-                  ? "border-gold bg-gold/10 text-gold"
-                  : "border-line bg-panel text-text"
-                  }`}
+                className={`rounded-2xl border px-3 py-3 text-sm ${
+                  value === icon
+                    ? "border-gold bg-gold/10 text-gold"
+                    : "border-line bg-panel text-text"
+                }`}
               >
                 {icon}
               </button>
@@ -781,9 +779,7 @@ function renderField(
       );
 
     default:
-
       return (
-
         <div>
           <TextInput
             label={field.label}
@@ -796,7 +792,6 @@ function renderField(
           ) : null}
         </div>
       );
-
   }
 }
 
@@ -923,7 +918,7 @@ export function PageEditorCmsPage({ config }: { config: CmsConfig }) {
         (field) =>
           (field.type === "relation-multiselect" ||
             field.type === "relation-select") &&
-          field.relation?.endpoint
+          field.relation?.endpoint,
       );
 
       const results: Record<string, { label: string; value: string }[]> = {};
@@ -1123,9 +1118,9 @@ export function PageEditorCmsPage({ config }: { config: CmsConfig }) {
             </div>
           }
         >
-          <div className="mb-5 flex flex-wrap gap-3">
+          <div className="mb-5 flex gap-3">
             <input
-              className="input w-72"
+              className="input max-w-72"
               placeholder={config.searchPlaceholder || "Search"}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -1138,67 +1133,135 @@ export function PageEditorCmsPage({ config }: { config: CmsConfig }) {
             </ActionButton>
           </div>
 
-          <div className="space-y-3">
-            {items.map((item) => (
-              <div
-                key={item._id || item.title}
-                className="grid gap-4 rounded-[28px] border border-line bg-panel/60 p-4 xl:grid-cols-[140px_1fr_auto] xl:items-center"
-              >
-                <div className="h-20 w-20 overflow-hidden rounded-[22px] border border-line bg-card">
-                  {item.image ? (
-                    <img
-                      src={item.image}
-                      alt={item.title}
-                      className="h-full w-full object-cover"
-                    />
-                  ) : (
-                    <div className="h-full w-full bg-gradient-to-br from-violet-500/15 to-gold/10" />
-                  )}
-                </div>
+          <div className="overflow-hidden rounded-[28px] border border-line bg-panel/70">
+            <p className="px-5 pt-4 pb-2 text-xs text-muted">
+              Showing {items.length} of {items.length} entries
+            </p>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left">
+                <thead className="border-b border-line bg-card/50">
+                  <tr>
+                    <th className="px-4 py-3 text-xs font-medium text-muted uppercase tracking-wider w-12">
+                      SNO.
+                    </th>
+                    <th className="px-4 py-3 text-xs font-medium text-muted uppercase tracking-wider w-20">
+                      Image
+                    </th>
+                    <th className="px-4 py-3 text-xs font-medium text-muted uppercase tracking-wider">
+                      Title
+                    </th>
+                    <th className="px-4 py-3 text-xs font-medium text-muted uppercase tracking-wider">
+                      Type
+                    </th>
+                    <th className="px-4 py-3 text-xs font-medium text-muted uppercase tracking-wider">
+                      Added At
+                    </th>
+                    <th className="px-4 py-3 text-xs font-medium text-muted uppercase tracking-wider">
+                      Status
+                    </th>
+                    <th className="px-4 py-3 text-xs font-medium text-muted uppercase tracking-wider text-right">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {items.map((item, index) => (
+                    <tr
+                      key={item._id || item.title}
+                      className="border-b border-line last:border-none hover:bg-card/40 transition-colors"
+                    >
+                      <td className="px-4 py-4 text-sm text-muted">
+                        {index + 1}
+                      </td>
 
-                <div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <h3 className="text-base font-semibold text-text">
-                      {item.title}
-                    </h3>
-                    <StatusBadge
-                      value={item.status || "draft"}
-                      tone={item.status === "published" ? "green" : "slate"}
-                    />
-                  </div>
+                      <td className="px-4 py-4">
+                        <div className="h-11 w-11 overflow-hidden rounded-xl border border-line bg-card shrink-0">
+                          {item.image ? (
+                            <img
+                              src={item.image}
+                              alt={item.title}
+                              className="h-full w-full object-cover"
+                            />
+                          ) : (
+                            <div className="h-full w-full bg-gradient-to-br from-violet-500/15 to-gold/10" />
+                          )}
+                        </div>
+                      </td>
 
-                  {item.subtitle ? (
-                    <p className="mt-2 text-sm text-muted">{item.subtitle}</p>
-                  ) : null}
-                  {item.slug ? (
-                    <p className="mt-2 text-xs text-muted">/{item.slug}</p>
-                  ) : null}
-                  {(item as any).pageType ? (
-                    <p className="mt-2 text-xs text-muted">
-                      Type: {(item as any).pageType}
-                    </p>
-                  ) : null}
-                  {item.description ? (
-                    <p className="mt-3 line-clamp-3 text-sm leading-6 text-muted">
-                      {item.description}
-                    </p>
-                  ) : null}
-                </div>
+                      <td className="px-4 py-4">
+                        <p className="text-sm font-medium text-text">
+                          {item.title}
+                        </p>
+                        {item.subtitle ? (
+                          <p className="mt-0.5 text-xs text-muted">
+                            {item.subtitle}
+                          </p>
+                        ) : null}
+                        {item.slug ? (
+                          <p className="mt-0.5 text-xs text-muted/60">
+                            /{item.slug}
+                          </p>
+                        ) : null}
+                        {item.description ? (
+                          <p className="mt-1 text-xs text-muted/60 line-clamp-1">
+                            {item.description}
+                          </p>
+                        ) : null}
+                      </td>
 
-                <div className="justify-self-end">
-                  <InlineActions
-                    onEdit={() => edit(item)}
-                    onDelete={() => remove(item._id)}
-                  />
-                </div>
-              </div>
-            ))}
+                      <td className="px-4 py-4 text-sm text-muted whitespace-nowrap">
+                        {(item as any).pageType || "-"}
+                      </td>
 
-            {!items.length ? (
-              <div className="rounded-3xl border border-dashed border-line p-8 text-sm text-muted">
-                No records found.
-              </div>
-            ) : null}
+                      <td className="px-4 py-4 min-w-[150px]">
+                        <p className="text-sm text-muted">
+                          {item.createdAt
+                            ? new Date(item.createdAt).toLocaleDateString(
+                                "en-GB",
+                                {
+                                  day: "2-digit",
+                                  month: "2-digit",
+                                  year: "2-digit",
+                                },
+                              )
+                            : "-"}
+                        </p>
+                        <p className="mt-0.5 text-xs text-muted/60">
+                          {item.createdAt
+                            ? new Date(item.createdAt).toLocaleTimeString(
+                                "en-GB",
+                                {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                  hour12: true,
+                                },
+                              )
+                            : ""}
+                        </p>
+                      </td>
+
+                      <td className="px-4 py-4">
+                        <StatusBadge
+                          value={item.status || "draft"}
+                          tone={item.status === "published" ? "green" : "slate"}
+                        />
+                      </td>
+
+                      <td className="px-4 py-4 text-right">
+                        <InlineActions
+                          onEdit={() => edit(item)}
+                          onDelete={() => remove(item._id)}
+                        />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {!items.length && (
+              <div className="p-8 text-sm text-muted">No records found.</div>
+            )}
           </div>
         </SectionCard>
       </div>

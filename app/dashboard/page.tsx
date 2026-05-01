@@ -15,7 +15,7 @@
 //   return (
 //     <DashboardShell>
 //       <Header title="Welcome to Dashboard" subtitle="This pass restructures the starter around the actual screens visible in the video: properties, contact queues, assessments, tasks, media, icons, about, and playbooks." />
-//       <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+//       <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-2">
 //         <MetricTile label="Active Properties" value={data?.stats.activeListings ?? '--'} note="Live inventory currently shown in the system." />
 //         <MetricTile label="Contact Queues" value={data?.contactQueues.length ?? '--'} note="Queue items waiting for review or publishing." />
 //         <MetricTile label="Lead Conversion" value={data ? `${data.stats.conversionRate}%` : '--'} note="Qualified lead progression inside the luxury funnel." />
@@ -61,7 +61,7 @@
 // }
 
 "use client";
- 
+
 import { useCallback, useEffect, useRef, useState } from "react";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { Header } from "@/components/header";
@@ -69,23 +69,23 @@ import { DataTable } from "@/components/data-table";
 import { api } from "@/lib/api";
 import { WorkspaceSnapshot } from "@/lib/types";
 import { SectionCard, StatusBadge } from "@/components/ui";
- 
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
 // ─────────────────────────────────────────────────────────────────────────────
- 
+
 type TimeFilter = "Today" | "Week" | "Month" | "Year";
- 
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Chart.js — lazy CDN load
 // ─────────────────────────────────────────────────────────────────────────────
- 
+
 declare global {
   interface Window {
     Chart: any;
   }
 }
- 
+
 function loadChartJs(): Promise<void> {
   return new Promise((resolve) => {
     if (window.Chart) {
@@ -99,22 +99,25 @@ function loadChartJs(): Promise<void> {
     document.head.appendChild(s);
   });
 }
- 
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers — bucket any array by time filter
 // ─────────────────────────────────────────────────────────────────────────────
- 
-function bucketByFilter(items: { createdAt: string }[], filter: TimeFilter): number[] {
+
+function bucketByFilter(
+  items: { createdAt: string }[],
+  filter: TimeFilter,
+): number[] {
   if (!items || items.length === 0) return [];
   const now = new Date();
- 
+
   const getKey = (d: Date): string => {
     if (filter === "Today") return d.getHours().toString();
     if (filter === "Week") return d.toDateString();
     if (filter === "Month") return `${d.getDate()}`;
     return `${d.getMonth() + 1}`;
   };
- 
+
   const isInRange = (d: Date): boolean => {
     const diff = now.getTime() - d.getTime();
     if (filter === "Today") return diff < 86_400_000;
@@ -122,7 +125,7 @@ function bucketByFilter(items: { createdAt: string }[], filter: TimeFilter): num
     if (filter === "Month") return diff < 30 * 86_400_000;
     return diff < 365 * 86_400_000;
   };
- 
+
   const buckets: Record<string, number> = {};
   items.forEach((item) => {
     const d = new Date(item.createdAt);
@@ -130,10 +133,10 @@ function bucketByFilter(items: { createdAt: string }[], filter: TimeFilter): num
     const key = getKey(d);
     buckets[key] = (buckets[key] || 0) + 1;
   });
- 
+
   return Object.values(buckets);
 }
- 
+
 function calculateDelta(data: number[]): number {
   if (data.length < 2) return 0;
   const last = data[data.length - 1];
@@ -141,14 +144,14 @@ function calculateDelta(data: number[]): number {
   if (prev === 0) return 0;
   return Math.round(((last - prev) / prev) * 100);
 }
- 
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Sparkline — inline trend line used inside each metric card
 // ─────────────────────────────────────────────────────────────────────────────
- 
+
 function Sparkline({ data, positive }: { data: number[]; positive: boolean }) {
   const ref = useRef<HTMLCanvasElement>(null);
- 
+
   useEffect(() => {
     const canvas = ref.current;
     if (!canvas || data.length < 2) return;
@@ -160,9 +163,9 @@ function Sparkline({ data, positive }: { data: number[]; positive: boolean }) {
     const min = Math.min(...data);
     const range = max - min || 1;
     const step = w / (data.length - 1);
- 
+
     ctx.clearRect(0, 0, w, h);
- 
+
     // Draw filled area
     ctx.beginPath();
     data.forEach((v, i) => {
@@ -176,11 +179,14 @@ function Sparkline({ data, positive }: { data: number[]; positive: boolean }) {
     ctx.closePath();
     const grad = ctx.createLinearGradient(0, 0, 0, h);
     const color = positive ? "#d4a84b" : "#ef4444";
-    grad.addColorStop(0, positive ? "rgba(212,168,75,0.35)" : "rgba(239,68,68,0.35)");
+    grad.addColorStop(
+      0,
+      positive ? "rgba(212,168,75,0.35)" : "rgba(239,68,68,0.35)",
+    );
     grad.addColorStop(1, "rgba(0,0,0,0)");
     ctx.fillStyle = grad;
     ctx.fill();
- 
+
     // Draw line
     ctx.beginPath();
     data.forEach((v, i) => {
@@ -193,14 +199,14 @@ function Sparkline({ data, positive }: { data: number[]; positive: boolean }) {
     ctx.lineJoin = "round";
     ctx.stroke();
   }, [data, positive]);
- 
+
   return <canvas ref={ref} width={130} height={44} className="block" />;
 }
- 
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Unified MetricCard — replaces both MetricTile and ContactQueryCard
 // ─────────────────────────────────────────────────────────────────────────────
- 
+
 interface MetricCardProps {
   label: string;
   value: number | string;
@@ -208,15 +214,21 @@ interface MetricCardProps {
   sparkline: number[];
   deltaPercent: number;
 }
- 
-function MetricCard({ label, value, note, sparkline, deltaPercent }: MetricCardProps) {
+
+function MetricCard({
+  label,
+  value,
+  note,
+  sparkline,
+  deltaPercent,
+}: MetricCardProps) {
   const positive = deltaPercent >= 0;
   const hasData = sparkline.length >= 2;
- 
+
   return (
     <div className="card rounded-3xl border border-line bg-panel/60 px-5 py-5 flex items-center justify-between gap-4">
       <div className="flex flex-col gap-1 min-w-0">
-      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-gold/80 to-transparent" />
+        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-gold/80 to-transparent" />
 
         <span className="text-[10px] font-semibold tracking-[0.22em] uppercase text-muted">
           {label}
@@ -225,7 +237,9 @@ function MetricCard({ label, value, note, sparkline, deltaPercent }: MetricCardP
           {value}
         </span>
         {note && (
-          <span className="text-xs text-muted leading-snug max-w-[180px]">{note}</span>
+          <span className="text-xs text-muted leading-snug max-w-[180px]">
+            {note}
+          </span>
         )}
         {hasData && (
           <span
@@ -260,20 +274,20 @@ function MetricCard({ label, value, note, sparkline, deltaPercent }: MetricCardP
     </div>
   );
 }
- 
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Full-size contact chart (bottom section)
 // ─────────────────────────────────────────────────────────────────────────────
- 
+
 function ContactQueryChart({ data }: { data: number[] }) {
   const ref = useRef<HTMLCanvasElement>(null);
   const chartRef = useRef<any>(null);
- 
+
   useEffect(() => {
     loadChartJs().then(() => {
       if (!ref.current) return;
       chartRef.current?.destroy();
- 
+
       chartRef.current = new window.Chart(ref.current, {
         type: "line",
         data: {
@@ -306,27 +320,34 @@ function ContactQueryChart({ data }: { data: number[] }) {
         },
       });
     });
- 
+
     return () => chartRef.current?.destroy();
   }, [data]);
- 
+
   return (
     <div className="h-64">
       <canvas ref={ref} />
     </div>
   );
 }
- 
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers — derive per-filter values for non-array stats
 // ─────────────────────────────────────────────────────────────────────────────
- 
+
 /** Build a synthetic sparkline + delta for scalar stats (activeListings, conversionRate).
  *  Since these are point-in-time scalars (not timestamped arrays), we fabricate a
  *  plausible recent trend using a seeded variance so it feels data-driven. */
 function scalarSparkline(value: number, filter: TimeFilter): number[] {
   if (!value) return [];
-  const points = filter === "Today" ? 8 : filter === "Week" ? 7 : filter === "Month" ? 10 : 12;
+  const points =
+    filter === "Today"
+      ? 8
+      : filter === "Week"
+        ? 7
+        : filter === "Month"
+          ? 10
+          : 12;
   // Deterministic pseudo-random walk ending at `value`
   const seed = value * 0.1;
   return Array.from({ length: points }, (_, i) => {
@@ -335,24 +356,26 @@ function scalarSparkline(value: number, filter: TimeFilter): number[] {
     return Math.max(0, Math.round(value * progress + noise));
   });
 }
- 
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Page
 // ─────────────────────────────────────────────────────────────────────────────
- 
+
 export default function DashboardPage() {
-  const [workspaceData, setWorkspaceData] = useState<WorkspaceSnapshot | null>(null);
+  const [workspaceData, setWorkspaceData] = useState<WorkspaceSnapshot | null>(
+    null,
+  );
   const [filter, setFilter] = useState<TimeFilter>("Today");
- 
+
   const filters: TimeFilter[] = ["Today", "Week", "Month", "Year"];
- 
+
   useEffect(() => {
     api
       .get<WorkspaceSnapshot>("/workspace/snapshot")
       .then(setWorkspaceData)
       .catch(() => undefined);
   }, []);
- 
+
   // ── Contact queries — bucketed by filter ──────────────────────────────────
   const contactTotal = workspaceData?.contactQueues.length ?? 0;
   const _contactBucketed = bucketByFilter(
@@ -366,7 +389,7 @@ export default function DashboardPage() {
       ? _contactBucketed
       : scalarSparkline(contactTotal, filter);
   const contactDelta = calculateDelta(contactSparkline);
- 
+
   // ── Active properties — synthetic sparkline from scalar stat ─────────────
   const activePropValue = workspaceData?.stats.activeListings ?? 0;
   const activePropSparkline = scalarSparkline(
@@ -374,12 +397,12 @@ export default function DashboardPage() {
     filter,
   );
   const activePropDelta = calculateDelta(activePropSparkline);
- 
+
   // ── Conversion rate — synthetic sparkline ─────────────────────────────────
   const convRate = workspaceData?.stats.conversionRate ?? 0;
   const convSparkline = scalarSparkline(convRate, filter);
   const convDelta = calculateDelta(convSparkline);
- 
+
   return (
     <DashboardShell>
       {/* ── Header + filter tabs ──────────────────────────────────── */}
@@ -404,10 +427,10 @@ export default function DashboardPage() {
           ))}
         </div>
       </div>
- 
+
       {/* ── Metric cards — all now show sparkline graph ───────────── */}
-      <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3 mb-6">
-      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-gold/80 to-transparent" />
+      <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-2 mb-6">
+        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-gold/80 to-transparent" />
 
         <MetricCard
           label="Contact Query"

@@ -16,6 +16,7 @@ import {
   TextInput,
 } from "@/components/crud-kit";
 import { propertyTypeCmsConfig } from "@/configs/cms/property-type.config";
+import { Modal } from "@/components/modal";
 
 const ROOT_KEYS = [
   "title",
@@ -665,13 +666,13 @@ function renderField(
               <video
                 src={value}
                 controls
-                className="h-40w-full rounded-2xl border border-line object-cover"
+                className="h-20 w-20 rounded-2xl border border-line object-cover"
               />
             ) : (
               <img
                 src={value}
                 alt={field.label}
-                className="h-40w-full rounded-2xl border border-line object-cover"
+                className="h-20 w-20 rounded-2xl border border-line object-cover"
               />
             )
           ) : null}
@@ -784,6 +785,7 @@ export default function EditorCmsPage() {
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
+  const [adform, setaddForm] = useState(false);
   const [relationOptions, setRelationOptions] = useState<
     Record<string, { label: string; value: string }[]>
   >({});
@@ -864,7 +866,7 @@ export default function EditorCmsPage() {
   };
 
   const edit = (item: CmsItem) => {
-    setaddForm(!adform);
+    setaddForm(true); // ← change !adform to true
     setEditingId(item._id || null);
 
     const blank = blankFromConfig(config);
@@ -923,7 +925,6 @@ export default function EditorCmsPage() {
       setError("Unable to save record.");
     }
   };
-  const [adform, setaddForm] = useState(false);
   const remove = async (id?: string) => {
     if (!id) return;
 
@@ -948,67 +949,63 @@ export default function EditorCmsPage() {
       <div className="space-y-6">
         <SectionNotice message={message} error={error} />
 
-        {adform && (
-          <SectionCard
-            title={
-              editingId
-                ? `Edit ${config.title.slice(0, -1) || config.title}`
-                : config.addLabel || `Add ${config.title}`
-            }
-            subtitle="Frontend-controlled CMS with manual, linked, auto, and repeatable section content."
-            action={
-              <div className="flex gap-3">
-                <ActionButton secondary onClick={() => setaddForm(!adform)}>
-                  Cancel
-                </ActionButton>
-                <ActionButton secondary onClick={reset}>
-                  Reset
-                </ActionButton>
-                <ActionButton onClick={submit}>
-                  {editingId ? "Update" : "Save"}
-                </ActionButton>
-              </div>
-            }
-          >
-            <div className="grid gap-6 xl:grid-cols-[1.6fr_0.9fr]">
-              <div className="space-y-5">
-                {leftGroups.map((group) => (
-                  <FieldGroup
-                    key={group.key}
-                    title={group.label}
-                    fields={fieldsByGroup(group.key)}
-                    form={form}
-                    setForm={setForm}
-                    relationOptions={relationOptions}
-                  />
-                ))}
-              </div>
-
-              <div className="space-y-4 rounded-[28px] border border-line bg-panel/50 p-4">
-                <p className="text-xs uppercase tracking-[0.24em] text-gold">
-                  Meta & Settings
-                </p>
-
-                {rightGroups.map((group) => (
-                  <FieldGroup
-                    key={group.key}
-                    title={group.label}
-                    fields={fieldsByGroup(group.key)}
-                    form={form}
-                    setForm={setForm}
-                    relationOptions={relationOptions}
-                  />
-                ))}
-
-                <FormActions
-                  onSubmit={submit}
-                  onCancel={reset}
-                  submitLabel={editingId ? "Update Record" : "Create Record"}
+        <Modal
+          open={adform}
+          onClose={() => {
+            setaddForm(false);
+            reset();
+          }}
+          title={
+            editingId
+              ? `Edit ${config.title.slice(0, -1) || config.title}`
+              : config.addLabel || `Add ${config.title}`
+          }
+          subtitle="Frontend-controlled CMS with manual, linked, auto, and repeatable section content."
+          size="xl"
+        >
+          <div className="grid gap-6 grid-cols-2">
+            {/* Left column */}
+            <div className="space-y-5">
+              {leftGroups.map((group) => (
+                <FieldGroup
+                  key={group.key}
+                  title={group.label}
+                  fields={fieldsByGroup(group.key)}
+                  form={form}
+                  setForm={setForm}
+                  relationOptions={relationOptions}
                 />
-              </div>
+              ))}
             </div>
-          </SectionCard>
-        )}
+
+            {/* Right column */}
+            <div className="space-y-4 rounded-[28px] border border-line bg-panel/50 p-4">
+              <p className="text-xs uppercase tracking-[0.24em] text-gold">
+                Meta & Settings
+              </p>
+
+              {rightGroups.map((group) => (
+                <FieldGroup
+                  key={group.key}
+                  title={group.label}
+                  fields={fieldsByGroup(group.key)}
+                  form={form}
+                  setForm={setForm}
+                  relationOptions={relationOptions}
+                />
+              ))}
+
+              <FormActions
+                onSubmit={submit}
+                onCancel={() => {
+                  setaddForm(false);
+                  reset();
+                }}
+                submitLabel={editingId ? "Update Record" : "Create Record"}
+              />
+            </div>
+          </div>
+        </Modal>
 
         <SectionCard
           title={`${config.title} Listing`}
@@ -1021,9 +1018,9 @@ export default function EditorCmsPage() {
             </div>
           }
         >
-          <div className="mb-5 flex flex-wrap gap-3">
+          <div className="mb-5 flex gap-3">
             <input
-              className="input w-72"
+              className="input max-w-72"
               placeholder={config.searchPlaceholder || "Search"}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -1036,67 +1033,135 @@ export default function EditorCmsPage() {
             </ActionButton>
           </div>
 
-          <div className="space-y-3">
-            {items.map((item) => (
-              <div
-                key={item._id || item.title}
-                className="grid gap-4 rounded-[28px] border border-line bg-panel/60 p-4 xl:grid-cols-[140px_1fr_auto] xl:items-center"
-              >
-                <div className="h-20 w-20 overflow-hidden rounded-[22px] border border-line bg-card">
-                  {item.image ? (
-                    <img
-                      src={item.image}
-                      alt={item.title}
-                      className="h-full w-full object-cover"
-                    />
-                  ) : (
-                    <div className="h-full w-full bg-gradient-to-br from-violet-500/15 to-gold/10" />
-                  )}
-                </div>
+          <div className="overflow-hidden rounded-[28px] border border-line bg-panel/70">
+            <p className="px-5 pt-4 pb-2 text-xs text-muted">
+              Showing {items.length} of {items.length} entries
+            </p>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left">
+                <thead className="border-b border-line bg-card/50">
+                  <tr>
+                    <th className="px-4 py-3 text-xs font-medium text-muted uppercase tracking-wider w-12">
+                      SNO.
+                    </th>
+                    <th className="px-4 py-3 text-xs font-medium text-muted uppercase tracking-wider w-20">
+                      Image
+                    </th>
+                    <th className="px-4 py-3 text-xs font-medium text-muted uppercase tracking-wider">
+                      Title
+                    </th>
+                    <th className="px-4 py-3 text-xs font-medium text-muted uppercase tracking-wider">
+                      Type
+                    </th>
+                    <th className="px-4 py-3 text-xs font-medium text-muted uppercase tracking-wider">
+                      Added At
+                    </th>
+                    <th className="px-4 py-3 text-xs font-medium text-muted uppercase tracking-wider">
+                      Status
+                    </th>
+                    <th className="px-4 py-3 text-xs font-medium text-muted uppercase tracking-wider text-right">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {items.map((item, index) => (
+                    <tr
+                      key={item._id || item.title}
+                      className="border-b border-line last:border-none hover:bg-card/40 transition-colors"
+                    >
+                      <td className="px-4 py-4 text-sm text-muted">
+                        {index + 1}
+                      </td>
 
-                <div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <h3 className="text-base font-semibold text-text">
-                      {item.title}
-                    </h3>
-                    <StatusBadge
-                      value={item.status || "draft"}
-                      tone={item.status === "published" ? "green" : "slate"}
-                    />
-                  </div>
+                      <td className="px-4 py-4">
+                        <div className="h-11 w-11 overflow-hidden rounded-xl border border-line bg-card shrink-0">
+                          {item.image ? (
+                            <img
+                              src={item.image}
+                              alt={item.title}
+                              className="h-full w-full object-cover"
+                            />
+                          ) : (
+                            <div className="h-full w-full bg-gradient-to-br from-violet-500/15 to-gold/10" />
+                          )}
+                        </div>
+                      </td>
 
-                  {item.subtitle ? (
-                    <p className="mt-2 text-sm text-muted">{item.subtitle}</p>
-                  ) : null}
-                  {item.slug ? (
-                    <p className="mt-2 text-xs text-muted">/{item.slug}</p>
-                  ) : null}
-                  {(item as any).pageType ? (
-                    <p className="mt-2 text-xs text-muted">
-                      Type: {(item as any).pageType}
-                    </p>
-                  ) : null}
-                  {item.description ? (
-                    <p className="mt-3 line-clamp-3 text-sm leading-6 text-muted">
-                      {item.description}
-                    </p>
-                  ) : null}
-                </div>
+                      <td className="px-4 py-4">
+                        <p className="text-sm font-medium text-text">
+                          {item.title}
+                        </p>
+                        {item.subtitle ? (
+                          <p className="mt-0.5 text-xs text-muted">
+                            {item.subtitle}
+                          </p>
+                        ) : null}
+                        {item.slug ? (
+                          <p className="mt-0.5 text-xs text-muted/60">
+                            /{item.slug}
+                          </p>
+                        ) : null}
+                        {item.description ? (
+                          <p className="mt-1 text-xs text-muted/60 line-clamp-1">
+                            {item.description}
+                          </p>
+                        ) : null}
+                      </td>
 
-                <div className="justify-self-end">
-                  <InlineActions
-                    onEdit={() => edit(item)}
-                    onDelete={() => remove(item._id)}
-                  />
-                </div>
-              </div>
-            ))}
+                      <td className="px-4 py-4 text-sm text-muted whitespace-nowrap">
+                        {(item as any).pageType || "-"}
+                      </td>
 
-            {!items.length ? (
-              <div className="rounded-3xl border border-dashed border-line p-8 text-sm text-muted">
-                No records found.
-              </div>
-            ) : null}
+                      <td className="px-4 py-4 min-w-[150px]">
+                        <p className="text-sm text-muted">
+                          {item.createdAt
+                            ? new Date(item.createdAt).toLocaleDateString(
+                                "en-GB",
+                                {
+                                  day: "2-digit",
+                                  month: "2-digit",
+                                  year: "2-digit",
+                                },
+                              )
+                            : "-"}
+                        </p>
+                        <p className="mt-0.5 text-xs text-muted/60">
+                          {item.createdAt
+                            ? new Date(item.createdAt).toLocaleTimeString(
+                                "en-GB",
+                                {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                  hour12: true,
+                                },
+                              )
+                            : ""}
+                        </p>
+                      </td>
+
+                      <td className="px-4 py-4">
+                        <StatusBadge
+                          value={item.status || "draft"}
+                          tone={item.status === "published" ? "green" : "slate"}
+                        />
+                      </td>
+
+                      <td className="px-4 py-4 text-right">
+                        <InlineActions
+                          onEdit={() => edit(item)}
+                          onDelete={() => remove(item._id)}
+                        />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {!items.length && (
+              <div className="p-8 text-sm text-muted">No records found.</div>
+            )}
           </div>
         </SectionCard>
       </div>

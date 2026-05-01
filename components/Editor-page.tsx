@@ -1,8 +1,840 @@
+// "use client";
+
+// import { ChangeEvent, useEffect, useMemo, useState } from "react";
+// import { DashboardShell } from "@/components/dashboard-shell";
+// import { Header } from "@/components/header";
+// import { api } from "@/lib/api";
+// import { CmsConfig, CmsField, CmsItem } from "@/lib/cms";
+// import { ActionButton, SectionCard, StatusBadge } from "@/components/ui";
+// import {
+//   FieldLabel,
+//   FormActions,
+//   InlineActions,
+//   SectionNotice,
+//   SelectInput,
+//   TextArea,
+//   TextInput,
+// } from "@/components/crud-kit";
+// import { TiptapEditor } from "./TextEditor";
+
+// type RelationOption = {
+//   label: string;
+//   value: string;
+// };
+
+// type RelationOptionsMap = Record<string, RelationOption[]>;
+
+// function blankFromConfig(config: CmsConfig): CmsItem {
+//   const data: Record<string, any> = {};
+
+//   for (const field of config.fields) {
+//     if (
+//       [
+//         "title",
+//         "subtitle",
+//         "slug",
+//         "status",
+//         "image",
+//         "description",
+//         "sortOrder",
+//       ].includes(field.key)
+//     )
+//       continue;
+
+//     if (field.type === "boolean") data[field.key] = false;
+//     else if (field.type === "number") data[field.key] = 0;
+//     else if (field.type === "multiselect") data[field.key] = [];
+//     else if (field.type === "relation-select" && (field as any).multiple)
+//       data[field.key] = [];
+//     else data[field.key] = "";
+//   }
+
+//   return {
+//     title: "",
+//     subtitle: "",
+//     slug: "",
+//     status: "draft",
+//     image: "",
+//     description: "",
+//     sortOrder: 0,
+//     data,
+//   };
+// }
+
+// function getValue(item: CmsItem, field: CmsField) {
+//   if (field.key in item) return (item as any)[field.key];
+//   return item.data?.[field.key];
+// }
+
+// function setValue(item: CmsItem, field: CmsField, value: any): CmsItem {
+//   if (
+//     field.key in item ||
+//     [
+//       "title",
+//       "subtitle",
+//       "slug",
+//       "status",
+//       "image",
+//       "description",
+//       "sortOrder",
+//     ].includes(field.key)
+//   ) {
+//     return { ...item, [field.key]: value };
+//   }
+
+//   return {
+//     ...item,
+//     data: { ...(item.data || {}), [field.key]: value },
+//   };
+// }
+
+// async function fileToDataUrl(file: File) {
+//   const formData = new FormData();
+//   formData.append("file", file);
+//   const response = await api.post("/content/upload/gallery", formData, {});
+//   console.log(response, "Upload response");
+//   const uploadedUrl =
+//     response?.data?.url ||
+//     response?.data?.data?.url ||
+//     response?.data?.fileUrl ||
+//     response?.data?.data?.fileUrl ||
+//     response?.data?.location ||
+//     response?.data?.data?.location ||
+//     "";
+//   return uploadedUrl;
+// }
+// const uploadAsset = async (file: File) => {
+//   try {
+//     const formData = new FormData();
+//     formData.append("file", file);
+//     const data = await api.post<any[]>(`/content/upload/gallery`, formData);
+
+//     return data?.data?.url;
+//   } catch {
+//     alert("Failed to upload asset.");
+//     return null;
+//   }
+// };
+// function normalizeRelationOptions(
+//   rows: any[],
+//   labelKey: string,
+//   valueKey: string,
+// ): RelationOption[] {
+//   return rows.map((row) => ({
+//     label: row?.[labelKey] ?? "Untitled",
+//     value: String(row?.[valueKey] ?? ""),
+//   }));
+// }
+// function GalleryUploader({
+//   value,
+//   onChange,
+// }: {
+//   value: string[];
+//   onChange: (next: string[]) => void;
+// }) {
+//   const images = Array.isArray(value) ? value : [];
+//   const [urlInput, setUrlInput] = useState("");
+//   const [uploading, setUploading] = useState(false);
+
+//   const uploadSingleFile = async (file: File): Promise<string> => {
+//     const formData = new FormData();
+//     formData.append("file", file);
+
+//     const response = await api.post("/content/upload/gallery", formData, {});
+//     console.log(response, "Upload response");
+//     const uploadedUrl =
+//       response?.data?.url ||
+//       response?.data?.data?.url ||
+//       response?.data?.fileUrl ||
+//       response?.data?.data?.fileUrl ||
+//       response?.data?.location ||
+//       response?.data?.data?.location ||
+//       "";
+
+//     if (!uploadedUrl) {
+//       throw new Error("Upload API did not return image URL");
+//     }
+
+//     return uploadedUrl;
+//   };
+
+//   const handleFiles = async (e: ChangeEvent<HTMLInputElement>) => {
+//     const files = Array.from(e.target.files || []);
+//     if (!files.length) return;
+
+//     setUploading(true);
+
+//     try {
+//       const nextImages = [...images];
+
+//       for (const file of files) {
+//         const uploadedUrl = await uploadSingleFile(file);
+//         nextImages.push(uploadedUrl);
+//         onChange([...nextImages]);
+//       }
+//     } catch (error) {
+//       console.error("Gallery upload failed:", error);
+//     } finally {
+//       setUploading(false);
+//       e.target.value = "";
+//     }
+//   };
+
+//   const addUrl = () => {
+//     const next = urlInput.trim();
+//     if (!next) return;
+//     onChange([...(images || []), next]);
+//     setUrlInput("");
+//   };
+
+//   const updateImage = (index: number, nextValue: string) => {
+//     const next = [...images];
+//     next[index] = nextValue;
+//     onChange(next);
+//   };
+
+//   const removeImage = (index: number) => {
+//     onChange(images.filter((_, i) => i !== index));
+//   };
+
+//   return (
+//     <div className="space-y-4">
+//       <div>
+//         <FieldLabel label="Gallery Images" />
+//         <p className="mt-1 text-xs text-muted">
+//           Upload multiple property gallery images or paste image URLs.
+//         </p>
+//       </div>
+
+//       <div className="space-y-3 rounded-[24px] border border-line bg-panel/40 p-4">
+//         <div className="flex gap-2">
+//           <div className="flex-1">
+//             <TextInput
+//               label="Add Image URL"
+//               value={urlInput}
+//               onChange={setUrlInput}
+//               placeholder="https://example.com/image.jpg"
+//             />
+//           </div>
+//           <div className="flex items-end">
+//             <ActionButton secondary onClick={addUrl} disabled={uploading}>
+//               Add URL
+//             </ActionButton>
+//           </div>
+//         </div>
+
+//         <input
+//           className="input"
+//           type="file"
+//           accept="image/*"
+//           multiple
+//           onChange={handleFiles}
+//           disabled={uploading}
+//         />
+
+//         {uploading ? (
+//           <p className="text-xs text-muted">Uploading images...</p>
+//         ) : null}
+//       </div>
+
+//       {!!images.length && (
+//         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-2">
+//           {images.map((image, index) => (
+//             <div
+//               key={`${image}-${index}`}
+//               className="space-y-3 rounded-[24px] border border-line bg-panel/40 p-4"
+//             >
+//               <TextInput
+//                 label={`Image ${index + 1}`}
+//                 value={image}
+//                 onChange={(next) => updateImage(index, next)}
+//               />
+
+//               {image ? (
+//                 <img
+//                   src={image}
+//                   alt={`Gallery ${index + 1}`}
+//                   className="h-40 w-full rounded-2xl border border-line object-cover"
+//                 />
+//               ) : null}
+
+//               <div className="flex justify-end">
+//                 <ActionButton
+//                   secondary
+//                   onClick={() => removeImage(index)}
+//                   disabled={uploading}
+//                 >
+//                   Remove
+//                 </ActionButton>
+//               </div>
+//             </div>
+//           ))}
+//         </div>
+//       )}
+
+//       {!images.length ? (
+//         <div className="rounded-2xl border border-dashed border-line p-6 text-sm text-muted">
+//           No gallery images added yet.
+//         </div>
+//       ) : null}
+//     </div>
+//   );
+// }
+// function renderField(
+//   field: CmsField,
+//   value: any,
+//   onChange: (value: any) => void,
+//   relationOptions: RelationOptionsMap = {},
+// ) {
+//   switch (field.type) {
+//     case "textarea":
+//       return (
+//         <TextArea
+//           label={field.label}
+//           value={value || ""}
+//           onChange={onChange}
+//           rows={field.key.toLowerCase().includes("body") ? 5 : 4}
+//         />
+//       );
+//     case "editor":
+//       return (
+//         <div className="w-full">
+//           <TiptapEditor
+//             label={field.label}
+//             value={value || ""}
+//             onChange={onChange}
+//             note={field.note}
+//           />
+//         </div>
+//       );
+//     case "select":
+//       return (
+//         <SelectInput
+//           label={field.label}
+//           value={value || ""}
+//           onChange={onChange}
+//           options={field.options || []}
+//         />
+//       );
+
+//     case "relation-select": {
+//       const options = relationOptions[field.key] || [];
+//       const isMultiple = Boolean((field as any).multiple);
+
+//       if (isMultiple) {
+//         const selected = Array.isArray(value) ? value.map(String) : [];
+
+//         return (
+//           <div>
+//             <FieldLabel label={field.label} />
+//             <div className="grid gap-2 sm:grid-cols-2">
+//               {options.map((option) => (
+//                 <label
+//                   key={option.value}
+//                   className="flex items-center gap-2 rounded-2xl border border-line bg-panel px-3 py-2 text-sm text-text"
+//                 >
+//                   <input
+//                     type="checkbox"
+//                     checked={selected.includes(option.value)}
+//                     onChange={(e) => {
+//                       if (e.target.checked) {
+//                         onChange([...selected, option.value]);
+//                       } else {
+//                         onChange(selected.filter((v) => v !== option.value));
+//                       }
+//                     }}
+//                   />
+//                   <span>{option.label}</span>
+//                 </label>
+//               ))}
+//             </div>
+
+//             {!options.length ? (
+//               <p className="mt-2 text-xs text-muted">No options available.</p>
+//             ) : null}
+
+//             {field.note ? (
+//               <p className="mt-2 text-xs text-muted">{field.note}</p>
+//             ) : null}
+//           </div>
+//         );
+//       }
+
+//       return (
+//         <div>
+//           <SelectInput
+//             label={field.label}
+//             value={value || ""}
+//             onChange={onChange}
+//             options={[
+//               { label: `Select ${field.label}`, value: "" },
+//               ...options,
+//             ]}
+//           />
+//           {!options.length ? (
+//             <p className="mt-2 text-xs text-muted">No options available.</p>
+//           ) : null}
+//           {field.note ? (
+//             <p className="mt-2 text-xs text-muted">{field.note}</p>
+//           ) : null}
+//         </div>
+//       );
+//     }
+
+//     case "number":
+//       return (
+//         <TextInput
+//           label={field.label}
+//           type="number"
+//           value={value ?? 0}
+//           onChange={(v) => onChange(Number(v))}
+//         />
+//       );
+
+//     case "date":
+//       return (
+//         <TextInput
+//           label={field.label}
+//           type="date"
+//           value={value || ""}
+//           onChange={onChange}
+//         />
+//       );
+
+//     case "boolean":
+//       return (
+//         <div>
+//           <FieldLabel label={field.label} />
+//           <label className="flex items-center gap-3 rounded-2xl border border-line bg-panel px-4 py-3 text-sm text-text">
+//             <input
+//               type="checkbox"
+//               checked={Boolean(value)}
+//               onChange={(e) => onChange(e.target.checked)}
+//             />
+//             <span>Enabled</span>
+//           </label>
+//         </div>
+//       );
+
+//     case "multiselect": {
+//       const selected = Array.isArray(value) ? value : [];
+
+//       return (
+//         <div>
+//           <FieldLabel label={field.label} />
+//           <div className="grid gap-2 sm:grid-cols-2">
+//             {(field.options || []).map((option) => (
+//               <label
+//                 key={option.value}
+//                 className="flex items-center gap-2 rounded-2xl border border-line bg-panel px-3 py-2 text-sm text-text"
+//               >
+//                 <input
+//                   type="checkbox"
+//                   checked={selected.includes(option.value)}
+//                   onChange={(e) =>
+//                     onChange(
+//                       e.target.checked
+//                         ? [...selected, option.value]
+//                         : selected.filter((v: string) => v !== option.value),
+//                     )
+//                   }
+//                 />
+//                 <span>{option.label}</span>
+//               </label>
+//             ))}
+//           </div>
+//           {field.note ? (
+//             <p className="mt-2 text-xs text-muted">{field.note}</p>
+//           ) : null}
+//         </div>
+//       );
+//     }
+
+//     case "icon":
+//       return (
+//         <div>
+//           <FieldLabel label={field.label} />
+//           <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+//             {[
+//               "building-2",
+//               "map-pin",
+//               "star",
+//               "home",
+//               "users",
+//               "images",
+//               "briefcase-business",
+//               "badge-dollar-sign",
+//             ].map((icon) => (
+//               <button
+//                 key={icon}
+//                 type="button"
+//                 onClick={() => onChange(icon)}
+//                 className={`rounded-2xl border px-3 py-3 text-sm ${
+//                   value === icon
+//                     ? "border-gold bg-gold/10 text-gold"
+//                     : "border-line bg-panel text-text"
+//                 }`}
+//               >
+//                 {icon}
+//               </button>
+//             ))}
+//           </div>
+//           {field.note ? (
+//             <p className="mt-2 text-xs text-muted">{field.note}</p>
+//           ) : null}
+//         </div>
+//       );
+
+//     case "video":
+//     case "image":
+//       return (
+//         <div className="space-y-4 w-full">
+//           <TextInput
+//             label={field.label}
+//             value={value || ""}
+//             onChange={onChange}
+//             placeholder={`Paste ${field.type} URL or upload below`}
+//           />
+
+//           {/* Upload */}
+//           <div>
+//             <FieldLabel label={`${field.label} Upload`} />
+//             <input
+//               className="input"
+//               type="file"
+//               accept={field.type === "video" ? "video/*" : "image/*"}
+//               onChange={async (e: ChangeEvent<HTMLInputElement>) => {
+//                 const file = e.target.files?.[0];
+//                 if (!file) return;
+
+//                 const uploadedUrl = await fileToDataUrl(file);
+//                 onChange(uploadedUrl);
+//               }}
+//             />
+//           </div>
+
+//           {/* ✅ PREVIEW FIX */}
+//           {value && (
+//             <div className="w-full rounded-2xl overflow-hidden border border-line bg-black">
+//               {field.type === "video" ? (
+//                 <video
+//                   src={value}
+//                   controls
+//                   className="w-full h-[250px] md:h-[350px] object-cover"
+//                 />
+//               ) : (
+//                 <img
+//                   src={value}
+//                   alt={field.label}
+//                   className="w-full h-[250px] md:h-[350px] object-cover"
+//                 />
+//               )}
+//             </div>
+//           )}
+
+//           {field.note && <p className="text-xs text-muted">{field.note}</p>}
+//         </div>
+//       );
+//     case "gallery":
+//       return <GalleryUploader value={value || []} onChange={onChange} />;
+
+//     default:
+//       return (
+//         <div>
+//           <TextInput
+//             label={field.label}
+//             value={value || ""}
+//             onChange={onChange}
+//           />
+//           {field.note ? (
+//             <p className="mt-2 text-xs text-muted">{field.note}</p>
+//           ) : null}
+//         </div>
+//       );
+//   }
+// }
+
+// export function EditorCmsPage({ config }: { config: CmsConfig }) {
+//   const [items, setItems] = useState<CmsItem[]>([]);
+//   const [form, setForm] = useState<CmsItem>(blankFromConfig(config));
+//   const [editingId, setEditingId] = useState<string | null>(null);
+//   const [message, setMessage] = useState<string | null>(null);
+//   const [error, setError] = useState<string | null>(null);
+//   const [search, setSearch] = useState("");
+//   const [relationOptions, setRelationOptions] = useState({});
+//   const [isFormOpen, setIsFormOpen] = useState(false); // ✅ control form
+
+//   const fields = useMemo(() => config.fields, [config]);
+
+//   const load = async (term = "") => {
+//     try {
+//       const rows = await api.get<CmsItem[]>(
+//         `/content/${config.entity}${term ? `?search=${encodeURIComponent(term)}` : ""}`,
+//       );
+//       setItems(rows);
+//     } catch {
+//       setError("Failed to load records.");
+//     }
+//   };
+
+//   useEffect(() => {
+//     load();
+//   }, [config.entity]);
+
+//   const reset = () => {
+//     setEditingId(null);
+//     setForm(blankFromConfig(config));
+//     setIsFormOpen(false); // ✅ close form
+//   };
+
+//   const edit = (item: CmsItem) => {
+//     setEditingId(item._id || null);
+//     setForm({
+//       ...blankFromConfig(config),
+//       ...item,
+//       data: {
+//         ...blankFromConfig(config).data,
+//         ...(item.data || {}),
+//       },
+//     });
+//     setIsFormOpen(true); // ✅ open form
+//     window.scrollTo({ top: 0, behavior: "smooth" });
+//   };
+
+//   const submit = async () => {
+//     try {
+//       const payload = {
+//         ...form,
+//         slug:
+//           form.slug ||
+//           form.title
+//             .toLowerCase()
+//             .replace(/[^a-z0-9]+/g, "-")
+//             .replace(/(^-|-$)+/g, ""),
+//       };
+
+//       if (editingId) {
+//         await api.patch(`/content/${config.entity}/${editingId}`, payload);
+//       } else {
+//         await api.post(`/content/${config.entity}`, payload);
+//       }
+
+//       setMessage(editingId ? "Updated successfully." : "Created successfully.");
+//       setError(null);
+//       reset();
+//       await load(search);
+//     } catch {
+//       setError("Unable to save record.");
+//       setMessage(null);
+//     }
+//   };
+
+//   const remove = async (id?: string) => {
+//     if (!id) return;
+
+//     try {
+//       await api.delete(`/content/${config.entity}/${id}`);
+//       setMessage("Deleted successfully.");
+//       setError(null);
+
+//       if (editingId === id) reset();
+//       await load(search);
+//     } catch {
+//       setError("Unable to delete record.");
+//       setMessage(null);
+//     }
+//   };
+
+//   return (
+//     <DashboardShell>
+//       <Header title={config.title} subtitle={config.subtitle} />
+
+//       <div className="space-y-6">
+//         <SectionNotice message={message} error={error} />
+
+//         {/* ✅ ADD BUTTON */}
+//         <div className="flex justify-end">
+//           <ActionButton
+//             onClick={() => {
+//               setForm(blankFromConfig(config));
+//               setEditingId(null);
+//               setIsFormOpen(true);
+//             }}
+//           >
+//             Add New
+//           </ActionButton>
+//         </div>
+
+//         {/* ✅ SIMPLE FORM (NO LEFT RIGHT SPLIT) */}
+//         {isFormOpen && (
+//           <SectionCard
+//             title={editingId ? "Edit Record" : "Add Record"}
+//             action={
+//               <div className="flex gap-3">
+//                 <ActionButton secondary onClick={reset}>
+//                   Cancel
+//                 </ActionButton>
+//                 <ActionButton onClick={submit}>
+//                   {editingId ? "Update" : "Save"}
+//                 </ActionButton>
+//               </div>
+//             }
+//           >
+//             <div className="space-y-5">
+//               {fields.map((field) => (
+//                 <div key={field.key}>
+//                   {renderField(
+//                     field,
+//                     getValue(form, field),
+//                     (value) => setForm((prev) => setValue(prev, field, value)),
+//                     relationOptions,
+//                   )}
+//                 </div>
+//               ))}
+//             </div>
+
+//             <FormActions
+//               onSubmit={submit}
+//               onCancel={reset}
+//               submitLabel={editingId ? "Update Record" : "Create Record"}
+//             />
+//           </SectionCard>
+//         )}
+
+//         {/* ✅ KEEP YOUR ORIGINAL LIST EXACTLY SAME */}
+//         <SectionCard
+//           title={`${config.title} Listing`}
+//           subtitle="Search, review, edit, and remove saved records."
+//         >
+//           <div className="mb-5 flex gap-3">
+//             <input
+//               className="input w-72"
+//               placeholder={config.searchPlaceholder || "Search"}
+//               value={search}
+//               onChange={(e) => setSearch(e.target.value)}
+//               onKeyDown={(e) => {
+//                 if (e.key === "Enter") load(search);
+//               }}
+//             />
+//             <ActionButton secondary onClick={() => load(search)}>
+//               Search
+//             </ActionButton>
+//           </div>
+
+//          <div className="overflow-hidden rounded-[28px] border border-line bg-panel/70">
+//   <div className="overflow-x-auto">
+//     <table className="w-full text-left">
+//       <thead className="border-b border-line bg-card/50">
+//         <tr>
+//           <th className="px-4 py-4 text-xs font-medium text-muted uppercase tracking-wider w-14">SNO.</th>
+//           <th className="px-4 py-4 text-xs font-medium text-muted uppercase tracking-wider w-20">Image</th>
+//           <th className="px-4 py-4 text-xs font-medium text-muted uppercase tracking-wider">Title</th>
+//           <th className="px-4 py-4 text-xs font-medium text-muted uppercase tracking-wider">Added At</th>
+//           <th className="px-4 py-4 text-xs font-medium text-muted uppercase tracking-wider">Status</th>
+//           <th className="px-4 py-4 text-xs font-medium text-muted uppercase tracking-wider text-right"></th>
+//         </tr>
+//       </thead>
+
+//       <tbody>
+//         {items.map((item, index) => (
+//           <tr
+//             key={item._id || item.title}
+//             className="border-b border-line last:border-none hover:bg-card/40 transition-colors"
+//           >
+//             {/* SNO */}
+//             <td className="px-4 py-4 text-sm text-muted">{index + 1}</td>
+
+//             {/* Image */}
+//             <td className="px-4 py-4">
+//               <div className="h-12 w-12 overflow-hidden rounded-xl border border-line bg-card">
+//                 {item.image ? (
+//                   <img
+//                     src={item.image}
+//                     alt={item.title}
+//                     className="h-full w-full object-cover"
+//                   />
+//                 ) : (
+//                   <div className="h-full w-full bg-gradient-to-br from-violet-500/15 to-gold/10" />
+//                 )}
+//               </div>
+//             </td>
+
+//             {/* Title */}
+//             <td className="px-4 py-4">
+//               <p className="text-sm font-medium text-text">{item.title}</p>
+//               {item.subtitle ? (
+//                 <p className="mt-1 text-xs text-muted">{item.subtitle}</p>
+//               ) : null}
+//               {item.slug ? (
+//                 <p className="mt-1 text-xs text-muted/60">/{item.slug}</p>
+//               ) : null}
+//             </td>
+
+//             {/* Added At */}
+//             <td className="px-4 py-4 min-w-[160px]">
+//               <p className="text-sm text-muted">
+//                 {item.data?.author || item.subtitle || "Nestwood"}
+//               </p>
+//               <p className="mt-1 text-xs text-muted/60">
+//                 {item.createdAt
+//                   ? new Date(item.createdAt).toLocaleDateString("en-GB", {
+//                       day: "2-digit",
+//                       month: "2-digit",
+//                       year: "2-digit",
+//                     }) +
+//                     " " +
+//                     new Date(item.createdAt).toLocaleTimeString("en-GB", {
+//                       hour: "2-digit",
+//                       minute: "2-digit",
+//                       hour12: true,
+//                     })
+//                   : "-"}
+//               </p>
+//             </td>
+
+//             {/* Status */}
+//             <td className="px-4 py-4">
+//               <StatusBadge
+//                 value={item.status || "draft"}
+//                 tone={
+//                   item.status === "active" || item.status === "published"
+//                     ? "green"
+//                     : item.status === "not active" || item.status === "draft"
+//                       ? "red"
+//                       : "slate"
+//                 }
+//               />
+//             </td>
+
+//             {/* Actions */}
+//             <td className="px-4 py-4 text-right">
+//               <InlineActions
+//                 onEdit={() => edit(item)}
+//                 onDelete={() => remove(item._id)}
+//               />
+//             </td>
+//           </tr>
+//         ))}
+//       </tbody>
+//     </table>
+//   </div>
+
+//   {!items.length ? (
+//     <div className="p-8 text-sm text-muted">No records found.</div>
+//   ) : null}
+// </div>
+//         </SectionCard>
+//       </div>
+//     </DashboardShell>
+//   );
+// }
+
 "use client";
 
 import { ChangeEvent, useEffect, useMemo, useState } from "react";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { Header } from "@/components/header";
+import { Modal } from "@/components/modal";
 import { api } from "@/lib/api";
 import { CmsConfig, CmsField, CmsItem } from "@/lib/cms";
 import { ActionButton, SectionCard, StatusBadge } from "@/components/ui";
@@ -17,16 +849,11 @@ import {
 } from "@/components/crud-kit";
 import { TiptapEditor } from "./TextEditor";
 
-type RelationOption = {
-  label: string;
-  value: string;
-};
-
+type RelationOption = { label: string; value: string };
 type RelationOptionsMap = Record<string, RelationOption[]>;
 
 function blankFromConfig(config: CmsConfig): CmsItem {
   const data: Record<string, any> = {};
-
   for (const field of config.fields) {
     if (
       [
@@ -40,7 +867,6 @@ function blankFromConfig(config: CmsConfig): CmsItem {
       ].includes(field.key)
     )
       continue;
-
     if (field.type === "boolean") data[field.key] = false;
     else if (field.type === "number") data[field.key] = 0;
     else if (field.type === "multiselect") data[field.key] = [];
@@ -48,7 +874,6 @@ function blankFromConfig(config: CmsConfig): CmsItem {
       data[field.key] = [];
     else data[field.key] = "";
   }
-
   return {
     title: "",
     subtitle: "",
@@ -81,50 +906,36 @@ function setValue(item: CmsItem, field: CmsField, value: any): CmsItem {
   ) {
     return { ...item, [field.key]: value };
   }
-
-  return {
-    ...item,
-    data: { ...(item.data || {}), [field.key]: value },
-  };
+  return { ...item, data: { ...(item.data || {}), [field.key]: value } };
 }
 
 async function fileToDataUrl(file: File) {
   const formData = new FormData();
   formData.append("file", file);
   const response = await api.post("/content/upload/gallery", formData, {});
-  console.log(response, "Upload response");
-  const uploadedUrl =
+  return (
     response?.data?.url ||
     response?.data?.data?.url ||
     response?.data?.fileUrl ||
     response?.data?.data?.fileUrl ||
     response?.data?.location ||
     response?.data?.data?.location ||
-    "";
-  return uploadedUrl;
+    ""
+  );
 }
+
 const uploadAsset = async (file: File) => {
   try {
     const formData = new FormData();
     formData.append("file", file);
     const data = await api.post<any[]>(`/content/upload/gallery`, formData);
-
     return data?.data?.url;
   } catch {
     alert("Failed to upload asset.");
     return null;
   }
 };
-function normalizeRelationOptions(
-  rows: any[],
-  labelKey: string,
-  valueKey: string,
-): RelationOption[] {
-  return rows.map((row) => ({
-    label: row?.[labelKey] ?? "Untitled",
-    value: String(row?.[valueKey] ?? ""),
-  }));
-}
+
 function GalleryUploader({
   value,
   onChange,
@@ -139,9 +950,7 @@ function GalleryUploader({
   const uploadSingleFile = async (file: File): Promise<string> => {
     const formData = new FormData();
     formData.append("file", file);
-
     const response = await api.post("/content/upload/gallery", formData, {});
-    console.log(response, "Upload response");
     const uploadedUrl =
       response?.data?.url ||
       response?.data?.data?.url ||
@@ -150,23 +959,16 @@ function GalleryUploader({
       response?.data?.location ||
       response?.data?.data?.location ||
       "";
-
-    if (!uploadedUrl) {
-      throw new Error("Upload API did not return image URL");
-    }
-
+    if (!uploadedUrl) throw new Error("Upload API did not return image URL");
     return uploadedUrl;
   };
 
   const handleFiles = async (e: ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (!files.length) return;
-
     setUploading(true);
-
     try {
       const nextImages = [...images];
-
       for (const file of files) {
         const uploadedUrl = await uploadSingleFile(file);
         nextImages.push(uploadedUrl);
@@ -187,25 +989,14 @@ function GalleryUploader({
     setUrlInput("");
   };
 
-  const updateImage = (index: number, nextValue: string) => {
-    const next = [...images];
-    next[index] = nextValue;
-    onChange(next);
-  };
-
-  const removeImage = (index: number) => {
-    onChange(images.filter((_, i) => i !== index));
-  };
-
   return (
     <div className="space-y-4">
       <div>
         <FieldLabel label="Gallery Images" />
         <p className="mt-1 text-xs text-muted">
-          Upload multiple property gallery images or paste image URLs.
+          Upload multiple images or paste URLs.
         </p>
       </div>
-
       <div className="space-y-3 rounded-[24px] border border-line bg-panel/40 p-4">
         <div className="flex gap-2">
           <div className="flex-1">
@@ -222,7 +1013,6 @@ function GalleryUploader({
             </ActionButton>
           </div>
         </div>
-
         <input
           className="input"
           type="file"
@@ -231,14 +1021,12 @@ function GalleryUploader({
           onChange={handleFiles}
           disabled={uploading}
         />
-
         {uploading ? (
           <p className="text-xs text-muted">Uploading images...</p>
         ) : null}
       </div>
-
       {!!images.length && (
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-2">
           {images.map((image, index) => (
             <div
               key={`${image}-${index}`}
@@ -247,21 +1035,23 @@ function GalleryUploader({
               <TextInput
                 label={`Image ${index + 1}`}
                 value={image}
-                onChange={(next) => updateImage(index, next)}
+                onChange={(next) => {
+                  const next2 = [...images];
+                  next2[index] = next;
+                  onChange(next2);
+                }}
               />
-
               {image ? (
                 <img
                   src={image}
                   alt={`Gallery ${index + 1}`}
-                  className="h-40 w-full rounded-2xl border border-line object-cover"
+                  className="h-20 w-20 rounded-2xl border border-line object-cover"
                 />
               ) : null}
-
               <div className="flex justify-end">
                 <ActionButton
                   secondary
-                  onClick={() => removeImage(index)}
+                  onClick={() => onChange(images.filter((_, i) => i !== index))}
                   disabled={uploading}
                 >
                   Remove
@@ -271,7 +1061,6 @@ function GalleryUploader({
           ))}
         </div>
       )}
-
       {!images.length ? (
         <div className="rounded-2xl border border-dashed border-line p-6 text-sm text-muted">
           No gallery images added yet.
@@ -280,6 +1069,7 @@ function GalleryUploader({
     </div>
   );
 }
+
 function renderField(
   field: CmsField,
   value: any,
@@ -316,14 +1106,11 @@ function renderField(
           options={field.options || []}
         />
       );
-
     case "relation-select": {
       const options = relationOptions[field.key] || [];
       const isMultiple = Boolean((field as any).multiple);
-
       if (isMultiple) {
         const selected = Array.isArray(value) ? value.map(String) : [];
-
         return (
           <div>
             <FieldLabel label={field.label} />
@@ -336,30 +1123,27 @@ function renderField(
                   <input
                     type="checkbox"
                     checked={selected.includes(option.value)}
-                    onChange={(e) => {
-                      if (e.target.checked) {
-                        onChange([...selected, option.value]);
-                      } else {
-                        onChange(selected.filter((v) => v !== option.value));
-                      }
-                    }}
+                    onChange={(e) =>
+                      onChange(
+                        e.target.checked
+                          ? [...selected, option.value]
+                          : selected.filter((v) => v !== option.value),
+                      )
+                    }
                   />
                   <span>{option.label}</span>
                 </label>
               ))}
             </div>
-
             {!options.length ? (
               <p className="mt-2 text-xs text-muted">No options available.</p>
             ) : null}
-
             {field.note ? (
               <p className="mt-2 text-xs text-muted">{field.note}</p>
             ) : null}
           </div>
         );
       }
-
       return (
         <div>
           <SelectInput
@@ -380,7 +1164,6 @@ function renderField(
         </div>
       );
     }
-
     case "number":
       return (
         <TextInput
@@ -390,7 +1173,6 @@ function renderField(
           onChange={(v) => onChange(Number(v))}
         />
       );
-
     case "date":
       return (
         <TextInput
@@ -400,7 +1182,6 @@ function renderField(
           onChange={onChange}
         />
       );
-
     case "boolean":
       return (
         <div>
@@ -415,10 +1196,8 @@ function renderField(
           </label>
         </div>
       );
-
     case "multiselect": {
       const selected = Array.isArray(value) ? value : [];
-
       return (
         <div>
           <FieldLabel label={field.label} />
@@ -449,7 +1228,6 @@ function renderField(
         </div>
       );
     }
-
     case "icon":
       return (
         <div>
@@ -469,11 +1247,7 @@ function renderField(
                 key={icon}
                 type="button"
                 onClick={() => onChange(icon)}
-                className={`rounded-2xl border px-3 py-3 text-sm ${
-                  value === icon
-                    ? "border-gold bg-gold/10 text-gold"
-                    : "border-line bg-panel text-text"
-                }`}
+                className={`rounded-2xl border px-3 py-3 text-sm ${value === icon ? "border-gold bg-gold/10 text-gold" : "border-line bg-panel text-text"}`}
               >
                 {icon}
               </button>
@@ -484,7 +1258,6 @@ function renderField(
           ) : null}
         </div>
       );
-
     case "video":
     case "image":
       return (
@@ -495,8 +1268,6 @@ function renderField(
             onChange={onChange}
             placeholder={`Paste ${field.type} URL or upload below`}
           />
-
-          {/* Upload */}
           <div>
             <FieldLabel label={`${field.label} Upload`} />
             <input
@@ -506,14 +1277,11 @@ function renderField(
               onChange={async (e: ChangeEvent<HTMLInputElement>) => {
                 const file = e.target.files?.[0];
                 if (!file) return;
-
                 const uploadedUrl = await fileToDataUrl(file);
                 onChange(uploadedUrl);
               }}
             />
           </div>
-
-          {/* ✅ PREVIEW FIX */}
           {value && (
             <div className="w-full rounded-2xl overflow-hidden border border-line bg-black">
               {field.type === "video" ? (
@@ -526,18 +1294,16 @@ function renderField(
                 <img
                   src={value}
                   alt={field.label}
-                  className="w-full h-[250px] md:h-[350px] object-cover"
+                  className="w-20 h-20 object-cover"
                 />
               )}
             </div>
           )}
-
           {field.note && <p className="text-xs text-muted">{field.note}</p>}
         </div>
       );
     case "gallery":
       return <GalleryUploader value={value || []} onChange={onChange} />;
-
     default:
       return (
         <div>
@@ -554,6 +1320,20 @@ function renderField(
   }
 }
 
+// Helper to check if a field should span full width
+function isFullWidth(field: CmsField) {
+  return [
+    "editor",
+    "textarea",
+    "gallery",
+    "image",
+    "video",
+    "multiselect",
+    "relation-select",
+    "icon",
+  ].includes(field.type);
+}
+
 export function EditorCmsPage({ config }: { config: CmsConfig }) {
   const [items, setItems] = useState<CmsItem[]>([]);
   const [form, setForm] = useState<CmsItem>(blankFromConfig(config));
@@ -562,7 +1342,7 @@ export function EditorCmsPage({ config }: { config: CmsConfig }) {
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [relationOptions, setRelationOptions] = useState({});
-  const [isFormOpen, setIsFormOpen] = useState(false); // ✅ control form
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const fields = useMemo(() => config.fields, [config]);
 
@@ -584,7 +1364,7 @@ export function EditorCmsPage({ config }: { config: CmsConfig }) {
   const reset = () => {
     setEditingId(null);
     setForm(blankFromConfig(config));
-    setIsFormOpen(false); // ✅ close form
+    setIsModalOpen(false);
   };
 
   const edit = (item: CmsItem) => {
@@ -592,13 +1372,9 @@ export function EditorCmsPage({ config }: { config: CmsConfig }) {
     setForm({
       ...blankFromConfig(config),
       ...item,
-      data: {
-        ...blankFromConfig(config).data,
-        ...(item.data || {}),
-      },
+      data: { ...blankFromConfig(config).data, ...(item.data || {}) },
     });
-    setIsFormOpen(true); // ✅ open form
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    setIsModalOpen(true);
   };
 
   const submit = async () => {
@@ -612,13 +1388,11 @@ export function EditorCmsPage({ config }: { config: CmsConfig }) {
             .replace(/[^a-z0-9]+/g, "-")
             .replace(/(^-|-$)+/g, ""),
       };
-
       if (editingId) {
         await api.patch(`/content/${config.entity}/${editingId}`, payload);
       } else {
         await api.post(`/content/${config.entity}`, payload);
       }
-
       setMessage(editingId ? "Updated successfully." : "Created successfully.");
       setError(null);
       reset();
@@ -631,12 +1405,10 @@ export function EditorCmsPage({ config }: { config: CmsConfig }) {
 
   const remove = async (id?: string) => {
     if (!id) return;
-
     try {
       await api.delete(`/content/${config.entity}/${id}`);
       setMessage("Deleted successfully.");
       setError(null);
-
       if (editingId === id) reset();
       await load(search);
     } catch {
@@ -652,37 +1424,26 @@ export function EditorCmsPage({ config }: { config: CmsConfig }) {
       <div className="space-y-6">
         <SectionNotice message={message} error={error} />
 
-        {/* ✅ ADD BUTTON */}
-        <div className="flex justify-end">
-          <ActionButton
-            onClick={() => {
-              setForm(blankFromConfig(config));
-              setEditingId(null);
-              setIsFormOpen(true);
-            }}
-          >
-            Add New
-          </ActionButton>
-        </div>
-
-        {/* ✅ SIMPLE FORM (NO LEFT RIGHT SPLIT) */}
-        {isFormOpen && (
-          <SectionCard
-            title={editingId ? "Edit Record" : "Add Record"}
-            action={
-              <div className="flex gap-3">
-                <ActionButton secondary onClick={reset}>
-                  Cancel
-                </ActionButton>
-                <ActionButton onClick={submit}>
-                  {editingId ? "Update" : "Save"}
-                </ActionButton>
-              </div>
-            }
-          >
-            <div className="space-y-5">
+        {/* Modal Form */}
+        <Modal
+          open={isModalOpen}
+          onClose={reset}
+          title={
+            editingId
+              ? `Edit ${config.title}`
+              : config.addLabel || `Add ${config.title}`
+          }
+          subtitle="Fill in the details below to save this record."
+          size="xl"
+        >
+          <div className="flex-1 overflow-y-auto pr-1">
+            {/* Scrollable fields */}
+            <div className="grid lg:grid-cols-4 grid-cols-2  gap-4">
               {fields.map((field) => (
-                <div key={field.key}>
+                <div
+                  key={field.key}
+                  className={isFullWidth(field) ? "col-span-2" : "col-span-1"}
+                >
                   {renderField(
                     field,
                     getValue(form, field),
@@ -693,22 +1454,36 @@ export function EditorCmsPage({ config }: { config: CmsConfig }) {
               ))}
             </div>
 
-            <FormActions
-              onSubmit={submit}
-              onCancel={reset}
-              submitLabel={editingId ? "Update Record" : "Create Record"}
-            />
-          </SectionCard>
-        )}
+            {/* Sticky footer */}
+            <div className="shrink-0 border-t border-line pt-4 mt-4">
+              <FormActions
+                onSubmit={submit}
+                onCancel={reset}
+                submitLabel={editingId ? "Update Record" : "Create Record"}
+              />
+            </div>
+          </div>
+        </Modal>
 
-        {/* ✅ KEEP YOUR ORIGINAL LIST EXACTLY SAME */}
+        {/* Listing */}
         <SectionCard
           title={`${config.title} Listing`}
           subtitle="Search, review, edit, and remove saved records."
+          action={
+            <ActionButton
+              onClick={() => {
+                setForm(blankFromConfig(config));
+                setEditingId(null);
+                setIsModalOpen(true);
+              }}
+            >
+              Add New
+            </ActionButton>
+          }
         >
           <div className="mb-5 flex gap-3">
             <input
-              className="input w-72"
+              className="input max-w-72"
               placeholder={config.searchPlaceholder || "Search"}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -721,65 +1496,119 @@ export function EditorCmsPage({ config }: { config: CmsConfig }) {
             </ActionButton>
           </div>
 
-          <div className="space-y-3">
-            {items.map((item) => (
-              <div
-                key={item._id || item.title}
-                className="grid gap-4 rounded-[28px] border border-line bg-panel/60 p-4 xl:grid-cols-[140px_1fr_auto] xl:items-center"
-              >
-                <div className="h-20 w-20 overflow-hidden rounded-[22px] border border-line bg-card">
-                  {item.image ? (
-                    <img
-                      src={item.image}
-                      alt={item.title}
-                      className="h-full w-full object-cover"
-                    />
-                  ) : (
-                    <div className="h-full w-full bg-gradient-to-br from-violet-500/15 to-gold/10" />
-                  )}
-                </div>
-
-                <div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <h3 className="text-base font-semibold text-text">
-                      {item.title}
-                    </h3>
-                    <StatusBadge
-                      value={item.status || "draft"}
-                      tone={
-                        item.status === "active" || item.status === "published"
-                          ? "green"
-                          : "slate"
-                      }
-                    />
-                  </div>
-
-                  {item.subtitle ? (
-                    <p className="mt-2 text-sm text-muted">{item.subtitle}</p>
-                  ) : null}
-                  {item.slug ? (
-                    <p className="mt-2 text-xs text-muted">/{item.slug}</p>
-                  ) : null}
-                  {item.description ? (
-                    <p className="mt-3 line-clamp-3 text-sm leading-6 text-muted">
-                      {item.description}
-                    </p>
-                  ) : null}
-                </div>
-
-                <div className="justify-self-end">
-                  <InlineActions
-                    onEdit={() => edit(item)}
-                    onDelete={() => remove(item._id)}
-                  />
-                </div>
-              </div>
-            ))}
-
+          <div className="overflow-hidden rounded-[28px] border border-line bg-panel/70">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left">
+                <thead className="border-b border-line bg-card/50">
+                  <tr>
+                    <th className="px-4 py-4 text-xs font-medium text-muted uppercase tracking-wider w-14">
+                      SNO.
+                    </th>
+                    <th className="px-4 py-4 text-xs font-medium text-muted uppercase tracking-wider w-20">
+                      Image
+                    </th>
+                    <th className="px-4 py-4 text-xs font-medium text-muted uppercase tracking-wider">
+                      Title
+                    </th>
+                    <th className="px-4 py-4 text-xs font-medium text-muted uppercase tracking-wider">
+                      Added At
+                    </th>
+                    <th className="px-4 py-4 text-xs font-medium text-muted uppercase tracking-wider">
+                      Status
+                    </th>
+                    <th className="px-4 py-4 text-xs font-medium text-muted uppercase tracking-wider text-right"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {items.map((item, index) => (
+                    <tr
+                      key={item._id || item.title}
+                      className="border-b border-line last:border-none hover:bg-card/40 transition-colors"
+                    >
+                      <td className="px-4 py-4 text-sm text-muted">
+                        {index + 1}
+                      </td>
+                      <td className="px-4 py-4">
+                        <div className="h-12 w-12 overflow-hidden rounded-xl border border-line bg-card">
+                          {item.image ? (
+                            <img
+                              src={item.image}
+                              alt={item.title}
+                              className="h-full w-full object-cover"
+                            />
+                          ) : (
+                            <div className="h-full w-full bg-gradient-to-br from-violet-500/15 to-gold/10" />
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-4 py-4">
+                        <p className="text-sm font-medium text-text">
+                          {item.title}
+                        </p>
+                        {item.subtitle ? (
+                          <p className="mt-1 text-xs text-muted">
+                            {item.subtitle}
+                          </p>
+                        ) : null}
+                        {item.slug ? (
+                          <p className="mt-1 text-xs text-muted/60">
+                            /{item.slug}
+                          </p>
+                        ) : null}
+                      </td>
+                      <td className="px-4 py-4 min-w-[160px]">
+                        <p className="text-sm text-muted">
+                          {item.data?.author || item.subtitle || "Nestwood"}
+                        </p>
+                        <p className="mt-1 text-xs text-muted/60">
+                          {item.createdAt
+                            ? new Date(item.createdAt).toLocaleDateString(
+                                "en-GB",
+                                {
+                                  day: "2-digit",
+                                  month: "2-digit",
+                                  year: "2-digit",
+                                },
+                              ) +
+                              " " +
+                              new Date(item.createdAt).toLocaleTimeString(
+                                "en-GB",
+                                {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                  hour12: true,
+                                },
+                              )
+                            : "-"}
+                        </p>
+                      </td>
+                      <td className="px-4 py-4">
+                        <StatusBadge
+                          value={item.status || "draft"}
+                          tone={
+                            item.status === "active" ||
+                            item.status === "published"
+                              ? "green"
+                              : item.status === "not active" ||
+                                  item.status === "draft"
+                                ? "red"
+                                : "slate"
+                          }
+                        />
+                      </td>
+                      <td className="px-4 py-4 text-right">
+                        <InlineActions
+                          onEdit={() => edit(item)}
+                          onDelete={() => remove(item._id)}
+                        />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
             {!items.length ? (
-              <div className="rounded-3xl border border-dashed border-line p-8 text-sm text-muted">
-                No records found.
-              </div>
+              <div className="p-8 text-sm text-muted">No records found.</div>
             ) : null}
           </div>
         </SectionCard>

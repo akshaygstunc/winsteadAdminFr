@@ -14,6 +14,7 @@ import {
   TextArea,
   TextInput,
 } from "@/components/crud-kit";
+import { Modal } from "@/components/modal";
 
 type PropertyTypeOption = {
   _id: string;
@@ -115,8 +116,9 @@ export default function PropertySubTypesPage() {
     setForm(blankForm);
     setError(null);
     setMessage(null);
+    setModalOpen(false);
   };
-
+  const [modalOpen, setModalOpen] = useState(false);
   const edit = (item: PropertySubTypeItem) => {
     setEditingId(item._id || null);
     setForm({
@@ -127,7 +129,7 @@ export default function PropertySubTypesPage() {
           ? item.propertyTypeId
           : item.propertyTypeId?._id || "",
     });
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    setModalOpen(true);
   };
 
   const submit = async () => {
@@ -189,19 +191,13 @@ export default function PropertySubTypesPage() {
       <div className="space-y-6">
         <SectionNotice message={message} error={error} />
 
-        <SectionCard
+        {/* Add / Edit Modal */}
+        <Modal
+          open={modalOpen}
+          onClose={reset}
           title={editingId ? "Edit Property Sub-Type" : "Add Property Sub-Type"}
           subtitle="Create and manage property sub-types with linked property type."
-          action={
-            <div className="flex gap-3">
-              <ActionButton secondary onClick={reset}>
-                Reset
-              </ActionButton>
-              <ActionButton onClick={submit}>
-                {editingId ? "Update" : "Save"}
-              </ActionButton>
-            </div>
-          }
+          size="xl"
         >
           <div className="grid gap-6 xl:grid-cols-[1.6fr_0.9fr]">
             <div className="space-y-5">
@@ -214,7 +210,6 @@ export default function PropertySubTypesPage() {
                       !prev.slug || prev.slug === createSlug(prev.title)
                         ? createSlug(value)
                         : prev.slug;
-
                     return { ...prev, title: value, slug: nextSlug };
                   })
                 }
@@ -281,7 +276,7 @@ export default function PropertySubTypesPage() {
                   <img
                     src={form.image}
                     alt="Preview"
-                    className="h-40w-full rounded-2xl border border-line object-cover"
+                    className="h-20 w-20 rounded-2xl border border-line object-cover"
                   />
                 ) : null}
               </div>
@@ -340,15 +335,25 @@ export default function PropertySubTypesPage() {
               />
             </div>
           </div>
-        </SectionCard>
+        </Modal>
 
         <SectionCard
           title="Property Sub-Types Listing"
           subtitle="Search, review, edit, and remove saved records."
+          action={
+            <ActionButton
+              onClick={() => {
+                reset();
+                setModalOpen(true);
+              }}
+            >
+              Add Sub-Type
+            </ActionButton>
+          }
         >
-          <div className="mb-5 flex flex-wrap gap-3">
+          <div className="mb-5 flex gap-3">
             <input
-              className="input w-72"
+              className="input max-w-72"
               placeholder="Search property sub-types..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -361,7 +366,7 @@ export default function PropertySubTypesPage() {
             </ActionButton>
           </div>
 
-          <div className="space-y-3">
+          <div className="grid grid-cols-4 gap-2">
             {items.map((item) => {
               const propertyTypeLabel =
                 typeof item.propertyTypeId === "string"
@@ -373,14 +378,14 @@ export default function PropertySubTypesPage() {
               return (
                 <div
                   key={item._id || item.title}
-                  className="grid gap-4 rounded-[28px] border border-line bg-panel/60 p-4 xl:grid-cols-[140px_1fr_auto] xl:items-center"
+                  className="grid grid-cols-1 gap-2 rounded-[28px] border border-line bg-panel/60 p-4 xl:items-center"
                 >
                   <div className="h-20 w-20 overflow-hidden rounded-[22px] border border-line bg-card">
                     {item.image ? (
                       <img
                         src={item.image}
                         alt={item.title}
-                        className="h-full w-full object-cover"
+                        className="h-20 w-20 object-cover"
                       />
                     ) : (
                       <div className="h-full w-full bg-gradient-to-br from-violet-500/15 to-gold/10" />

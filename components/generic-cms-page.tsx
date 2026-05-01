@@ -401,7 +401,7 @@ function GalleryUploader({
       </div>
 
       {!!images.length && (
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-2">
           {images.map((image, index) => (
             <div
               key={`${image}-${index}`}
@@ -417,7 +417,7 @@ function GalleryUploader({
                 <img
                   src={image}
                   alt={`Gallery ${index + 1}`}
-                  className="h-40 w-full rounded-2xl border border-line object-cover"
+                  className="h-20 w-20 rounded-2xl border border-line object-cover"
                 />
               ) : null}
 
@@ -648,13 +648,13 @@ function renderField(
                 <video
                   src={value}
                   controls
-                  className="w-full h-[250px] md:h-[350px] object-cover"
+                  className="w-full h-[100px] md:h-[200px] object-cover"
                 />
               ) : (
                 <img
                   src={value}
                   alt={field.label}
-                  className="w-full h-[250px] md:h-[350px] object-cover"
+                  className="w-20 h-20 object-cover"
                 />
               )}
             </div>
@@ -887,9 +887,9 @@ export function GenericCmsPage({ config }: { config: CmsConfig }) {
             title={`${config.title} Records`}
             subtitle="Fully wired add, edit, delete, search, and image persistence flow."
             action={
-              <div className="flex flex-wrap gap-3">
+              <div className="flex gap-3">
                 <input
-                  className="input w-72"
+                  className="input max-w-72"
                   placeholder={config.searchPlaceholder || "Search"}
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
@@ -933,7 +933,7 @@ export function GenericCmsPage({ config }: { config: CmsConfig }) {
               className={
                 config.entity === "contact-query"
                   ? ""
-                  : "grid gap-4 md:grid-cols-2 xl:grid-cols-3"
+                  : "grid gap-4 md:grid-cols-1 xl:grid-cols-1"
               }
             >
               {config.entity === "contact-query" ? (
@@ -1282,86 +1282,168 @@ export function GenericCmsPage({ config }: { config: CmsConfig }) {
                   ) : null}
                 </div>
               ) : (
-                items?.map((item) => (
-                  <article
-                    key={item._id || item.title}
-                    className="rounded-[28px] border border-line bg-panel/70 p-4"
-                  >
-                    {item.image ? (
-                      <img
-                        src={item.image}
-                        alt={item.title}
-                        className="mb-4 h-40 w-full rounded-[22px] border border-line object-cover"
-                      />
-                    ) : (
-                      <div className="mb-4 h-40 rounded-[22px] border border-dashed border-line bg-gradient-to-br from-violet-500/15 via-transparent to-gold/10" />
-                    )}
-
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <h3 className="text-base font-semibold text-text">
-                          {item.title}
-                        </h3>
-                        {item.subtitle ? (
-                          <p className="mt-1 text-sm text-muted">
-                            {item.subtitle}
-                          </p>
-                        ) : null}
-                      </div>
-
-                      <StatusBadge
-                        value={item.status || "draft"}
-                        tone={
-                          item.status === "active" ||
-                          item.status === "published"
-                            ? "green"
-                            : item.status === "archived"
-                              ? "red"
-                              : "gold"
-                        }
-                      />
-                    </div>
-
-                    {config.cardMeta?.length ? (
-                      <div className="mt-4 grid gap-2">
-                        {config.cardMeta.map((key) => {
-                          const val = getValue(item, {
-                            key,
-                            label: key,
-                            type: "text",
-                          } as CmsField);
-                          if (val === undefined || val === null || val === "")
-                            return null;
-
-                          return (
-                            <div
+                <div className="overflow-hidden rounded-[28px] border border-line bg-panel/70">
+                  <p className="px-5 pt-4 pb-2 text-xs text-muted">
+                    Showing {items?.length || 0} of {items?.length || 0} entries
+                  </p>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left">
+                      <thead className="border-b border-line bg-card/50">
+                        <tr>
+                          <th className="px-4 py-3 text-xs font-medium text-muted uppercase tracking-wider w-12">
+                            SNO.
+                          </th>
+                          <th className="px-4 py-3 text-xs font-medium text-muted uppercase tracking-wider w-20">
+                            Image
+                          </th>
+                          <th className="px-4 py-3 text-xs font-medium text-muted uppercase tracking-wider">
+                            Title
+                          </th>
+                          {config.cardMeta?.map((key) => (
+                            <th
                               key={key}
-                              className="rounded-2xl border border-line bg-card/70 px-3 py-2 text-sm text-muted"
+                              className="px-4 py-3 text-xs font-medium text-muted uppercase tracking-wider"
                             >
-                              <span className="text-gold">
-                                {key.replace(/([A-Z])/g, " $1")}:
-                              </span>{" "}
-                              {String(val)}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    ) : null}
+                              {key.replace(/([A-Z])/g, " $1")}
+                            </th>
+                          ))}
+                          <th className="px-4 py-3 text-xs font-medium text-muted uppercase tracking-wider">
+                            Added At
+                          </th>
+                          <th className="px-4 py-3 text-xs font-medium text-muted uppercase tracking-wider">
+                            Status
+                          </th>
+                          <th className="px-4 py-3 text-xs font-medium text-muted uppercase tracking-wider text-right">
+                            Actions
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {items?.map((item, index) => (
+                          <tr
+                            key={item._id || item.title}
+                            className="border-b border-line last:border-none hover:bg-card/40 transition-colors"
+                          >
+                            {/* SNO */}
+                            <td className="px-4 py-4 text-sm text-muted">
+                              {index + 1}
+                            </td>
 
-                    {item.description ? (
-                      <p className="mt-4 line-clamp-4 text-sm leading-6 text-muted">
-                        {item.description}
-                      </p>
-                    ) : null}
+                            {/* Image */}
+                            <td className="px-4 py-4">
+                              <div className="h-11 w-11 overflow-hidden rounded-xl border border-line bg-card shrink-0">
+                                {item.image ? (
+                                  <img
+                                    src={item.image}
+                                    alt={item.title}
+                                    className="h-full w-full object-cover"
+                                  />
+                                ) : (
+                                  <div className="h-full w-full bg-gradient-to-br from-violet-500/15 to-gold/10" />
+                                )}
+                              </div>
+                            </td>
 
-                    <div className="mt-4 flex justify-end">
-                      <InlineActions
-                        onEdit={() => onEdit(item)}
-                        onDelete={() => onDelete(item._id)}
-                      />
+                            {/* Title */}
+                            <td className="px-4 py-4">
+                              <p className="text-sm font-medium text-text">
+                                {item.title}
+                              </p>
+                              {item.subtitle ? (
+                                <p className="mt-0.5 text-xs text-muted">
+                                  {item.subtitle}
+                                </p>
+                              ) : null}
+                              {item.description ? (
+                                <p className="mt-1 text-xs text-muted/60 line-clamp-1">
+                                  {item.description}
+                                </p>
+                              ) : null}
+                            </td>
+
+                            {/* cardMeta */}
+                            {config.cardMeta?.map((key) => {
+                              const val = getValue(item, {
+                                key,
+                                label: key,
+                                type: "text",
+                              } as CmsField);
+                              return (
+                                <td
+                                  key={key}
+                                  className="px-4 py-4 text-sm text-muted whitespace-nowrap"
+                                >
+                                  {val !== undefined &&
+                                  val !== null &&
+                                  val !== ""
+                                    ? String(val)
+                                    : "-"}
+                                </td>
+                              );
+                            })}
+
+                            {/* Added At */}
+                            <td className="px-4 py-4 min-w-[150px]">
+                              <p className="text-sm text-muted">
+                                {item.createdAt
+                                  ? new Date(item.createdAt).toLocaleDateString(
+                                      "en-GB",
+                                      {
+                                        day: "2-digit",
+                                        month: "2-digit",
+                                        year: "2-digit",
+                                      },
+                                    )
+                                  : "-"}
+                              </p>
+                              <p className="mt-0.5 text-xs text-muted/60">
+                                {item.createdAt
+                                  ? new Date(item.createdAt).toLocaleTimeString(
+                                      "en-GB",
+                                      {
+                                        hour: "2-digit",
+                                        minute: "2-digit",
+                                        hour12: true,
+                                      },
+                                    )
+                                  : ""}
+                              </p>
+                            </td>
+
+                            {/* Status */}
+                            <td className="px-4 py-4">
+                              <StatusBadge
+                                value={item.status || "draft"}
+                                tone={
+                                  item.status === "active" ||
+                                  item.status === "published"
+                                    ? "green"
+                                    : item.status === "archived"
+                                      ? "red"
+                                      : "gold"
+                                }
+                              />
+                            </td>
+
+                            {/* Actions */}
+                            <td className="px-4 py-4 text-right">
+                              <InlineActions
+                                onEdit={() => onEdit(item)}
+                                onDelete={() => onDelete(item._id)}
+                              />
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {!items?.length && (
+                    <div className="p-8 text-sm text-muted">
+                      No records found.
                     </div>
-                  </article>
-                ))
+                  )}
+                </div>
               )}
 
               {!items?.length &&
@@ -1388,7 +1470,7 @@ export function GenericCmsPage({ config }: { config: CmsConfig }) {
                   className="h-64 w-full rounded-[28px] border border-line object-cover"
                 />
               ) : null}
-              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-2">
                 {config.fields.map((field) => (
                   <div
                     key={field.key}
@@ -1427,7 +1509,7 @@ export function GenericCmsPage({ config }: { config: CmsConfig }) {
             subtitle="Every route now has its own working form, search flow, and persistent Mongo-backed record storage."
             size="xl"
           >
-            <div className="space-y-5">
+            <div className="space-y-5 mt-0">
               {groupedFields.map((group, index) => (
                 <FormGrid key={index} columns={3}>
                   {group.map((field) => (
@@ -1437,7 +1519,7 @@ export function GenericCmsPage({ config }: { config: CmsConfig }) {
                         ["textarea", "image", "gallery", "faq"].includes(
                           field.type,
                         )
-                          ? "md:col-span-2 xl:col-span-3"
+                          ? "md:col-span-3 xl:col-span-3 mt-0"
                           : ""
                       }
                     >

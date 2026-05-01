@@ -733,7 +733,7 @@ function GalleryUploader({
       </div>
 
       {!!images.length && (
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-2">
           {images.map((image, index) => (
             <div
               key={`${image}-${index}`}
@@ -1819,7 +1819,7 @@ export default function PropertiesPage() {
                         {Array.isArray(property?.gallery) &&
                         property.gallery.length > 0 ? (
                           <div className="flex">
-                            <div className="flex h-8 w-8 items-center overflow-x-scroll">
+                            <div className="flex items-center overflow-x-auto">
                               {property.gallery
                                 .slice(0, 5)
                                 .map((img: string, i: number) => (
@@ -1832,7 +1832,7 @@ export default function PropertiesPage() {
                                 ))}
                             </div>
                             <div
-                              className="h-15 w-15   rounded-lg px-4  flex items-center justify-center text-xs"
+                              className="h-15 w-15  rounded-lg px-4  flex items-center justify-center text-xs"
                               cursor-pointer
                               onClick={() =>
                                 setImagePicker({
@@ -2157,7 +2157,7 @@ export default function PropertiesPage() {
             </div>
           ) : previewModal.type === "amenities" ? (
             // ── AMENITIES LIST ──
-            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-2">
               {(previewModal.property.amenities || []).length === 0 ? (
                 <p className="text-sm text-muted col-span-full">
                   No amenities added.

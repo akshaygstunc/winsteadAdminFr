@@ -96,7 +96,7 @@ export function LocationsCmsPage({ config }: { config: CmsConfig }) {
             <ActionButton onClick={() => setOpen(true)}>Add City</ActionButton>
           }
         >
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             {items.map((item) => {
               const subs = Array.isArray(item.data?.subCities)
                 ? item.data?.subCities
@@ -168,7 +168,7 @@ export function LocationsCmsPage({ config }: { config: CmsConfig }) {
           subtitle="Manage city-level records and comma-separated sub-cities."
           size="lg"
         >
-          <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-2">
             <TextInput
               label="City Name"
               value={form.title}
