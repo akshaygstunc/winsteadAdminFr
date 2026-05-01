@@ -1821,7 +1821,6 @@ export default function PropertiesPage() {
                           <div className="flex">
                             <div className="flex items-center overflow-x-auto">
                               {property.gallery
-                                .slice(0, 5)
                                 .map((img: string, i: number) => (
                                   <img
                                     key={i}
