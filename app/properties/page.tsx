@@ -297,7 +297,6 @@ const propertyFormSections: FieldSection[] = [
         title: "Property Document",
         custom: "file",
       },
-
     ],
   },
   {
@@ -1816,45 +1815,51 @@ export default function PropertiesPage() {
 
                       <div
                       // className="cursor-pointer"
-
                       >
-                        {Array.isArray(property?.gallery) && property.gallery.length > 0 ? (
+                        {Array.isArray(property?.gallery) &&
+                        property.gallery.length > 0 ? (
                           <div className="flex">
-
-
-                            <div className="flex items-center overflow-x-scroll">
-                              {property.gallery.slice(0, 5).map((img: string, i: number) => (
-                              <img
-                                key={i}
-                                src={img}
-                                alt={property.title}
-                                  className="h-8 w-8 rounded object-cover border border-line bg-lightgray hover:scale-105 transition"
-                              />
-                            ))}
-
+                            <div className="flex h-8 w-8 items-center overflow-x-scroll">
+                              {property.gallery
+                                .slice(0, 5)
+                                .map((img: string, i: number) => (
+                                  <img
+                                    key={i}
+                                    src={img}
+                                    alt={property.title}
+                                    className="h-8 w-8 rounded object-cover border border-line bg-lightgray hover:scale-105 transition"
+                                  />
+                                ))}
                             </div>
-                            <div className="h-15 w-15   rounded-lg px-4  flex items-center justify-center text-xs" cursor-pointer onClick={() =>
+                            <div
+                              className="h-15 w-15   rounded-lg px-4  flex items-center justify-center text-xs"
+                              cursor-pointer
+                              onClick={() =>
+                                setImagePicker({
+                                  open: true,
+                                  type: "gallery",
+                                  propertyId: property._id,
+                                })
+                              }
+                            >
+                              <Upload size={20} />
+                            </div>
+                          </div>
+                        ) : (
+                          <div
+                            className="h-10 w-10 bg-black rounded-lg bg-muted flex items-center justify-center text-xs"
+                            cursor-pointer
+                            onClick={() =>
                               setImagePicker({
                                 open: true,
                                 type: "gallery",
                                 propertyId: property._id,
                               })
-                            }>
-                              <Upload size={20} />
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="h-10 w-10 bg-black rounded-lg bg-muted flex items-center justify-center text-xs" cursor-pointer onClick={() =>
-                            setImagePicker({
-                              open: true,
-                              type: "gallery",
-                              propertyId: property._id,
-                            })
-                          }>
+                            }
+                          >
                             <UploadCloud />
                           </div>
                         )}
-
                       </div>
                     </td>
                     <td className="px-4 py-3 text-muted">
@@ -1876,7 +1881,7 @@ export default function PropertiesPage() {
                           property.floorPlans.length > 0 && (
                             <button
                               onClick={() =>
-                              setManageModal({
+                                setManageModal({
                                   type: "floorPlans",
                                   property,
                                 })
@@ -1888,23 +1893,22 @@ export default function PropertiesPage() {
                           )}
 
                         {/* Clickable Features / Amenities badge */}
-                        {(
-                            <button
-                              onClick={() =>
+                        {
+                          <button
+                            onClick={() =>
                               setManageModal({
                                 type: "amenities",
                                 property,
                               })
-                              }
-                              className="inline-flex items-center rounded px-2 py-1 text-xs font-medium bg-purple-50 text-purple-700 border border-purple-200 hover:bg-purple-100 transition-colors cursor-pointer"
-                            >
+                            }
+                            className="inline-flex items-center rounded px-2 py-1 text-xs font-medium bg-purple-50 text-purple-700 border border-purple-200 hover:bg-purple-100 transition-colors cursor-pointer"
+                          >
                             Features ({property?.amenities?.length})
                           </button>
-                        )}
-
+                        }
 
                         {/* Clickable FAQ badge */}
-                        {(
+                        {
                           <button
                             onClick={() =>
                               setManageModal({ type: "faq", property })
@@ -1913,7 +1917,7 @@ export default function PropertiesPage() {
                           >
                             FAQ ({property?.faq?.length})
                           </button>
-                        )}
+                        }
                       </div>
                     </td>
                     {/* Action — Type & Developer as badges */}
@@ -2048,7 +2052,7 @@ export default function PropertiesPage() {
                   }
                 />
               ) : (
-                        <FormGrid columns={section.columns}>
+                <FormGrid columns={section.columns}>
                   {(section.fields || []).map((field) => (
                     <div key={String(field.key)}>
                       {renderDynamicField(
@@ -2064,8 +2068,6 @@ export default function PropertiesPage() {
               )}
             </div>
           ))}
-
-
         </div>
         <FormActions
           onSubmit={submit}
@@ -2228,17 +2230,12 @@ export default function PropertiesPage() {
 
           try {
             // 🔹 get current property
-            const current = items.find(
-              (p) => p._id === imagePicker.propertyId
-            );
-            console.log(current)
+            const current = items.find((p) => p._id === imagePicker.propertyId);
+            console.log(current);
             // 🔹 append new images
-            const updatedGallery = [
-              ...(current?.gallery || []),
-              ...images,
-            ];
-            const type = current?.type?.map((ty) => ty?._id)
-            const subType = current?.subType?.map((ty) => ty?._id)
+            const updatedGallery = [...(current?.gallery || []), ...images];
+            const type = current?.type?.map((ty) => ty?._id);
+            const subType = current?.subType?.map((ty) => ty?._id);
             // 🔹 OPTIONAL: remove duplicates
             const uniqueGallery = Array.from(new Set(updatedGallery));
 
@@ -2254,7 +2251,6 @@ export default function PropertiesPage() {
 
             // 🔹 refresh table
             await load();
-
           } catch (err) {
             console.error("Gallery update failed", err);
           }
@@ -2274,10 +2270,10 @@ export default function PropertiesPage() {
                 setManageModal((prev) =>
                   prev
                     ? {
-                      ...prev,
-                      property: { ...prev.property, floorPlans: next },
-                    }
-                    : null
+                        ...prev,
+                        property: { ...prev.property, floorPlans: next },
+                      }
+                    : null,
                 )
               }
             />
@@ -2290,10 +2286,10 @@ export default function PropertiesPage() {
                 setManageModal((prev) =>
                   prev
                     ? {
-                      ...prev,
-                      property: { ...prev.property, amenities: next },
-                    }
-                    : null
+                        ...prev,
+                        property: { ...prev.property, amenities: next },
+                      }
+                    : null,
                 )
               }
             />
@@ -2306,10 +2302,10 @@ export default function PropertiesPage() {
                 setManageModal((prev) =>
                   prev
                     ? {
-                      ...prev,
-                      property: { ...prev.property, faq: next },
-                    }
-                    : null
+                        ...prev,
+                        property: { ...prev.property, faq: next },
+                      }
+                    : null,
                 )
               }
             />
@@ -2318,9 +2314,9 @@ export default function PropertiesPage() {
           <div className="flex justify-end mt-4">
             <ActionButton
               onClick={async () => {
-                const p = manageModal.property
-                const type = p?.type?.map((ty) => ty?._id)
-                const subType = p?.subType?.map((ty) => ty?._id)
+                const p = manageModal.property;
+                const type = p?.type?.map((ty) => ty?._id);
+                const subType = p?.subType?.map((ty) => ty?._id);
                 await api.patch(`/properties/${p._id}`, {
                   ...p,
                   developer: p?.developer?._id,
