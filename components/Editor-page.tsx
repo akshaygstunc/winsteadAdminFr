@@ -706,7 +706,7 @@ export function EditorCmsPage({ config }: { config: CmsConfig }) {
           title={`${config.title} Listing`}
           subtitle="Search, review, edit, and remove saved records."
         >
-          <div className="mb-5 flex flex-wrap gap-3">
+          <div className="mb-5 flex gap-3">
             <input
               className="input w-72"
               placeholder={config.searchPlaceholder || "Search"}
@@ -727,7 +727,7 @@ export function EditorCmsPage({ config }: { config: CmsConfig }) {
                 key={item._id || item.title}
                 className="grid gap-4 rounded-[28px] border border-line bg-panel/60 p-4 xl:grid-cols-[140px_1fr_auto] xl:items-center"
               >
-                <div className="h-28 overflow-hidden rounded-[22px] border border-line bg-card">
+                <div className="h-20 w-20 overflow-hidden rounded-[22px] border border-line bg-card">
                   {item.image ? (
                     <img
                       src={item.image}

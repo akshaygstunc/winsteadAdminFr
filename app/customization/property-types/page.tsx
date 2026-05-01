@@ -1042,7 +1042,7 @@ export default function EditorCmsPage() {
                 key={item._id || item.title}
                 className="grid gap-4 rounded-[28px] border border-line bg-panel/60 p-4 xl:grid-cols-[140px_1fr_auto] xl:items-center"
               >
-                <div className="h-40 overflow-hidden rounded-[22px] border border-line bg-card">
+                <div className="h-20 w-20 overflow-hidden rounded-[22px] border border-line bg-card">
                   {item.image ? (
                     <img
                       src={item.image}
