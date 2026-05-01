@@ -654,7 +654,7 @@ function renderField(
                 <img
                   src={value}
                   alt={field.label}
-                  className="w-20 h-20 object-cover"
+                  className="w-full h-30 object-cover"
                 />
               )}
             </div>
