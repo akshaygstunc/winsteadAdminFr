@@ -39,7 +39,7 @@ export default function AssessmentRequestsPage() {
           </div>
         </SectionCard>
         <SectionCard title="Request Grid" subtitle="Saved requests render here instantly.">
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-2">
             {items.map((request) => (
               <div key={request._id} className="rounded-[28px] border border-line bg-panel/60 p-5">
                 <div className="flex items-start justify-between"><div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-line bg-white/5 font-semibold text-gold">{request.avatar}</div><StatusBadge value={request.stage} tone={request.stage === 'hot' ? 'green' : request.stage === 'warm' ? 'gold' : 'slate'} /></div>
