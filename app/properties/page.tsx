@@ -60,7 +60,7 @@ type PropertyForm = Property & {
   propertyBanner?: string;
   propertydoc?: string;
   amenities?: AmenityItem[];
-  floorPlans?: FloorPlanItem[];
+  floorPlans?: string[];
   communities?: string;
   faq: any[];
 };
@@ -957,16 +957,18 @@ function FloorPlansEditor({
   value,
   onChange,
 }: {
-  value: FloorPlanItem[];
-  onChange: (next: FloorPlanItem[]) => void;
+    value: string[]; // ✅ ONLY IDS
+    onChange: (next: string[]) => void;
 }) {
   const items = Array.isArray(value) ? value : [];
+
   const [options, setOptions] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const ref = useRef<HTMLDivElement>(null);
 
+  // Close dropdown on outside click
   useEffect(() => {
     const handleClick = (e: any) => {
       if (!ref.current?.contains(e.target)) {
@@ -978,24 +980,24 @@ function FloorPlansEditor({
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
 
+  // Fetch floor plans
   useEffect(() => {
     const fetchFloorPlans = async () => {
       try {
         setLoading(true);
+
         const response = await api.get("/content/floor-plans");
         const rows = normalizeApiArray(response);
+
         const nextOptions = rows.map((row: any) => ({
           _id: String(row?._id ?? row?.id ?? ""),
           title: String(row?.title ?? ""),
           unitType: String(row?.data?.unitType ?? row?.unitType ?? ""),
-          category: String(row?.data?.category ?? row?.category ?? ""),
           bedrooms: Number(row?.data?.bedrooms ?? row?.bedrooms ?? 0),
           bathrooms: Number(row?.data?.bathrooms ?? row?.bathrooms ?? 0),
-          size: String(row?.data?.size ?? row?.size ?? ""),
-          price: Number(row?.data?.price ?? row?.price ?? 0),
           image: String(row?.data?.image ?? row?.image ?? ""),
-          sortOrder: Number(row?.data?.sortOrder ?? row?.sortOrder ?? 0),
         }));
+
         setOptions(nextOptions);
       } catch (error) {
         console.error("Failed to load floor plans:", error);
@@ -1003,19 +1005,25 @@ function FloorPlansEditor({
         setLoading(false);
       }
     };
+
     fetchFloorPlans();
   }, []);
 
-  const isSelected = (id: string) => items.some((item: any) => item._id === id);
+  // Check selected
+  const isSelected = (id: string) => items.includes(id);
 
+  // Toggle select
   const toggle = (option: any) => {
+    if (!option?._id) return;
+
     if (isSelected(option._id)) {
-      onChange(items.filter((item: any) => item._id !== option._id));
+      onChange(items.filter((id) => id !== option._id));
     } else {
-      onChange([...items, { ...option }]);
+      onChange([...items, option._id]);
     }
   };
 
+  // Filter
   const filteredOptions = options.filter(
     (opt) =>
       opt.title.toLowerCase().includes(search.toLowerCase()) ||
@@ -1026,31 +1034,39 @@ function FloorPlansEditor({
     <div className="space-y-1.5" ref={ref}>
       <FieldLabel label="Floor Plans" />
 
+      {/* Selected values */}
       <div
         className="input w-full min-h-[44px] flex flex-wrap gap-1.5 items-center cursor-text"
         onClick={() => setOpen(true)}
       >
-        {items.map((item: any) => (
-          <span
-            key={item._id || item.title}
-            className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-md bg-gold/20 text-gold border border-gold/30"
-          >
-            {item.title}
-            {item.unitType ? (
-              <span className="opacity-60">· {item.unitType}</span>
-            ) : null}
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                toggle(item);
-              }}
-              className="text-gold/70 hover:text-gold font-bold leading-none"
+        {items.map((id) => {
+          const item = options.find((o) => o._id === id);
+
+          return (
+            <span
+              key={id}
+              className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-md bg-gold/20 text-gold border border-gold/30"
             >
-              ×
-            </button>
-          </span>
-        ))}
+              {item?.title || id}
+              {item?.unitType && (
+                <span className="opacity-60">· {item.unitType}</span>
+              )}
+
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toggle(item || { _id: id });
+                }}
+                className="text-gold/70 hover:text-gold font-bold leading-none"
+              >
+                ×
+              </button>
+            </span>
+          );
+        })}
+
+        {/* Search */}
         <input
           type="text"
           value={search}
@@ -1064,6 +1080,7 @@ function FloorPlansEditor({
         />
       </div>
 
+      {/* Dropdown */}
       {open && (
         <div className="relative z-50">
           <div className="absolute top-0 left-0 right-0 border border-line rounded-xl bg-panel shadow-lg max-h-56 overflow-y-auto">
@@ -1076,33 +1093,38 @@ function FloorPlansEditor({
             ) : (
               filteredOptions.map((option) => {
                 const selected = isSelected(option._id);
+
                 return (
                   <div
                     key={option._id}
                     onClick={() => toggle(option)}
-                    className={`px-4 py-2.5 cursor-pointer flex justify-between items-center gap-3 text-sm transition-colors ${
-                      selected
+                    className={`px-4 py-2.5 cursor-pointer flex justify-between items-center gap-3 text-sm transition-colors ${selected
                         ? "bg-card text-muted line-through"
                         : "text-text hover:bg-card/60"
-                    }`}
+                      }`}
                   >
                     <div className="flex items-center gap-2">
                       {option.image && (
                         <img
                           src={option.image}
                           alt={option.title}
-                          className="h-6 w-6 rounded object-cover shrink-0 border border-line"
+                          className="h-6 w-6 rounded object-cover border border-line"
                         />
                       )}
+
                       <div>
-                        <span className="font-medium">{option.title}</span>
+                        <span className="font-medium">
+                          {option.title}
+                        </span>
                         <span className="ml-2 text-xs text-muted">
-                          {option.unitType} · {option.bedrooms}B{" "}
-                          {option.bathrooms}Ba
+                          {option.unitType} · {option.bedrooms}B {option.bathrooms}Ba
                         </span>
                       </div>
                     </div>
-                    {selected && <span className="text-xs text-gold">✓</span>}
+
+                    {selected && (
+                      <span className="text-xs text-gold">✓</span>
+                    )}
                   </div>
                 );
               })
@@ -1339,7 +1361,7 @@ function renderDynamicField(
             <input
               className="input"
               type="file"
-              accept="image/*"
+              accept="image/*,video/*"
               onChange={async (e: ChangeEvent<HTMLInputElement>) => {
                 const file = e.target.files?.[0];
                 if (!file) return;
@@ -1351,13 +1373,20 @@ function renderDynamicField(
               }}
             />
 
-            {value ? (
-              <img
-                src={String(value)}
-                alt={field.label}
-                className="h-16 w-16 rounded-2xl border border-line object-cover m-1"
-              />
-            ) : null}
+            {value && (
+              value?.match(/\.(mp4|webm|ogg)$/i) ? (
+                <video
+                  src={value}
+                  className="h-16 w-16 rounded-2xl border object-cover"
+                  controls
+                />
+              ) : (
+                <img
+                    src={value}
+                    className="h-16 w-16 rounded-2xl border object-cover"
+                  />
+              )
+            )}
           </div>
           <p className="text-gold text-xs">Note: {field.note}</p>
         </div>
@@ -1605,7 +1634,7 @@ export default function PropertiesPage() {
 
       // ✅ LOCATION FIX
       location: getId(item.location),
-      // sublocation: getId(item.sublocation),
+      sublocation: getId(item.sublocation),
 
       // ✅ COMMUNITY (if exists)
       communities: getId(item.communities),
@@ -1813,26 +1842,79 @@ export default function PropertiesPage() {
 
                       {/* Thumbnail */}
 
-                      <div
-                      // className="cursor-pointer"
-                      >
-                        {Array.isArray(property?.gallery) &&
-                        property.gallery.length > 0 ? (
-                          <div className="flex">
-                            <div className="flex items-center overflow-x-auto">
-                              {property.gallery
-                                .map((img: string, i: number) => (
-                                  <img
+                      <div>
+                        {Array.isArray(property?.gallery) && property.gallery.length > 0 ? (
+                          <div className="flex items-center gap-2">
+
+                            {/* IMAGES LIST */}
+                            <div className="flex items-center overflow-x-scroll ">
+                              {property.gallery.map((media: string, i: number) => {
+                                const isVideo = /\.(mp4|webm|ogg)$/i.test(media);
+
+                                return (
+                                  <div
                                     key={i}
-                                    src={img}
-                                    alt={property.title}
-                                    className="h-8 w-8 rounded object-cover border border-line bg-lightgray hover:scale-105 transition"
-                                  />
-                                ))}
+                                    className="relative group cursor-pointer"
+                                    // onClick={() =>
+                                    //   setPreviewModal({
+                                    //     open: true,
+                                    //     media,
+                                    //   })
+                                    // }
+                                  >
+                                    {isVideo ? (
+                                      <video
+                                        src={media}
+                                        className="h-8 w-8 rounded border object-cover"
+                                        muted
+                                      />
+                                    ) : (
+                                      <img
+                                        src={media}
+                                        alt={property.title}
+                                        className="h-8 w-8 rounded object-cover border border-line bg-lightgray"
+                                      />
+                                    )}
+
+                                    {/* ❌ REMOVE BUTTON */}
+                                    <button
+                                      onClick={async (e) => {
+                                        e.stopPropagation(); // prevent preview click
+
+                                        try {
+                                          const updatedGallery = property.gallery.filter(
+                                            (_: string, index: number) => index !== i
+                                          );
+
+                                          const type = property?.type?.map((t: any) => t?._id);
+                                          const subType = property?.subType?.map((t: any) => t?._id);
+
+                                          await api.patch(`/properties/${property._id}`, {
+                                            ...property,
+                                            developer: property?.developer?._id,
+                                            location: property?.location?._id,
+                                            type,
+                                            subType,
+                                            gallery: updatedGallery,
+                                          });
+
+                                          await load();
+                                        } catch (err) {
+                                          console.error("Remove image failed", err);
+                                        }
+                                      }}
+                                      className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition"
+                                    >
+                                      ×
+                                    </button>
+                                  </div>
+                                );
+                              })}
                             </div>
+
+                            {/* ➕ UPLOAD BUTTON (ALWAYS VISIBLE) */}
                             <div
-                              className="h-15 w-15  rounded-lg px-4  flex items-center justify-center text-xs"
-                              cursor-pointer
+                              className="h-10 w-10 rounded-lg flex items-center justify-center border border-line cursor-pointer hover:bg-card transition"
                               onClick={() =>
                                 setImagePicker({
                                   open: true,
@@ -1841,13 +1923,12 @@ export default function PropertiesPage() {
                                 })
                               }
                             >
-                              <Upload size={20} />
+                              <Upload size={18} />
                             </div>
                           </div>
                         ) : (
                           <div
-                            className="h-10 w-10 bg-black rounded-lg bg-muted flex items-center justify-center text-xs"
-                            cursor-pointer
+                            className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center cursor-pointer"
                             onClick={() =>
                               setImagePicker({
                                 open: true,
@@ -1876,9 +1957,7 @@ export default function PropertiesPage() {
                         )}
 
                         {/* Clickable Floor Plans badge */}
-                        {property.floorPlans &&
-                          property.floorPlans.length > 0 && (
-                            <button
+                        {<button
                               onClick={() =>
                                 setManageModal({
                                   type: "floorPlans",
@@ -1887,9 +1966,9 @@ export default function PropertiesPage() {
                               }
                               className="inline-flex items-center rounded px-2 py-1 text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 transition-colors cursor-pointer"
                             >
-                              Floor Plans ({property.floorPlans.length})
+                          Floor Plans ({property?.floorPlans?.length})
                             </button>
-                          )}
+                        }
 
                         {/* Clickable Features / Amenities badge */}
                         {
@@ -2264,7 +2343,9 @@ export default function PropertiesPage() {
         >
           {manageModal.type === "floorPlans" && (
             <FloorPlansEditor
-              value={manageModal.property.floorPlans || []}
+              value={(manageModal.property.floorPlans || []).map((fp: any) =>
+                typeof fp === "string" ? fp : fp?.title
+              )}
               onChange={(next) =>
                 setManageModal((prev) =>
                   prev

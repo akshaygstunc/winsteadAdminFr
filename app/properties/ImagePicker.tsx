@@ -84,7 +84,7 @@ export default function ImagePickerModal({
                     type="file"
                     multiple={multiple}
                     className="input"
-                    accept="image/*"
+                    accept="image/*,video/*"
                     onChange={(e) => {
                         if (e.target.files) uploadFiles(e.target.files);
                     }}
