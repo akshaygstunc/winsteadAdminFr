@@ -1283,7 +1283,7 @@ function renderField(
             />
           </div>
           {value && (
-            <div className="w-full rounded-2xl overflow-hidden border border-line bg-black">
+            <div className="w-48 rounded-2xl overflow-hidden border border-line bg-black">
               {field.type === "video" ? (
                 <video
                   src={value}
@@ -1294,7 +1294,7 @@ function renderField(
                 <img
                   src={value}
                   alt={field.label}
-                  className="w-full h-30 object-cover"
+                  className="w-48 h-30 object-cover"
                 />
               )}
             </div>
@@ -1331,6 +1331,7 @@ function isFullWidth(field: CmsField) {
     "multiselect",
     "relation-select",
     "icon",
+    "editor"
   ].includes(field.type);
 }
 
@@ -1438,7 +1439,7 @@ export function EditorCmsPage({ config }: { config: CmsConfig }) {
         >
           <div className="flex-1 overflow-y-auto pr-1">
             {/* Scrollable fields */}
-            <div className="grid lg:grid-cols-4 grid-cols-2  gap-4">
+            <div className="grid lg:grid-cols-2 grid-cols-2   gap-4">
               {fields.map((field) => (
                 <div
                   key={field.key}
