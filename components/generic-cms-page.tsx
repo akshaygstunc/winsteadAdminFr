@@ -796,7 +796,19 @@ export function GenericCmsPage({ config }: { config: CmsConfig }) {
   useEffect(() => {
     load(search);
   }, [config.entity, developerFilter]);
+  const getFieldSpan = (field: CmsField) => {
+    const fullWidthTypes = [
+      "textarea",
+      "editor",
+      "gallery",
+      "image",
+      "video",
+      "faq",
+      "address",
+    ];
 
+    return fullWidthTypes.includes(field.type) ? "col-span-6" : "col-span-3";
+  };
   const groupedFields = useMemo(() => {
     const chunks: CmsField[][] = [];
     for (let i = 0; i < config.fields.length; i += 3)
@@ -1479,7 +1491,7 @@ export function GenericCmsPage({ config }: { config: CmsConfig }) {
                       field.type === "editor" ||
                       field.type === "gallery" ||
                       field.type === "image"
-                        ? "md:col-span-2 xl:col-span-3"
+                        ? "md:col-span-2 xl:col-span-3 w-full"
                         : ""
                     }
                   >
@@ -1511,7 +1523,7 @@ export function GenericCmsPage({ config }: { config: CmsConfig }) {
           >
             <div className="space-y-5 mt-0">
               {groupedFields.map((group, index) => (
-                <FormGrid key={index} columns={3}>
+                <FormGrid key={index} columns={2}>
                   {group.map((field) => (
                     <div
                       key={field.key}

@@ -797,35 +797,25 @@ function AmenitiesEditor({
   onChange: (next: AmenityItem[]) => void;
 }) {
   const items = Array.isArray(value) ? value : [];
+
   const [options, setOptions] = useState<AmenityOption[]>([]);
   const [loading, setLoading] = useState(false);
-  const [open, setOpen] = useState(false);
-  const [search, setSearch] = useState("");
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const handleClick = (e: any) => {
-      if (!ref.current?.contains(e.target)) {
-        setOpen(false);
-        setSearch("");
-      }
-    };
-    document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
-  }, []);
 
   useEffect(() => {
     const fetchAmenities = async () => {
       try {
         setLoading(true);
+
         const response = await api.get("/content/property-amenities");
         const rows = normalizeApiArray(response);
+
         const nextOptions: AmenityOption[] = rows.map((row: any) => ({
           _id: String(row?._id ?? row?.id ?? ""),
           title: String(row?.name ?? row?.title ?? ""),
           icon: String(row?.data?.icon ?? row?.image ?? ""),
           description: String(row?.description ?? ""),
         }));
+
         setOptions(nextOptions);
       } catch (error) {
         console.error("Failed to load amenities:", error);
@@ -833,10 +823,12 @@ function AmenitiesEditor({
         setLoading(false);
       }
     };
+
     fetchAmenities();
   }, []);
 
-  const isSelected = (id: string) => items.some((item) => item._id === id);
+  const isSelected = (id: string) =>
+    items.some((item) => item._id === id);
 
   const toggle = (option: AmenityOption) => {
     if (isSelected(option._id)) {
@@ -854,101 +846,84 @@ function AmenitiesEditor({
     }
   };
 
-  const filteredOptions = options.filter((opt) =>
-    opt.title.toLowerCase().includes(search.toLowerCase()),
+  // 👉 split selected / unselected
+  const selectedOptions = items;
+  const unselectedOptions = options.filter(
+    (o) => !items.some((i) => i._id === o._id)
   );
 
   return (
-    <div className="space-y-1.5" ref={ref}>
+    <div className="space-y-3">
       <FieldLabel label="Amenities" />
 
-      <div
-        className="input w-full min-h-[44px] flex flex-wrap gap-1.5 items-center cursor-text"
-        onClick={() => setOpen(true)}
-      >
-        {items.map((item) => (
-          <span
-            key={item._id || item.title}
-            className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-md bg-gold/20 text-gold border border-gold/30"
-          >
-            {item.icon && (
-              <img
-                src={item.icon}
-                alt={item.title}
-                className="h-3.5 w-3.5 rounded object-cover"
-              />
-            )}
-            {item.title}
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                toggle({
-                  _id: item._id!,
-                  title: item.title,
-                  icon: item.icon,
-                  description: item.description,
-                });
-              }}
-              className="text-gold/70 hover:text-gold font-bold leading-none"
+      {/* ================= SELECTED ================= */}
+      {selectedOptions.length > 0 && (
+        <div className="flex flex-wrap gap-2 border-black border py-5 px-5 rounded-2xl mb-4">
+          {selectedOptions.map((item) => (
+            <div
+              key={item._id}
+              className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gold/20 border border-gold/30 text-gold text-sm"
             >
-              ×
-            </button>
-          </span>
-        ))}
-        <input
-          type="text"
-          value={search}
-          onChange={(e) => {
-            setSearch(e.target.value);
-            setOpen(true);
-          }}
-          onFocus={() => setOpen(true)}
-          placeholder={items.length === 0 ? "Select Amenities" : ""}
-          className="flex-1 min-w-[80px] bg-transparent text-sm text-text placeholder:text-muted outline-none border-none"
-        />
-      </div>
+              {item.icon && (
+                <img
+                  src={item.icon}
+                  alt={item.title}
+                  className="h-4 w-4 rounded object-cover"
+                />
+              )}
 
-      {open && (
-        <div className="relative z-50">
-          <div className="absolute top-0 left-0 right-0 border border-line rounded-xl bg-panel shadow-lg max-h-56 overflow-y-auto">
-            {loading ? (
-              <div className="px-3 py-3 text-sm text-muted">Loading...</div>
-            ) : filteredOptions.length === 0 ? (
-              <div className="px-3 py-3 text-sm text-muted">
-                No amenities found.
-              </div>
-            ) : (
-              filteredOptions.map((option) => {
-                const selected = isSelected(option._id);
-                return (
-                  <div
-                    key={option._id}
-                    onClick={() => toggle(option)}
-                    className={`px-4 py-2.5 cursor-pointer flex justify-between items-center gap-3 text-sm transition-colors ${
-                      selected
-                        ? "bg-card text-muted line-through"
-                        : "text-text hover:bg-card/60"
-                    }`}
-                  >
-                    <div className="flex items-center gap-2">
-                      {option.icon && (
-                        <img
-                          src={option.icon}
-                          alt={option.title}
-                          className="h-5 w-5 rounded object-cover shrink-0"
-                        />
-                      )}
-                      <span>{option.title}</span>
-                    </div>
-                    {selected && <span className="text-xs text-gold">✓</span>}
-                  </div>
-                );
-              })
-            )}
-          </div>
+              <span className="font-medium">{item.title}</span>
+
+              <button
+                type="button"
+                onClick={() => toggle(item)}
+                className="ml-1 text-gold/70 hover:text-gold font-bold"
+              >
+                ×
+              </button>
+            </div>
+          ))}
         </div>
       )}
+
+      {/* ================= OPTIONS ================= */}
+      <div className="flex flex-wrap gap-3  py-10 ">
+        {loading ? (
+          <div className="text-sm text-muted">Loading...</div>
+        ) : (
+          [...selectedOptions, ...unselectedOptions].map((opt) => {
+            const selected = isSelected(opt._id);
+
+            return (
+              <label
+                key={opt._id}
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer text-sm transition
+                ${selected
+                    ? "bg-card border-gold text-gold"
+                    : "border-line text-text hover:bg-card/50"
+                  }`}
+              >
+                <input
+                  type="checkbox"
+                  checked={selected}
+                  onChange={() => toggle(opt)}
+                  className="accent-yellow-500"
+                />
+
+                {opt.icon && (
+                  <img
+                    src={opt.icon}
+                    alt={opt.title}
+                    className="h-4 w-4 rounded object-cover"
+                  />
+                )}
+
+                <span className="font-medium">{opt.title}</span>
+              </label>
+            );
+          })
+        )}
+      </div>
     </div>
   );
 }
@@ -957,30 +932,14 @@ function FloorPlansEditor({
   value,
   onChange,
 }: {
-    value: string[]; // ✅ ONLY IDS
+    value: string[];
     onChange: (next: string[]) => void;
 }) {
   const items = Array.isArray(value) ? value : [];
 
   const [options, setOptions] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
-  const [open, setOpen] = useState(false);
-  const [search, setSearch] = useState("");
-  const ref = useRef<HTMLDivElement>(null);
 
-  // Close dropdown on outside click
-  useEffect(() => {
-    const handleClick = (e: any) => {
-      if (!ref.current?.contains(e.target)) {
-        setOpen(false);
-        setSearch("");
-      }
-    };
-    document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
-  }, []);
-
-  // Fetch floor plans
   useEffect(() => {
     const fetchFloorPlans = async () => {
       try {
@@ -1009,10 +968,8 @@ function FloorPlansEditor({
     fetchFloorPlans();
   }, []);
 
-  // Check selected
   const isSelected = (id: string) => items.includes(id);
 
-  // Toggle select
   const toggle = (option: any) => {
     if (!option?._id) return;
 
@@ -1023,115 +980,90 @@ function FloorPlansEditor({
     }
   };
 
-  // Filter
-  const filteredOptions = options.filter(
-    (opt) =>
-      opt.title.toLowerCase().includes(search.toLowerCase()) ||
-      opt.unitType.toLowerCase().includes(search.toLowerCase()),
-  );
+  // 👉 selected + unselected split
+  const selectedOptions = options.filter((o) => items.includes(o._id));
+  const unselectedOptions = options.filter((o) => !items.includes(o._id));
 
   return (
-    <div className="space-y-1.5" ref={ref}>
+    <div className="space-y-3">
       <FieldLabel label="Floor Plans" />
 
-      {/* Selected values */}
-      <div
-        className="input w-full min-h-[44px] flex flex-wrap gap-1.5 items-center cursor-text"
-        onClick={() => setOpen(true)}
-      >
-        {items.map((id) => {
-          const item = options.find((o) => o._id === id);
-
-          return (
-            <span
-              key={id}
-              className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-md bg-gold/20 text-gold border border-gold/30"
+      {/* ================= SELECTED (TOP) ================= */}
+      {selectedOptions.length > 0 && (
+        <div className="flex flex-wrap gap-2 border-black border py-5 px-5 rounded-2xl mb-4">
+          {selectedOptions.map((opt) => (
+            <div
+              key={opt._id}
+              className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gold/20 border border-gold/30 text-gold text-sm"
             >
-              {item?.title || id}
-              {item?.unitType && (
-                <span className="opacity-60">· {item.unitType}</span>
+              {opt.image && (
+                <img
+                  src={opt.image}
+                  alt={opt.title}
+                  className="h-5 w-5 rounded object-cover"
+                />
               )}
+
+              <span className="font-medium">{opt.title}</span>
+
+              <span className="text-xs opacity-70">
+                {opt.bedrooms}B · {opt.bathrooms}Ba
+              </span>
 
               <button
                 type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  toggle(item || { _id: id });
-                }}
-                className="text-gold/70 hover:text-gold font-bold leading-none"
+                onClick={() => toggle(opt)}
+                className="ml-1 text-gold/70 hover:text-gold font-bold"
               >
                 ×
               </button>
-            </span>
-          );
-        })}
-
-        {/* Search */}
-        <input
-          type="text"
-          value={search}
-          onChange={(e) => {
-            setSearch(e.target.value);
-            setOpen(true);
-          }}
-          onFocus={() => setOpen(true)}
-          placeholder={items.length === 0 ? "Select Floor Plans" : ""}
-          className="flex-1 min-w-[80px] bg-transparent text-sm text-text placeholder:text-muted outline-none border-none"
-        />
-      </div>
-
-      {/* Dropdown */}
-      {open && (
-        <div className="relative z-50">
-          <div className="absolute top-0 left-0 right-0 border border-line rounded-xl bg-panel shadow-lg max-h-56 overflow-y-auto">
-            {loading ? (
-              <div className="px-3 py-3 text-sm text-muted">Loading...</div>
-            ) : filteredOptions.length === 0 ? (
-              <div className="px-3 py-3 text-sm text-muted">
-                No floor plans found.
-              </div>
-            ) : (
-              filteredOptions.map((option) => {
-                const selected = isSelected(option._id);
-
-                return (
-                  <div
-                    key={option._id}
-                    onClick={() => toggle(option)}
-                    className={`px-4 py-2.5 cursor-pointer flex justify-between items-center gap-3 text-sm transition-colors ${selected
-                        ? "bg-card text-muted line-through"
-                        : "text-text hover:bg-card/60"
-                      }`}
-                  >
-                    <div className="flex items-center gap-2">
-                      {option.image && (
-                        <img
-                          src={option.image}
-                          alt={option.title}
-                          className="h-6 w-6 rounded object-cover border border-line"
-                        />
-                      )}
-
-                      <div>
-                        <span className="font-medium">
-                          {option.title}
-                        </span>
-                        <span className="ml-2 text-xs text-muted">
-                          {option.unitType} · {option.bedrooms}B {option.bathrooms}Ba
-                        </span>
-                      </div>
-                    </div>
-
-                    {selected && (
-                      <span className="text-xs text-gold">✓</span>
-                    )}
-                  </div>
-                );
-              })
-            )}
-          </div>
+            </div>
+          ))}
         </div>
       )}
+
+      {/* ================= OPTIONS (CHECKBOX GRID) ================= */}
+      <div className="flex flex-wrap gap-4 py-10 ">
+        {loading ? (
+          <div className="text-sm text-muted">Loading...</div>
+        ) : (
+            [...selectedOptions, ...unselectedOptions].map((opt) => {
+              const selected = isSelected(opt._id);
+
+            return (
+              <label
+                key={opt._id}
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer text-sm transition
+                ${selected
+                    ? "bg-card border-gold text-gold"
+                    : "border-line text-text hover:bg-card/50"
+                  }`}
+              >
+                <input
+                  type="checkbox"
+                  checked={selected}
+                  onChange={() => toggle(opt)}
+                  className="accent-yellow-500"
+                />
+
+                {opt.image && (
+                  <img
+                    src={opt.image}
+                    alt={opt.title}
+                    className="h-5 w-5 rounded object-cover"
+                  />
+                )}
+
+                <span className="font-medium">{opt.title}</span>
+
+                <span className="text-xs text-muted">
+                  {opt.bedrooms}B · {opt.bathrooms}Ba
+                </span>
+              </label>
+            );
+          })
+        )}
+      </div>
     </div>
   );
 }
