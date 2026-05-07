@@ -8,6 +8,7 @@ import { pagesCmsConfig } from '@/configs/cms/page.config';
 import { projectsCmsConfig } from "@/configs/cms/project.config";
 import { EditorConfigs } from '@/lib/editor';
 import { PageEditorCmsPage } from './editor-cms-page';
+import { BlogEditorPage } from './blogeditor';
 type CmsRouteProps = {
   id: keyof typeof pagesCmsConfig;
 };
@@ -28,7 +29,8 @@ export function CmsRoute({ id }: CmsRouteProps) {
       return <PageEditorCmsPage config={pagesCmsConfig} />;
     case 'editor':
       return <EditorCmsPage config={config} />;
-
+    case 'blog':
+      return <BlogEditorPage config={config}/>
     case 'crm':
       return <CrmCmsPage config={config} />;
 
