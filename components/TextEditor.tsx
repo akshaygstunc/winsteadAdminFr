@@ -59,9 +59,9 @@ export function TiptapEditor({
                 linkOnPaste: true,
             }),
 
-            Placeholder.configure({
-                placeholder: `Write ${label.toLowerCase()} here...`,
-            }),
+           Placeholder.configure({
+  placeholder: `Write ${(label || "content").toLowerCase()} here...`,
+})
         ],
         content: value || '',
         immediatelyRender: false,

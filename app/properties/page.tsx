@@ -63,6 +63,7 @@ type PropertyForm = Property & {
   floorPlans?: string[];
   communities?: string;
   faq: any[];
+  bannerImages?: string[]; // ✅ NEW
 };
 
 type DynamicField = {
@@ -109,6 +110,7 @@ const emptyForm: PropertyForm = {
   longitude: "",
   latitude: "",
   propertyStatus: "ready",
+  bannerImages: [],
   visibility: "both",
   price: 0,
   status: "active",
@@ -124,7 +126,7 @@ const emptyForm: PropertyForm = {
   sortOrder: 0,
   tag: "",
   url: "",
-  author: "wasim",
+  author: "winstead",
   gallery: [],
   propertyType: [],
   propertySubType: [],
@@ -158,6 +160,11 @@ const propertyFormSections: FieldSection[] = [
           valueKey: "_id",
         },
       },
+      {
+  key: "banners",
+  title: "Banner Images",
+  custom: "banners",
+},
       {
         key: "subType",
         label: "Property Sub-Type",
@@ -352,7 +359,25 @@ function normalizeApiArray(response: any): any[] {
   if (Array.isArray(response?.payload)) return response.payload;
   return [];
 }
+function BannerUploader({
+  value,
+  onChange,
+}: {
+  value: string[];
+  onChange: (next: string[]) => void;
+}) {
+  return (
+    <div className="space-y-4">
+      <FieldLabel label="Banner Images" />
+      
+      <p className="text-xs text-muted">
+        Upload banner images (recommended 1260x420)
+      </p>
 
+      <GalleryUploader value={value} onChange={onChange} />
+    </div>
+  );
+}
 function Toggle({
   label,
   checked,
@@ -1621,14 +1646,14 @@ export default function PropertiesPage() {
       setError("Unable to delete property.");
     }
   };
-  const [imagePicker, setImagePicker] = useState<{
-    open: boolean;
-    type: "gallery";
-    propertyId?: string;
-  }>({
-    open: false,
-    type: "gallery",
-  });
+ const [imagePicker, setImagePicker] = useState<{
+  open: boolean;
+  type: "gallery" | "banner"; // ✅ UPDATED
+  propertyId?: string;
+}>({
+  open: false,
+  type: "gallery",
+});
 
   // Add these state variables inside PropertiesPage() — near your other useState hooks
   const [previewModal, setPreviewModal] = useState<{
@@ -1845,34 +1870,73 @@ export default function PropertiesPage() {
                             </div>
 
                             {/* ➕ UPLOAD BUTTON (ALWAYS VISIBLE) */}
-                            <div
-                              className="h-10 w-10 rounded-lg flex items-center justify-center border border-line cursor-pointer hover:bg-card transition"
-                              onClick={() =>
-                                setImagePicker({
-                                  open: true,
-                                  type: "gallery",
-                                  propertyId: property._id,
-                                })
-                              }
-                            >
-                              <Upload size={18} />
-                            </div>
+                           <div className="flex gap-2">
+
+  {/* Gallery Upload */}
+  <div
+    className="h-10 w-10 rounded-lg flex items-center justify-center border border-line cursor-pointer hover:bg-card"
+    onClick={() =>
+      setImagePicker({
+        open: true,
+        type: "gallery",
+        propertyId: property._id,
+      })
+    }
+  >
+    <Upload size={16} />
+  </div>
+
+  {/* Banner Upload */}
+  
+  
+
+</div>
                           </div>
                         ) : (
-                          <div
-                            className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center cursor-pointer"
-                            onClick={() =>
-                              setImagePicker({
-                                open: true,
-                                type: "gallery",
-                                propertyId: property._id,
-                              })
-                            }
-                          >
-                            <UploadCloud />
-                          </div>
+                         <div className="flex gap-2">
+
+  {/* Gallery Upload */}
+  <div
+    className="h-10 w-10 rounded-lg flex items-center justify-center border border-line cursor-pointer hover:bg-card"
+    onClick={() =>
+      setImagePicker({
+        open: true,
+        type: "gallery",
+        propertyId: property._id,
+      })
+    }
+  >
+    <Upload size={16} />
+  </div>
+
+  {/* Banner Upload */}
+  <div
+    className="h-10 w-10 rounded-lg flex items-center justify-center border border-line cursor-pointer hover:bg-card"
+    onClick={() =>
+      setImagePicker({
+        open: true,
+        type: "banner",
+        propertyId: property._id,
+      })
+    }
+  >
+    🖼️
+  </div>
+
+</div>
                         )}
                       </div>
+                      {property?.bannerImages?.length > 0 && (
+  <div className="flex gap-1 mt-2">
+    {property?.bannerImages?.slice(0, 3).map((img, i) => (
+      <img
+        key={i}
+        src={img}
+        className="h-6 w-10 rounded object-cover border"
+      />
+    ))}
+  </div>
+)}
                     </td>
                     <td className="px-4 py-3 text-muted">
                       {Array.isArray(property?.type)
@@ -1928,6 +1992,20 @@ export default function PropertiesPage() {
                             FAQ ({property?.faq?.length})
                           </button>
                         }
+                        {<div
+  data-tooltip-target="tooltip-default"
+    className="inline-flex items-center rounded px-2 py-1 text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100 transition-colors cursor-pointer"
+    onClick={() =>
+      setImagePicker({
+        open: true,
+        type: "banner",
+        propertyId: property._id,
+      })
+    }
+  >
+    Banner
+    
+  </div>}
                       </div>
                     </td>
                     {/* Action — Type & Developer as badges */}
@@ -2031,7 +2109,17 @@ export default function PropertiesPage() {
                     }))
                   }
                 />
-              ) : section.custom === "amenities" ? (
+              ) : section.custom === "banners" ? (
+  <BannerUploader
+    value={Array.isArray(form.bannerImages) ? form.bannerImages : []}
+    onChange={(next) =>
+      setForm((prev) => ({
+        ...prev,
+        bannerImages: next,
+      }))
+    }
+  />
+) : section.custom === "amenities" ? (
                 <AmenitiesEditor
                   value={Array.isArray(form.amenities) ? form.amenities : []}
                   onChange={(next) =>
@@ -2236,35 +2324,40 @@ export default function PropertiesPage() {
         open={imagePicker.open}
         onClose={() => setImagePicker({ open: false })}
         onSelect={async (images) => {
-          if (!imagePicker.propertyId || images.length === 0) return;
+  if (!imagePicker.propertyId || images.length === 0) return;
 
-          try {
-            // 🔹 get current property
-            const current = items.find((p) => p._id === imagePicker.propertyId);
-            console.log(current);
-            // 🔹 append new images
-            const updatedGallery = [...(current?.gallery || []), ...images];
-            const type = current?.type?.map((ty) => ty?._id);
-            const subType = current?.subType?.map((ty) => ty?._id);
-            // 🔹 OPTIONAL: remove duplicates
-            const uniqueGallery = Array.from(new Set(updatedGallery));
+  try {
+    const current = items.find((p) => p._id === imagePicker.propertyId);
 
-            // 🔹 call update API
-            await api.patch(`/properties/${imagePicker.propertyId}`, {
-              ...current,
-              developer: current?.developer?._id,
-              location: current?.location?._id,
-              type,
-              subType,
-              gallery: uniqueGallery,
-            });
+    let updatedPayload: any = {};
 
-            // 🔹 refresh table
-            await load();
-          } catch (err) {
-            console.error("Gallery update failed", err);
-          }
-        }}
+    if (imagePicker.type === "gallery") {
+      const updated = [...(current?.gallery || []), ...images];
+      updatedPayload.gallery = Array.from(new Set(updated));
+    }
+
+    if (imagePicker.type === "banner") {
+      const updated = [...(current?.bannerImages || []), ...images];
+      updatedPayload.bannerImages = Array.from(new Set(updated));
+    }
+
+    const type = current?.type?.map((t) => t?._id);
+    const subType = current?.subType?.map((t) => t?._id);
+
+    await api.patch(`/properties/${imagePicker.propertyId}`, {
+      ...current,
+      developer: current?.developer?._id,
+      location: current?.location?._id,
+      type,
+      subType,
+      ...updatedPayload,
+    });
+
+    await load();
+  } catch (err) {
+    console.error("Upload failed", err);
+  }
+}}
       />
       {manageModal && (
         <Modal

@@ -34,7 +34,7 @@ export type CmsConfig = {
   subtitle: string;
   entity: string;
   mode?: "collection" | "singleton";
-  layout?: "cards" | "editor" | "crm" | "locations";
+  layout?: "cards" | "editor" | "crm" | "locations" | "blog";
   addLabel?: string;
   searchPlaceholder?: string;
   fields: CmsField[];
@@ -623,42 +623,116 @@ export const EditorConfigs: Record<string, CmsConfig> = {
       "Blogs",
       "blogs",
       "Blog posts with hero image, category, slug, and SEO fields.",
-      undefined,
+      "blog",
       [
-        { key: "title", label: "Blog Title", type: "text" },
-        { key: "slug", label: "Slug URL", type: "text" },
+        // 🟢 MAIN CONTENT (LEFT SIDE)
+
+        {
+          key: "title",
+          label: "Blog Title",
+          type: "text",
+          layout: "main",
+        },
+
+        {
+          key: "description",
+          label: "Content",
+          type: "editor", // 🔥 important (replace textArea)
+          layout: "main",
+        },
+
+        // 🟡 SIDEBAR (RIGHT SIDE)
+
         {
           key: "status",
           label: "Publish",
           type: "select",
           options: statusOptions,
+          layout: "sidebar",
         },
-        { key: "videoUrl", label: "Video / YouTube URL", type: "video" },
-        { key: "category", label: "Category", type: "text" },
+
         {
-          key: "suggestPropertyType",
-          label: "Suggest Property Type",
+          key: "slug",
+          label: "Slug URL",
           type: "text",
+          layout: "sidebar",
         },
+
+        {
+          key: "videoUrl",
+          label: "Video / YouTube URL",
+          type: "video", // 🔥 changed (NOT video)
+          layout: "sidebar",
+        },
+
+        {
+          key: "category",
+          label: "Category",
+          type: "select", // 🔥 better UX than text
+          options: [
+            { label: "Real Estate", value: "real-estate" },
+            { label: "Investment", value: "investment" },
+          ],
+          layout: "sidebar",
+        },
+
         {
           key: "suggestPropertyCategory",
-          label: "Suggest Property Category",
-          type: "text",
+          label: "Suggest Property Type",
+          type: "relation-select",
+          relation: {
+            endpoint: "content/property-types",
+            labelKey: "title",
+            valueKey: "_id",
+          },
+          layout: "sidebar",
         },
+
         {
           key: "suggestPropertyDeveloper",
           label: "Suggest Property Developer",
-          type: "text",
+          type: "relation-select",
+          relation: {
+            endpoint: "content/developer-community",
+            labelKey: "title",
+            valueKey: "_id",
+          },
+          layout: "sidebar",
         },
-        { key: "metaTitle", label: "Meta Title", type: "text" },
-        { key: "metaKeywords", label: "Meta Keywords", type: "text" },
-        { key: "metaDescription", label: "Meta Description", type: "text" },
-        imageField("Cover Image", "image", "1260x420"),
-        textArea,
+
+        {
+          key: "image",
+          label: "Cover Image",
+          type: "image",
+          layout: "sidebar",
+        },
+
+        // 🔵 SEO
+
+        {
+          key: "metaTitle",
+          label: "Meta Title",
+          type: "text",
+          layout: "sidebar",
+        },
+
+        {
+          key: "metaKeywords",
+          label: "Meta Keywords",
+          type: "text",
+          layout: "sidebar",
+        },
+
+        {
+          key: "metaDescription",
+          label: "Meta Description",
+          type: "textarea", // 🔥 FIXED
+          layout: "sidebar",
+        },
       ],
       searchMeta("category", "metaTitle", "metaKeywords", "status"),
     ),
-    layout: "editor",
+    layout: "blog",
   },
 
   media: collection(
@@ -1101,6 +1175,162 @@ export const EditorConfigs: Record<string, CmsConfig> = {
         group: "seo",
         column: "left",
       },
+      imageField("OG Image", "ogImage"),
+    ],
+  ),
+  "career-page": singleton(
+    "Career Page",
+    "career-page",
+    "Manage Career page content including banner, benefits, and SEO.",
+    [
+      // ================= HERO / BANNER =================
+
+      imageField("Banner Image", "bannerImage", "1260x420"),
+      {
+        key: "bannerTitle",
+        label: "Banner Title",
+        type: "text",
+        group: "banner-section",
+        column: "left",
+      },
+      {
+        key: "bannerSubtitle",
+        label: "Banner Subtitle",
+        type: "textarea",
+        group: "banner-section",
+        column: "left",
+      },
+
+      {
+        key: "bannerPrimaryButtonText",
+        label: "Primary Button Text",
+        type: "text",
+        group: "banner-section",
+        column: "right",
+      },
+      {
+        key: "bannerPrimaryButtonUrl",
+        label: "Primary Button URL",
+        type: "text",
+        group: "banner-section",
+        column: "right",
+      },
+
+      // ================= INTRO =================
+      {
+        key: "introTitle",
+        label: "Intro Title",
+        type: "text",
+        group: "intro-section",
+        column: "left",
+      },
+      {
+        key: "introDescription",
+        label: "Intro Description",
+        type: "textarea",
+        group: "intro-section",
+        column: "left",
+      },
+      {
+        key: "intropointer1",
+        label: "Intro Pointer 1",
+        type: "text",
+        group: "intro-section",
+        column: "left",
+      },
+      {
+        key: "intropointer2",
+        label: "Intro Pointer 2",
+        type: "text",
+        group: "intro-section",
+        column: "left",
+      },
+      {
+        key: "intropointer3",
+        label: "Intro Pointer 3",
+        type: "text",
+        group: "intro-section",
+        column: "left",
+      },
+      {
+        key: "intropointer4",
+        label: "Intro Pointer 4",
+        type: "text",
+        group: "intro-section",
+        column: "left",
+      },
+      {
+        key: "cardtitle1",
+        label: "Card Title 1 ",
+        type: "text",
+        group: "intro-section",
+        column: "left",
+      },
+      {
+        key: "carddescription1",
+        label: "Card Description 1",
+        type: "textarea",
+        group: "intro-section",
+        column: "left",
+      },
+      {
+        key: "cardtitle2",
+        label: "Card Title 2 ",
+        type: "text",
+        group: "intro-section",
+        column: "left",
+      },
+      {
+        key: "carddescription2",
+        label: "Card Description 2",
+        type: "textarea",
+        group: "intro-section",
+        column: "left",
+      },
+      {
+        key: "cardtitle3",
+        label: "Card Title 3",
+        type: "text",
+        group: "intro-section",
+        column: "left",
+      },
+      {
+        key: "carddescription3",
+        label: "Card Description 3",
+        type: "textarea",
+        group: "intro-section",
+        column: "left",
+      },
+      {
+        key: "cardtitle4",
+        label: "Card Title 4",
+        type: "text",
+        group: "intro-section",
+        column: "left",
+      },
+      {
+        key: "carddescription4",
+        label: "Card Description 4",
+        type: "textarea",
+        group: "intro-section",
+        column: "left",
+      },
+      // ================= SEO =================
+      {
+        key: "metaTitle",
+        label: "Meta Title",
+        type: "text",
+        group: "seo",
+        column: "left",
+      },
+      {
+        key: "metaDescription",
+        label: "Meta Description",
+        type: "textarea",
+        group: "seo",
+        column: "left",
+      },
+
       imageField("OG Image", "ogImage"),
     ],
   ),
