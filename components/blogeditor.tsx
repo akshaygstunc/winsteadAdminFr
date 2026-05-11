@@ -910,7 +910,7 @@ function setValue(item: CmsItem, field: CmsField, value: any): CmsItem {
 }
 
 async function fileToDataUrl(file: File) {
-  const formData = new FormData();
+ try { const formData = new FormData();
   formData.append("file", file);
   const response = await api.post("/content/upload/gallery", formData, {});
   return (
@@ -921,7 +921,9 @@ async function fileToDataUrl(file: File) {
     response?.data?.location ||
     response?.data?.data?.location ||
     ""
-  );
+  );}catch(e){
+    alert(JSON.parse(e?.message)?.message || "Failed to upload file.");
+  }
 }
 
 const uploadAsset = async (file: File) => {
@@ -948,9 +950,17 @@ function GalleryUploader({
   const [uploading, setUploading] = useState(false);
 
   const uploadSingleFile = async (file: File): Promise<string> => {
+  try {
     const formData = new FormData();
+
     formData.append("file", file);
-    const response = await api.post("/content/upload/gallery", formData, {});
+
+    const response = await api.post(
+      "/content/upload/gallery",
+      formData,
+      {},
+    );
+
     const uploadedUrl =
       response?.data?.url ||
       response?.data?.data?.url ||
@@ -959,9 +969,32 @@ function GalleryUploader({
       response?.data?.location ||
       response?.data?.data?.location ||
       "";
-    if (!uploadedUrl) throw new Error("Upload API did not return image URL");
+
+    if (!uploadedUrl) {
+      throw new Error("Upload API did not return image URL");
+    }
+
     return uploadedUrl;
-  };
+  } catch (error: any) {
+  console.error("UPLOAD ERROR:", error);
+
+  let apiMessage = "Failed to upload file";
+
+  if (Array.isArray(error?.response?.data?.message)) {
+    apiMessage = error.response.data.message.join(", ");
+  } else if (typeof error?.response?.data?.message === "string") {
+    apiMessage = error.response.data.message;
+  } else if (typeof error?.response?.data?.error === "string") {
+    apiMessage = error.response.data.error;
+  } else if (typeof error?.message === "string") {
+    apiMessage = error.message;
+  }
+
+  console.error("FINAL API MESSAGE:", apiMessage);
+
+  throw apiMessage;
+}
+};
 
   const handleFiles = async (e: ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -974,12 +1007,20 @@ function GalleryUploader({
         nextImages.push(uploadedUrl);
         onChange([...nextImages]);
       }
-    } catch (error) {
-      console.error("Gallery upload failed:", error);
-    } finally {
-      setUploading(false);
-      e.target.value = "";
-    }
+    } catch (error: any) {
+  console.error("Gallery upload failed:", error);
+
+  const message =
+    typeof error === "string"
+      ? error
+      : error?.message || "Upload failed";
+
+  alert(message);
+} 
+// finally {
+//       setUploading(false);
+//       e.target.value = "";
+//     }
   };
 
   const addUrl = () => {

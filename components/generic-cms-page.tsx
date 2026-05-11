@@ -122,7 +122,7 @@ function setValue(item: CmsItem, field: CmsField, value: any): CmsItem {
 }
 
 async function fileToDataUrl(file: File) {
-  const formData = new FormData();
+  try{const formData = new FormData();
   formData.append("file", file);
   const response = await api.post("/content/upload/gallery", formData, {});
   console.log(response, "Upload response");
@@ -134,7 +134,10 @@ async function fileToDataUrl(file: File) {
     response?.data?.location ||
     response?.data?.data?.location ||
     "";
-  return uploadedUrl;
+  return uploadedUrl;}catch(err){
+    alert(JSON.parse(e?.message)?.message || "Failed to upload file.");
+    throw err;
+  }
 }
 function RelationSelect({ field, value, onChange }: any) {
   const [options, setOptions] = useState([]);
