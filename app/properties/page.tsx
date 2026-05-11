@@ -649,15 +649,18 @@ function GalleryUploader({
   onChange: (next: string[]) => void;
 }) {
   const images = Array.isArray(value) ? value : [];
+
   const [urlInput, setUrlInput] = useState("");
   const [uploading, setUploading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
   const uploadSingleFile = async (file: File): Promise<string> => {
-    const formData = new FormData();
+    try{
+      const formData = new FormData();
     formData.append("file", file);
 
     const response = await api.post("/content/upload/gallery", formData, {});
-    console.log(response, "Upload response");
+
     const uploadedUrl =
       response?.data?.url ||
       response?.data?.data?.url ||
@@ -668,27 +671,56 @@ function GalleryUploader({
       "";
 
     if (!uploadedUrl) {
+      setErrorMessage(`${response.error || "Unknown error"}: ${file.name}`);
       throw new Error("Upload API did not return image URL");
     }
+     return uploadedUrl;
+    }catch(err: any){
+      console.log(err,"resssssrrrrr")
+      const message = err?.response?.data?.message || err?.message || `Failed to upload ${file.name}`;
+      setErrorMessage(message);
+      throw err;
+    }
+    
 
-    return uploadedUrl;
+   
   };
 
   const handleFiles = async (e: ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
+
     if (!files.length) return;
 
     setUploading(true);
+    setErrorMessage("");
 
     try {
       const nextImages = [...images];
 
       for (const file of files) {
-        const uploadedUrl = await uploadSingleFile(file);
-        nextImages.push(uploadedUrl);
-        onChange([...nextImages]);
+        try {
+          const uploadedUrl = await uploadSingleFile(file);
+
+          nextImages.push(uploadedUrl);
+
+          onChange([...nextImages]);
+        } catch (err: any) {
+          const message =
+            err?.response?.data?.message ||
+            err?.message ||
+            `Failed to upload ${file.name}`;
+
+          setErrorMessage(message);
+        }
       }
-    } catch (error) {
+    } catch (error: any) {
+      const message =
+        error?.response?.data?.message ||
+        error?.message ||
+        "Gallery upload failed";
+
+      setErrorMessage(message);
+
       console.error("Gallery upload failed:", error);
     } finally {
       setUploading(false);
@@ -697,26 +729,46 @@ function GalleryUploader({
   };
 
   const addUrl = () => {
+    setErrorMessage("");
+
     const next = urlInput.trim();
-    if (!next) return;
+
+    if (!next) {
+      setErrorMessage("Please enter image URL");
+      return;
+    }
+
+    const alreadyExists = images.includes(next);
+
+    if (alreadyExists) {
+      setErrorMessage("This image URL already exists");
+      return;
+    }
+
     onChange([...(images || []), next]);
+
     setUrlInput("");
   };
 
   const updateImage = (index: number, nextValue: string) => {
     const next = [...images];
+
     next[index] = nextValue;
+
     onChange(next);
   };
 
   const removeImage = (index: number) => {
+    setErrorMessage("");
+
     onChange(images.filter((_, i) => i !== index));
   };
-
+  console.log(errorMessage, "Gallery error message");
   return (
     <div className="space-y-4">
       <div>
         <FieldLabel label="Gallery Images" />
+        {errorMessage}
         <p className="mt-1 text-xs text-muted">
           Upload multiple property gallery images or paste image URLs.
           <br />
@@ -736,8 +788,13 @@ function GalleryUploader({
               placeholder="https://example.com/image.jpg"
             />
           </div>
+
           <div className="flex items-end">
-            <ActionButton secondary onClick={addUrl} disabled={uploading}>
+            <ActionButton
+              secondary
+              onClick={addUrl}
+              disabled={uploading}
+            >
               Add URL
             </ActionButton>
           </div>
@@ -753,7 +810,15 @@ function GalleryUploader({
         />
 
         {uploading ? (
-          <p className="text-xs text-muted">Uploading images...</p>
+          <p className="text-xs text-muted">
+            Uploading images...
+          </p>
+        ) : null}
+
+        {errorMessage ? (
+          <p className="text-sm text-red-500 font-medium">
+            {errorMessage}
+          </p>
         ) : null}
       </div>
 

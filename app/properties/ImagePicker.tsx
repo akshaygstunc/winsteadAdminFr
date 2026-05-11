@@ -18,11 +18,11 @@ export default function ImagePickerModal({
     const [images, setImages] = useState<string[]>([]);
     const [uploading, setUploading] = useState(false);
     const [urlInput, setUrlInput] = useState("");
-
+    const [errorMessage, setErrorMessage] = useState<string>("");
     // 🔹 Upload files
     const uploadFiles = async (files: FileList) => {
         setUploading(true);
-
+        setErrorMessage("");
         try {
             const uploaded: string[] = [];
 
@@ -46,9 +46,11 @@ export default function ImagePickerModal({
                 multiple ? [...prev, ...uploaded] : uploaded
             );
         } catch (err) {
-            console.error("Upload failed", err);
+            console.error("Upload failed", JSON.parse(err?.message)?.message);
+            setErrorMessage(JSON.parse(err?.message)?.message || "Upload failed");
         } finally {
             setUploading(false);
+            // setErrorMessage("");
         }
     };
 
@@ -76,9 +78,12 @@ export default function ImagePickerModal({
     };
 
     return (
-        <Modal open={open} onClose={onClose} title="Upload / Select Images">
+        <Modal open={open} onClose={() => {
+            onClose()
+            setErrorMessage("")
+            }} title="Upload / Select Images">
             <div className="space-y-4">
-
+                <p className="text-sm text-red-500">{errorMessage}</p>
                 {/* Upload */}
                 <input
                     type="file"

@@ -29,7 +29,7 @@ async function request<T>(
   });
 
   if (!res.ok) {
-    throw new Error((await res.text()) || "API request failed");
+    throw new Error(await res.text());
   }
 
   if (res.status === 204) {
