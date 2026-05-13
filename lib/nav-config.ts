@@ -214,11 +214,11 @@ export const navSections: NavSection[] = [
             href: "/gallery-page",
             icon: FileText,
           },
-          // {
-          //   label: "Meta Settings",
-          //   href: "/master/meta-settings",
-          //   icon: Globe,
-          // },
+          {
+            label: "Career Page",
+            href: "/career-page",
+            icon: Globe,
+          },
           { label: "User Access", href: "/master/user-access", icon: Users },
           // { label: "Custom SEO", href: "/master/custom-seo", icon: Globe },
           // { label: "Sitemap", href: "/master/sitemap", icon: Globe },
