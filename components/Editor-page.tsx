@@ -773,7 +773,7 @@
 //             {/* Added At */}
 //             <td className="px-4 py-4 min-w-[160px]">
 //               <p className="text-sm text-muted">
-//                 {item.data?.author || item.subtitle || "Nestwood"}
+//                 {item.data?.author || item.subtitle || ""}
 //               </p>
 //               <p className="mt-1 text-xs text-muted/60">
 //                 {item.createdAt
@@ -1559,7 +1559,7 @@ export function EditorCmsPage({ config }: { config: CmsConfig }) {
                       </td>
                       <td className="px-4 py-4 min-w-[160px]">
                         <p className="text-sm text-muted">
-                          {item.data?.author || item.subtitle || "Nestwood"}
+                          {item.data?.author || item.subtitle || ""}
                         </p>
                         <p className="mt-1 text-xs text-muted/60">
                           {item.createdAt
