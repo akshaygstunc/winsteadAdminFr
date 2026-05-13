@@ -610,7 +610,11 @@ export const EditorConfigs: Record<string, CmsConfig> = {
         { key: "title", label: "Post Title", type: "text" },
 
         videoField("Post Media"),
-
+        {
+          key: "author",
+          label: "Author",
+          type: "text",
+        },
         { key: "description", label: "Description", type: "editor" },
       ],
       searchMeta("host", "episodeNumber", "publishDate", "status"),
@@ -654,6 +658,12 @@ export const EditorConfigs: Record<string, CmsConfig> = {
         {
           key: "slug",
           label: "Slug URL",
+          type: "text",
+          layout: "sidebar",
+        },
+        {
+          key: "author",
+          label: "Author",
           type: "text",
           layout: "sidebar",
         },
@@ -748,6 +758,11 @@ export const EditorConfigs: Record<string, CmsConfig> = {
         label: "Status",
         type: "select",
         options: statusOptions,
+      },
+      {
+        key: "author",
+        label: "Author",
+        type: "text",
       },
       { key: "mediaType", label: "Media Type", type: "text" },
       { key: "altText", label: "Alt Text", type: "text" },
@@ -969,7 +984,11 @@ export const EditorConfigs: Record<string, CmsConfig> = {
         label: "Event Date",
         type: "date",
       },
-
+      {
+        key: "author",
+        label: "Author",
+        type: "text",
+      },
       {
         key: "location",
         label: "Location",
@@ -3252,6 +3271,11 @@ export const EditorConfigs: Record<string, CmsConfig> = {
         type: "select",
         options: statusOptions,
       },
+      {
+        key: "author",
+        label: "Author",
+        type: "text",
+      },
       imageField("Category Image"),
       textArea,
     ],
@@ -3267,6 +3291,11 @@ export const EditorConfigs: Record<string, CmsConfig> = {
       { key: "title", label: "Developer Name", type: "text" },
       { key: "city", label: "City", type: "text" },
       { key: "slug", label: "Slug", type: "text" },
+      {
+        key: "author",
+        label: "Author",
+        type: "text",
+      },
       {
         key: "status",
         label: "Status",
@@ -3299,7 +3328,11 @@ export const EditorConfigs: Record<string, CmsConfig> = {
         type: "select",
         options: statusOptions,
       },
-
+      {
+        key: "author",
+        label: "Author",
+        type: "text",
+      },
       {
         key: "developer",
         label: "Developer",
