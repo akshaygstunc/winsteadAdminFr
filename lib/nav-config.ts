@@ -80,7 +80,7 @@ export const navSections: NavSection[] = [
       // { label: "Explore", href: "/explore", icon: Globe },
       { label: "Podcast", href: "/podcast", icon: Mic },
       { label: "Blogs", href: "/blogs", icon: PenSquare },
-      { label: "Media", href: "/media", icon: Images },
+      { label: "News & Media", href: "/media", icon: Images },
       { label: "Events", href: "/customization/events", icon: Images },
       { label: "Pages", href: "/pages", icon: FileText },
       // {
@@ -116,11 +116,11 @@ export const navSections: NavSection[] = [
             href: "/customization/footer-menu-2",
             icon: MenuSquare,
           },
-          {
-            label: "Categories",
-            href: "/customization/categories",
-            icon: FolderKanban,
-          },
+          // {
+          //   label: "Categories",
+          //   href: "/customization/categories",
+          //   icon: FolderKanban,
+          // },
           {
             label: "Developer",
             href: "/customization/developer-community",

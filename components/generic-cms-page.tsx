@@ -421,6 +421,7 @@ function GalleryUploader({
                   src={image}
                   alt={`Gallery ${index + 1}`}
                   className="h-20 w-20 rounded-2xl border border-line object-cover"
+                  loading="lazy"
                 />
               ) : null}
 
@@ -1085,7 +1086,7 @@ export function GenericCmsPage({ config }: { config: CmsConfig }) {
                                         ? `${item.property.area}`
                                         : null,
                                       item?.property?.price
-                                        ? `₹ ${item.property.price.toLocaleString()} AED`
+                                        ? `AED ${item.property.price.toLocaleString()} AED`
                                         : null,
                                     ]
                                       .filter(Boolean)
@@ -1352,6 +1353,7 @@ export function GenericCmsPage({ config }: { config: CmsConfig }) {
                                     src={item.image}
                                     alt={item.title}
                                     className="h-full w-full object-cover"
+                                    loading="lazy"
                                   />
                                 ) : (
                                   <div className="h-full w-full bg-gradient-to-br from-violet-500/15 to-gold/10" />
@@ -1370,10 +1372,13 @@ export function GenericCmsPage({ config }: { config: CmsConfig }) {
                                 </p>
                               ) : null}
                               {item.description ? (
-                                <p className="mt-1 text-xs text-muted/60 line-clamp-1">
-                                  {item.description}
-                                </p>
-                              ) : null}
+  <div
+    className="mt-1 text-xs text-muted/60 line-clamp-1"
+    dangerouslySetInnerHTML={{
+      __html: item.description,
+    }}
+  />
+) : null}
                             </td>
 
                             {/* cardMeta */}

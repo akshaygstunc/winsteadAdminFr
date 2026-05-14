@@ -107,7 +107,6 @@ export const projectsCmsConfig: CmsConfig = {
         valueKey: "_id",
       },
     },
-
     {
       key: "image",
       label: "Hero Image",
@@ -144,7 +143,7 @@ export const projectsCmsConfig: CmsConfig = {
       group: "specs",
       column: "left",
       placeholder: "From AED 2.3M",
-  },
+    },
     {
       key: "sizeRange",
       label: "Size Range",

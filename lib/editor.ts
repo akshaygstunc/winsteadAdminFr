@@ -81,7 +81,6 @@ const textArea2 = (label = "Content"): CmsField => ({
   type: "editor",
 });
 
-
 const DEFAULT_IMAGE_DIMENSION_NOTE =
   "Note: Please upload image in the recommended dimensions/aspect ratio for best quality.";
 

@@ -530,6 +530,7 @@ function renderField(
   value: any,
   onChange: (value: any) => void,
   relationOptions: Record<string, { label: string; value: string }[]>,
+  isMediaEntity?: boolean,
 ) {
   const uploadAsset = async (file: File) => {
     try {
@@ -795,18 +796,21 @@ function renderField(
   }
 }
 
+// AFTER
 function FieldGroup({
   title,
   fields,
   form,
   setForm,
   relationOptions,
+  isMediaEntity,
 }: {
   title: string;
   fields: CmsField[];
   form: CmsItem;
   setForm: React.Dispatch<React.SetStateAction<CmsItem>>;
   relationOptions: Record<string, { label: string; value: string }[]>;
+  isMediaEntity?: boolean;
 }) {
   if (!fields.length) return null;
 
@@ -817,31 +821,13 @@ function FieldGroup({
       <div className="space-y-4">
         {fields.map((field) => (
           <div key={field.key}>
-            {renderField(
-              field,
-              getValue(form, field),
-              (value) =>
-                setForm((prev) => {
-                  let next = setValue(prev, field, value);
-
-                  if (field.key === "title") {
-                    const currentSlug = next.slug || "";
-                    const oldSlug = prev.slug || "";
-                    const generatedOldSlug = createSlug(prev.title || "");
-
-                    if (
-                      !currentSlug ||
-                      currentSlug === oldSlug ||
-                      currentSlug === generatedOldSlug
-                    ) {
-                      next = { ...next, slug: createSlug(String(value || "")) };
-                    }
-                  }
-
-                  return next;
-                }),
-              relationOptions,
-            )}
+{renderField(
+  field,
+  getValue(form, field),
+  (value) => setForm((prev) => setValue(prev, field, value)),
+  relationOptions,
+  isMediaEntity,
+)}
           </div>
         ))}
       </div>
@@ -1077,6 +1063,8 @@ export function PageEditorCmsPage({ config }: { config: CmsConfig }) {
                     form={form}
                     setForm={setForm}
                     relationOptions={relationOptions}
+                     isMediaEntity={true}
+
                   />
                 ))}
               </div>
@@ -1094,6 +1082,7 @@ export function PageEditorCmsPage({ config }: { config: CmsConfig }) {
                     form={form}
                     setForm={setForm}
                     relationOptions={relationOptions}
+                    
                   />
                 ))}
 
@@ -1181,6 +1170,7 @@ export function PageEditorCmsPage({ config }: { config: CmsConfig }) {
                               src={item.image}
                               alt={item.title}
                               className="h-full w-full object-cover"
+                              loading="lazy"
                             />
                           ) : (
                             <div className="h-full w-full bg-gradient-to-br from-violet-500/15 to-gold/10" />

@@ -946,7 +946,8 @@ function GalleryUploader({
   const images = Array.isArray(value) ? value : [];
   const [urlInput, setUrlInput] = useState("");
   const [uploading, setUploading] = useState(false);
-
+const [assets, setAssets] = useState<any[]>([]);
+const [loadingAssets, setLoadingAssets] = useState(false);
   const uploadSingleFile = async (file: File): Promise<string> => {
     const formData = new FormData();
     formData.append("file", file);
@@ -962,7 +963,28 @@ function GalleryUploader({
     if (!uploadedUrl) throw new Error("Upload API did not return image URL");
     return uploadedUrl;
   };
+useEffect(() => {
+  (async () => {
+    try {
+      setLoadingAssets(true);
 
+      const response = await api.get("/properties/assets");
+
+      const rows =
+        response?.data ||
+        response?.items ||
+        response?.results ||
+        response ||
+        [];
+
+      setAssets(Array.isArray(rows) ? rows : []);
+    } catch (err) {
+      console.error("Failed to load assets", err);
+    } finally {
+      setLoadingAssets(false);
+    }
+  })();
+}, []);
   const handleFiles = async (e: ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (!files.length) return;
@@ -1024,6 +1046,50 @@ function GalleryUploader({
         {uploading ? (
           <p className="text-xs text-muted">Uploading images...</p>
         ) : null}
+        <div className="space-y-2">
+  <FieldLabel label="Select From Uploaded Assets" />
+
+  {loadingAssets ? (
+    <p className="text-xs text-muted">Loading assets...</p>
+  ) : (
+    <div className="grid grid-cols-3 md:grid-cols-5 gap-3 max-h-[300px] overflow-y-auto rounded-2xl border border-line p-3">
+      {assets.map((asset: any) => {
+        const selected = images.includes(asset.url);
+
+        return (
+          <button
+            type="button"
+            key={asset._id || asset.url}
+            onClick={() => {
+              if (selected) {
+                onChange(images.filter((img) => img !== asset.url));
+              } else {
+                onChange([...images, asset.url]);
+              }
+            }}
+            className={`relative overflow-hidden rounded-xl border transition ${
+              selected
+                ? "border-gold ring-2 ring-gold"
+                : "border-line hover:border-gold/40"
+            }`}
+          >
+            <img
+              src={asset.url}
+              alt=""
+              className="h-24 w-full object-cover"
+            />
+
+            {selected && (
+              <div className="absolute top-1 right-1 bg-gold text-black text-[10px] px-1.5 py-0.5 rounded">
+                ✓
+              </div>
+            )}
+          </button>
+        );
+      })}
+    </div>
+  )}
+</div>
       </div>
       {!!images.length && (
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-2">
@@ -1070,11 +1136,83 @@ function GalleryUploader({
   );
 }
 
+// ── Media Image Picker ─────────────────────────────────────────────────────
+function MediaImagePicker({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (url: string) => void;
+}) {
+  const [mediaItems, setMediaItems] = useState<CmsItem[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        setLoading(true);
+        const rows = await api.get<CmsItem[]>("/content/media");
+        setMediaItems(Array.isArray(rows) ? rows : []);
+      } catch {
+        console.error("Failed to load media items");
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
+  if (loading) return <p className="text-xs text-muted">Loading media...</p>;
+  if (!mediaItems.length) return null;
+
+  return (
+    <div className="space-y-2">
+      <FieldLabel label="Select From Existing Media" />
+      <div className="grid grid-cols-3 md:grid-cols-5 gap-3 max-h-[260px] overflow-y-auto rounded-2xl border border-line p-3">
+        {mediaItems
+          .filter((m) => m.image)
+          .map((m) => {
+            const selected = value === m.image;
+            return (
+              <button
+                type="button"
+                key={m._id || m.image}
+                onClick={() => onChange(selected ? "" : m.image!)}
+                className={`relative overflow-hidden rounded-xl border transition ${
+                  selected
+                    ? "border-gold ring-2 ring-gold"
+                    : "border-line hover:border-gold/40"
+                }`}
+              >
+                <img
+                  src={m.image}
+                  alt={m.title || ""}
+                  className="h-20 w-full object-cover"
+                />
+                {selected && (
+                  <div className="absolute top-1 right-1 bg-gold text-black text-[10px] px-1.5 py-0.5 rounded">
+                    ✓
+                  </div>
+                )}
+                {m.title && (
+                  <p className="text-[10px] text-muted px-1 pb-1 truncate text-left">
+                    {m.title}
+                  </p>
+                )}
+              </button>
+            );
+          })}
+      </div>
+    </div>
+  );
+}
+
+
 function renderField(
   field: CmsField,
   value: any,
   onChange: (value: any) => void,
   relationOptions: RelationOptionsMap = {},
+  isMediaEntity = false,
 ) {
   switch (field.type) {
     case "textarea":
@@ -1258,50 +1396,65 @@ function renderField(
           ) : null}
         </div>
       );
-    case "video":
-    case "image":
-      return (
-        <div className="space-y-4 w-full">
-          <TextInput
-            label={field.label}
-            value={value || ""}
-            onChange={onChange}
-            placeholder={`Paste ${field.type} URL or upload below`}
+  case "video":
+case "image":
+  return (
+    <div className="space-y-3">
+      <TextInput
+        label={field.label}
+        value={value || ""}
+        onChange={onChange}
+        placeholder={
+          field.placeholder || "Paste media URL or upload below"
+        }
+      />
+
+      <div>
+        <FieldLabel label={`${field.label} Upload`} />
+
+        <input
+          className="input"
+          type="file"
+          accept={field.type === "video" ? "video/*" : "image/*"}
+          onChange={async (e: ChangeEvent<HTMLInputElement>) => {
+            const file = e.target.files?.[0];
+            if (!file) return;
+
+            const dataUrl = await uploadAsset(file);
+
+            onChange(dataUrl);
+          }}
+        />
+      </div>
+
+      {isMediaEntity && field.type === "image" && (
+        <MediaImagePicker
+          value={value || ""}
+          onChange={onChange}
+        />
+      )}
+
+      {value ? (
+        field.type === "video" ? (
+          <video
+            src={value}
+            controls
+            className="h-36 w-full rounded-2xl border border-line object-cover"
           />
-          <div>
-            <FieldLabel label={`${field.label} Upload`} />
-            <input
-              className="input"
-              type="file"
-              accept={field.type === "video" ? "video/*" : "image/*"}
-              onChange={async (e: ChangeEvent<HTMLInputElement>) => {
-                const file = e.target.files?.[0];
-                if (!file) return;
-                const uploadedUrl = await fileToDataUrl(file);
-                onChange(uploadedUrl);
-              }}
-            />
-          </div>
-          {value && (
-            <div className="w-48 rounded-2xl overflow-hidden border border-line bg-black">
-              {field.type === "video" ? (
-                <video
-                  src={value}
-                  controls
-                  className="w-full h-[250px] md:h-[350px] object-cover"
-                />
-              ) : (
-                <img
-                  src={value}
-                  alt={field.label}
-                  className="w-48 h-30 object-cover"
-                />
-              )}
-            </div>
-          )}
-          {field.note && <p className="text-xs text-muted">{field.note}</p>}
-        </div>
-      );
+        ) : (
+          <img
+            src={value}
+            alt={field.label}
+            className="h-36 w-full rounded-2xl border border-line object-cover"
+          />
+        )
+      ) : null}
+
+      {field.note ? (
+        <p className="text-xs text-muted">{field.note}</p>
+      ) : null}
+    </div>
+  );
     case "gallery":
       return <GalleryUploader value={value || []} onChange={onChange} />;
     default:
@@ -1331,7 +1484,7 @@ function isFullWidth(field: CmsField) {
     "multiselect",
     "relation-select",
     "icon",
-    "editor"
+    "editor",
   ].includes(field.type);
 }
 
@@ -1450,6 +1603,7 @@ export function EditorCmsPage({ config }: { config: CmsConfig }) {
                     getValue(form, field),
                     (value) => setForm((prev) => setValue(prev, field, value)),
                     relationOptions,
+                     config.entity === "media",
                   )}
                 </div>
               ))}
@@ -1530,12 +1684,12 @@ export function EditorCmsPage({ config }: { config: CmsConfig }) {
                         {index + 1}
                       </td>
                       <td className="px-4 py-4">
-                        <div className="h-12 w-12 overflow-hidden rounded-xl border border-line bg-card">
+                        <div className="h-12 w-12 overflow-hidden rounded-xl border border-line bg-gray">
                           {item.image ? (
                             <img
                               src={item.image}
                               alt={item.title}
-                              className="h-full w-full object-cover"
+                              className="h-full w-full object-contain bg-gray"
                             />
                           ) : (
                             <div className="h-full w-full bg-gradient-to-br from-violet-500/15 to-gold/10" />
