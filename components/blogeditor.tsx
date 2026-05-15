@@ -409,20 +409,45 @@ function AdvertisementsSection({
   value,
   onChange,
 }: {
-  value: { position: string; code: string }[];
-  onChange: (next: { position: string; code: string }[]) => void;
+  value: { position: string; code: string; image?: string }[];
+  onChange: (next: { position: string; code: string; image?: string }[]) => void;
 }) {
   const ads = Array.isArray(value) ? value : [];
+  const [uploading, setUploading] = useState<Record<number, boolean>>({});
+  const [pickerOpenIndex, setPickerOpenIndex] = useState<number | null>(null);
+  const fileRefs = useRef<Record<number, HTMLInputElement | null>>({});
 
-  const add = () => onChange([...ads, { position: "", code: "" }]);
+  const add = () => onChange([...ads, { position: "", code: "", image: "" }]);
 
-  const update = (index: number, key: "position" | "code", val: string) => {
+  const update = (
+    index: number,
+    key: "position" | "code" | "image",
+    val: string,
+  ) => {
     const next = [...ads];
     next[index] = { ...next[index], [key]: val };
     onChange(next);
   };
 
   const remove = (index: number) => onChange(ads.filter((_, i) => i !== index));
+
+  const handleImageUpload = async (
+    e: ChangeEvent<HTMLInputElement>,
+    index: number,
+  ) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      setUploading((prev) => ({ ...prev, [index]: true }));
+      const url = await uploadFile(file);
+      update(index, "image", url);
+    } catch {
+      alert("Failed to upload image.");
+    } finally {
+      setUploading((prev) => ({ ...prev, [index]: false }));
+      e.target.value = "";
+    }
+  };
 
   return (
     <div className="space-y-3">
@@ -443,9 +468,7 @@ function AdvertisementsSection({
             className="rounded-[12px] border border-line bg-card p-3 space-y-2"
           >
             <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-text">
-                Ad slot {i + 1}
-              </span>
+              <span className="text-xs font-medium text-text">Ad slot {i + 1}</span>
               <button
                 type="button"
                 onClick={() => remove(i)}
@@ -454,18 +477,84 @@ function AdvertisementsSection({
                 Remove
               </button>
             </div>
+
             <TextInput
               label="Position"
               value={ad.position}
               onChange={(v) => update(i, "position", v)}
               placeholder="e.g. Top of article, After paragraph 3"
             />
+
             <TextInput
               label="Ad code / URL"
               value={ad.code}
               onChange={(v) => update(i, "code", v)}
               placeholder="https://ads.example.com/slot/..."
             />
+
+            {/* ── Ad Image ── */}
+            <div className="space-y-2">
+              <FieldLabel label="Ad Image" />
+
+              <div className="flex gap-2 flex-wrap">
+                <button
+                  type="button"
+                  disabled={uploading[i]}
+                  onClick={() => fileRefs.current[i]?.click()}
+                  className="flex items-center gap-2 rounded-xl border border-line bg-panel px-3 py-2 text-xs text-text hover:border-gold/50 transition disabled:opacity-50"
+                >
+                  {uploading[i] ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin text-gold" />
+                  ) : (
+                    <Upload className="h-3.5 w-3.5 text-muted" />
+                  )}
+                  {uploading[i] ? "Uploading..." : "Upload Image"}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setPickerOpenIndex(i)}
+                  className="flex items-center gap-2 rounded-xl border border-gold/40 bg-gold/10 px-3 py-2 text-xs text-gold hover:bg-gold/20 transition"
+                >
+                  <Images className="h-3.5 w-3.5" />
+                  Select Uploaded
+                </button>
+
+                <input
+                  ref={(el) => { fileRefs.current[i] = el; }}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => handleImageUpload(e, i)}
+                />
+              </div>
+
+              {/* Paste URL fallback */}
+              <input
+                className="input text-xs w-full"
+                value={ad.image || ""}
+                onChange={(e) => update(i, "image", e.target.value)}
+                placeholder="Or paste image URL..."
+              />
+
+              {/* Preview */}
+              {ad.image && (
+                <div className="relative w-full rounded-xl overflow-hidden border border-line bg-black">
+                  <img
+                    src={ad.image}
+                    alt={`Ad ${i + 1}`}
+                    className="w-full h-[120px] object-cover"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => update(i, "image", "")}
+                    className="absolute top-1.5 right-1.5 rounded-lg bg-black/60 p-1 text-white hover:bg-red-500/80 transition"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         ))}
 
@@ -477,6 +566,19 @@ function AdvertisementsSection({
           + Add advertisement
         </button>
       </div>
+
+      {/* Single shared picker modal, keyed by slot index */}
+      <ImagePickerModal
+        open={pickerOpenIndex !== null}
+        onClose={() => setPickerOpenIndex(null)}
+        multiple={false}
+        onSelect={(urls) => {
+          if (pickerOpenIndex !== null && urls[0]) {
+            update(pickerOpenIndex, "image", urls[0]);
+          }
+          setPickerOpenIndex(null);
+        }}
+      />
     </div>
   );
 }
