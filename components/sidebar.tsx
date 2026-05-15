@@ -229,23 +229,7 @@ export function Sidebar() {
             </div>
           </div>
         ))}
-         <div>
-    <p className="mb-2 px-2 text-xs uppercase tracking-[0.24em] text-gold">
-      Others
-    </p>
-
-    <div className="space-y-1">
-      {/* <NavEntry
-        key="/sitemap"
-        item={{
-          label: "Sitemap",
-          href: "/sitemap",
-          icon: Sitemap,
-        }}
-        pathname={pathname}
-      /> */}
-    </div>
-  </div>
+        
       </nav>
     </aside>
   );

@@ -848,6 +848,7 @@ import {
   TextInput,
 } from "@/components/crud-kit";
 import { TiptapEditor } from "./TextEditor";
+import { MediaPickerField } from "./MediaPickerField";
 
 type RelationOption = { label: string; value: string };
 type RelationOptionsMap = Record<string, RelationOption[]>;
@@ -969,16 +970,14 @@ useEffect(() => {
     try {
       setLoadingAssets(true);
 
-      const response = await api.get("/properties/assets");
+      // REPLACE with:
+const response = await api.get("/properties/assets");
 
-      const rows =
-        response?.data ||
-        response?.items ||
-        response?.results ||
-        response ||
-        [];
+const rows = Array.isArray(response)
+  ? response
+  : response?.data || response?.items || response?.results || [];
 
-      setAssets(Array.isArray(rows) ? rows : []);
+setAssets(Array.isArray(rows) ? rows : []);
     } catch (err) {
       console.error("Failed to load assets", err);
     } finally {
@@ -1152,8 +1151,11 @@ function MediaImagePicker({
     (async () => {
       try {
         setLoading(true);
-        const rows = await api.get<CmsItem[]>("/content/media");
-        setMediaItems(Array.isArray(rows) ? rows : []);
+        const res = await api.get<any>("/properties/assets");
+const rows = Array.isArray(res)
+  ? res
+  : res?.data || res?.items || res?.results || [];
+setMediaItems(Array.isArray(rows) ? rows : []);
       } catch {
         console.error("Failed to load media items");
       } finally {
@@ -1170,14 +1172,14 @@ function MediaImagePicker({
       <FieldLabel label="Select From Existing Media" />
       <div className="grid grid-cols-3 md:grid-cols-5 gap-3 max-h-[260px] overflow-y-auto rounded-2xl border border-line p-3">
         {mediaItems
-          .filter((m) => m.image)
+          .filter((m) => m.url)
           .map((m) => {
-            const selected = value === m.image;
+            const selected = value === m.url;
             return (
               <button
                 type="button"
                 key={m._id || m.image}
-                onClick={() => onChange(selected ? "" : m.image!)}
+                onClick={() => onChange(selected ? "" : m.url)}
                 className={`relative overflow-hidden rounded-xl border transition ${
                   selected
                     ? "border-gold ring-2 ring-gold"
@@ -1185,7 +1187,7 @@ function MediaImagePicker({
                 }`}
               >
                 <img
-                  src={m.image}
+                  src={m.url}
                   alt={m.title || ""}
                   className="h-20 w-full object-cover"
                 />
@@ -1532,64 +1534,17 @@ function renderField(
         </div>
       );
   case "video":
-case "image":
-  return (
-    <div className="space-y-3">
-      <TextInput
-        label={field.label}
-        value={value || ""}
-        onChange={onChange}
-        placeholder={
-          field.placeholder || "Paste media URL or upload below"
-        }
-      />
-
-      <div>
-        <FieldLabel label={`${field.label} Upload`} />
-
-        <input
-          className="input"
-          type="file"
-          accept={field.type === "video" ? "video/*" : "image/*"}
-          onChange={async (e: ChangeEvent<HTMLInputElement>) => {
-            const file = e.target.files?.[0];
-            if (!file) return;
-
-            const dataUrl = await uploadAsset(file);
-
-            onChange(dataUrl);
-          }}
-        />
-      </div>
-
-      {isMediaEntity && field.type === "image" && (
-        <MediaImagePicker
-          value={value || ""}
-          onChange={onChange}
-        />
-      )}
-
-      {value ? (
-        field.type === "video" ? (
-          <video
-            src={value}
-            controls
-            className="h-36 w-full rounded-2xl border border-line object-cover"
-          />
-        ) : (
-          <img
-            src={value}
-            alt={field.label}
-            className="h-36 w-full rounded-2xl border border-line object-cover"
-          />
-        )
-      ) : null}
-
-      {field.note ? (
-        <p className="text-xs text-muted">{field.note}</p>
-      ) : null}
-    </div>
-  );
+ case "image":
+   return (
+     <MediaPickerField
+       label={field.label}
+       value={value || ""}
+       onChange={onChange}
+       mediaType={field.type as "image" | "video"}
+       note={field.note}
+       placeholder={field.placeholder}
+     />
+   );
     case "gallery":
       return <GalleryUploader value={value || []} onChange={onChange} />;
    case "advertisement":

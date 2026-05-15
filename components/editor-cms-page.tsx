@@ -15,6 +15,7 @@ import {
   TextArea,
   TextInput,
 } from "@/components/crud-kit";
+import { MediaPickerField } from "./MediaPickerField";
 
 const ROOT_KEYS = [
   "title",
@@ -732,51 +733,17 @@ function renderField(
         </div>
       );
 
-    case "video":
+     case "video":
     case "image":
       return (
-        <div className="space-y-3">
-          <TextInput
-            label={field.label}
-            value={value || ""}
-            onChange={onChange}
-            placeholder={field.placeholder || "Paste media URL or upload below"}
-          />
-          <div>
-            <FieldLabel label={`${field.label} Upload`} />
-            <input
-              className="input"
-              type="file"
-              accept={field.type === "video" ? "video/*" : "image/*"}
-              onChange={async (e: ChangeEvent<HTMLInputElement>) => {
-                const file = e.target.files?.[0];
-                if (!file) return;
-                const dataUrl = await uploadAsset(file);
-                onChange(dataUrl);
-              }}
-            />
-          </div>
-
-          {value ? (
-            field.type === "video" ? (
-              <video
-                src={value}
-                controls
-                className="h-36 w-full rounded-2xl border border-line object-cover"
-              />
-            ) : (
-              <img
-                src={value}
-                alt={field.label}
-                className="h-36 w-full rounded-2xl border border-line object-cover"
-              />
-            )
-          ) : null}
-
-          {field.note ? (
-            <p className="text-xs text-muted">{field.note}</p>
-          ) : null}
-        </div>
+        <MediaPickerField
+          label={field.label}
+          value={value || ""}
+          onChange={onChange}
+          mediaType={field.type as "image" | "video"}
+          note={field.note}
+          placeholder={field.placeholder}
+        />
       );
 
     default:

@@ -765,12 +765,9 @@ function GalleryUploader({
 
         const response = await api.get("/properties/assets");
 
-        const rows =
-          response?.data ||
-          response?.items ||
-          response?.results ||
-          response ||
-          [];
+        const rows = Array.isArray(response)
+          ? response
+          : response?.data || response?.items || response?.results || [];
 
         setAssets(Array.isArray(rows) ? rows : []);
       } catch (err) {
@@ -855,33 +852,53 @@ function GalleryUploader({
             </ActionButton>
           </div>
         </div>
-        <input
+        {/* <input
           className="input"
           type="file"
           accept="image/*"
           multiple
           onChange={handleFiles}
           disabled={uploading}
-        />
+        /> */}
+        {/* <div className="flex gap-2">
+          <label
+            className={`flex items-center gap-2 rounded-2xl border border-line bg-panel px-4 py-2.5 text-sm text-text hover:border-gold/50 transition cursor-pointer ${uploading ? "opacity-50 pointer-events-none" : ""}`}
+          >
+            <Upload className="h-4 w-4 text-muted" />
+            {uploading ? "Uploading..." : "Upload Images"}
+            <input
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={handleFiles}
+              disabled={uploading}
+              className="hidden"
+            />
+          </label>
+        </div> */}
         <div className="space-y-2">
-          <FieldLabel label="Select From Uploaded Assets" />
+          <FieldLabel label="Select or Uploaded Assets" />
 
           {loadingAssets ? (
             <p className="text-xs text-muted">Loading assets...</p>
+          ) : !assets.length ? (
+            <p className="text-xs text-muted">No uploaded assets found.</p>
           ) : (
             <div className="grid grid-cols-3 md:grid-cols-5 gap-3 max-h-[300px] overflow-y-auto rounded-2xl border border-line p-3">
-              {assets.map((asset: any) => {
-                const selected = images.includes(asset.url);
+              {assets.map((asset: any, i: number) => {
+                const url = asset.url || asset.image || asset.fileUrl || "";
+                if (!url) return null;
+                const selected = images.includes(url);
 
                 return (
                   <button
                     type="button"
-                    key={asset._id || asset.url}
+                    key={asset._id || url || i}
                     onClick={() => {
                       if (selected) {
-                        onChange(images.filter((img) => img !== asset.url));
+                        onChange(images.filter((img) => img !== url));
                       } else {
-                        onChange([...images, asset.url]);
+                        onChange([...images, url]);
                       }
                     }}
                     className={`relative overflow-hidden rounded-xl border transition ${
@@ -891,11 +908,18 @@ function GalleryUploader({
                     }`}
                   >
                     <img
-                      src={asset.url}
-                      alt=""
+                      src={url}
+                      alt={asset.name || ""}
                       className="h-24 w-full object-cover"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).style.display = "none";
+                      }}
                     />
-
+                    {asset.name && (
+                      <p className="text-[10px] text-muted truncate px-1 pb-1 text-left">
+                        {asset.name}
+                      </p>
+                    )}
                     {selected && (
                       <div className="absolute top-1 right-1 bg-gold text-black text-[10px] px-1.5 py-0.5 rounded">
                         ✓
@@ -1188,7 +1212,102 @@ function FloorPlansEditor({
     </div>
   );
 }
+function ImageField({
+  field,
+  value,
+  onChange,
+  uploadFile,
+}: {
+  field: DynamicField;
+  value: string;
+  onChange: (url: string) => void;
+  uploadFile: (file: File) => Promise<string>;
+}) {
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
 
+  return (
+    <div className="space-y-3">
+      <FieldLabel label={field.label} />
+
+      {/* Two buttons */}
+      <div className="flex gap-2">
+        <button
+          type="button"
+          disabled={uploading}
+          onClick={() => fileRef.current?.click()}
+          className="flex items-center gap-2 rounded-2xl border border-line bg-panel px-4 py-2.5 text-sm text-text hover:border-gold/50 transition disabled:opacity-50"
+        >
+          <Upload className="h-4 w-4 text-muted" />
+          {uploading ? "Uploading..." : "Upload"}
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setPickerOpen(true)}
+          className="flex items-center gap-2 rounded-2xl border border-gold/40 bg-gold/10 px-4 py-2.5 text-sm text-gold hover:bg-gold/20 transition"
+        >
+          <Upload className="h-4 w-4" />
+          Select Uploaded
+        </button>
+
+        <input
+          ref={fileRef}
+          type="file"
+          accept="image/*,video/*"
+          className="hidden"
+          onChange={async (e) => {
+            const file = e.target.files?.[0];
+            if (!file) return;
+            setUploading(true);
+            const url = await uploadFile(file);
+            onChange(url);
+            setUploading(false);
+            e.target.value = "";
+          }}
+        />
+      </div>
+
+      {/* Preview + clear */}
+      {value && (
+        <div className="relative w-fit">
+          {value.match(/\.(mp4|webm|ogg)$/i) ? (
+            <video
+              src={value}
+              className="h-20 w-20 rounded-2xl border object-cover"
+              controls
+            />
+          ) : (
+            <img
+              src={value}
+              className="h-20 w-20 rounded-2xl border object-cover"
+            />
+          )}
+          <button
+            type="button"
+            onClick={() => onChange("")}
+            className="absolute -top-1.5 -right-1.5 rounded-full bg-red-500 text-white w-5 h-5 flex items-center justify-center text-xs hover:bg-red-600"
+          >
+            ×
+          </button>
+        </div>
+      )}
+
+      {field.note && <p className="text-gold text-xs">Note: {field.note}</p>}
+
+      {/* Reuse the existing ImagePickerModal — picks ONE image */}
+      <ImagePickerModal
+        open={pickerOpen}
+        onClose={() => setPickerOpen(false)}
+        onSelect={(images) => {
+          if (images[0]) onChange(images[0]);
+          setPickerOpen(false);
+        }}
+      />
+    </div>
+  );
+}
 function renderDynamicField(
   field: DynamicField,
   form: PropertyForm,
@@ -1395,45 +1514,12 @@ function renderDynamicField(
       );
     case "image":
       return (
-        <div className="space-y-3">
-          <TextInput
-            label={field.label}
-            value={String(value ?? "")}
-            onChange={(next) =>
-              setForm((prev) => ({ ...prev, [field.key]: next }))
-            }
-            placeholder="Paste image URL or upload below"
-          />
-          <div className="flex justify-between items-center">
-            <input
-              className="input"
-              type="file"
-              accept="image/*,video/*"
-              onChange={async (e: ChangeEvent<HTMLInputElement>) => {
-                const file = e.target.files?.[0];
-                if (!file) return;
-                const dataUrl = await uploadSingleFile(file);
-                setForm((prev) => ({ ...prev, [field.key]: dataUrl }));
-              }}
-            />
-            {value &&
-              (String(value).match(/\.(mp4|webm|ogg)$/i) ? (
-                <video
-                  src={String(value)}
-                  className="h-16 w-16 rounded-2xl border object-cover"
-                  controls
-                />
-              ) : (
-                <img
-                  src={String(value)}
-                  className="h-16 w-16 rounded-2xl border object-cover"
-                />
-              ))}
-          </div>
-          {field.note && (
-            <p className="text-gold text-xs">Note: {field.note}</p>
-          )}
-        </div>
+        <ImageField
+          field={field}
+          value={String(value ?? "")}
+          onChange={(url) => setForm((prev) => ({ ...prev, [field.key]: url }))}
+          uploadFile={uploadSingleFile}
+        />
       );
     default:
       return null;

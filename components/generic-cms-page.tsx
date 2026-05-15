@@ -26,6 +26,7 @@ import {
 } from "@/components/crud-kit";
 import { TiptapEditor } from "./TextEditor";
 import { ExternalLink, Pencil, Trash2 } from "lucide-react";
+import { MediaPickerField } from "./MediaPickerField";
 
 function blankFromConfig(config: CmsConfig): CmsItem {
   const data: Record<string, any> = {};
@@ -652,6 +653,18 @@ function renderField(
       return (
         <TextArea label={field.label} value={value || ""} onChange={onChange} />
       );
+      case "video":
+case "image":
+  return (
+    <MediaPickerField
+      label={field.label}
+      value={value || ""}
+      onChange={onChange}
+      mediaType={field.type as "image" | "video"}
+      note={field.note}
+      placeholder={field.placeholder}
+    />
+  );
     case "select":
       return (
         <SelectInput

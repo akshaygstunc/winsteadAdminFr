@@ -2981,6 +2981,7 @@ export const EditorConfigs: Record<string, CmsConfig> = {
         group: "experience-section",
         column: "left",
       },
+      
       // // {
       // //   key: "curatedExperienceIcon",
       // //   label: "Curated Experience Icon",
@@ -3079,6 +3080,62 @@ export const EditorConfigs: Record<string, CmsConfig> = {
       imageField("OG Image", "ogImage"),
     ],
   ),
+  "news-media": singleton(
+  "News & Media",
+  "news-media",
+  "Manage News & Media page content including banner, intro, and SEO.",
+  [
+    // BANNER SECTION
+    {
+      key: "bannerTitle",
+      label: "Banner Title",
+      type: "text",
+      group: "banner-section",
+      column: "left",
+    },
+    {
+      key: "bannerSubtitle",
+      label: "Banner Subtitle",
+      type: "textarea",
+      group: "banner-section",
+      column: "left",
+    },
+    imageField("Banner Image", "bannerImage", "1260x420"),
+
+    // INTRO SECTION
+    {
+      key: "introTitle",
+      label: "Intro Title",
+      type: "text",
+      group: "intro-section",
+      column: "left",
+    },
+    {
+      key: "introDescription",
+      label: "Intro Description",
+      type: "textarea",
+      group: "intro-section",
+      column: "left",
+    },
+
+    // SEO
+    {
+      key: "metaTitle",
+      label: "Meta Title",
+      type: "text",
+      group: "seo",
+      column: "left",
+    },
+    {
+      key: "metaDescription",
+      label: "Meta Description",
+      type: "textarea",
+      group: "seo",
+      column: "left",
+    },
+    imageField("OG Image", "ogImage"),
+  ],
+),
 
   "user-access": collection(
     "User Access",
