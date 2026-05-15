@@ -872,6 +872,7 @@ function blankFromConfig(config: CmsConfig): CmsItem {
     else if (field.type === "multiselect") data[field.key] = [];
     else if (field.type === "relation-select" && (field as any).multiple)
       data[field.key] = [];
+    else if (field.type === "advertisement") data[field.key] = [];
     else data[field.key] = "";
   }
   return {
@@ -1206,7 +1207,141 @@ function MediaImagePicker({
   );
 }
 
+function AdvertisementUploader({
+  value,
+  onChange,
+}: {
+  value: { label: string; url: string; image: string; position: string }[];
+  onChange: (val: any[]) => void;
+}) {
+  const items = Array.isArray(value) ? value : [];
+  const [uploading, setUploading] = useState<number | null>(null);
 
+  const addItem = () =>
+    onChange([...items, { label: "", url: "", image: "", position: "sidebar" }]);
+
+  const removeItem = (index: number) =>
+    onChange(items.filter((_, i) => i !== index));
+
+  const updateItem = (index: number, key: string, val: string) => {
+    const next = [...items];
+    next[index] = { ...next[index], [key]: val };
+    onChange(next);
+  };
+
+  const handleUpload = async (e: ChangeEvent<HTMLInputElement>, index: number) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(index);
+    try {
+      const url = await uploadAsset(file);
+      if (url) updateItem(index, "image", url);
+    } finally {
+      setUploading(null);
+      e.target.value = "";
+    }
+  };
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <p className="text-xs font-medium text-gold uppercase tracking-wider">
+          Advertisements
+        </p>
+        <button
+          type="button"
+          onClick={addItem}
+          className="text-xs border border-gold/40 bg-gold/10 text-gold px-3 py-1 rounded-xl"
+        >
+          + Add
+        </button>
+      </div>
+
+      {!items.length && (
+        <p className="text-xs text-muted border border-dashed border-line rounded-xl px-3 py-4 text-center">
+          No ads yet.
+        </p>
+      )}
+
+      {items.map((ad, index) => (
+        <div key={index} className="border border-line rounded-xl p-3 space-y-2 bg-panel/30">
+          {/* Header row */}
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-medium text-text">Ad #{index + 1}</p>
+            <button
+              type="button"
+              className="text-[11px] text-red-400"
+              onClick={() => removeItem(index)}
+            >
+              Remove
+            </button>
+          </div>
+
+          {/* Position pills — compact */}
+          <div className="flex flex-wrap gap-1">
+            {["sidebar", "top", "bottom", "inline"].map((pos) => (
+              <button
+                key={pos}
+                type="button"
+                onClick={() => updateItem(index, "position", pos)}
+                className={`text-[11px] px-2 py-0.5 rounded-lg border capitalize ${
+                  ad.position === pos
+                    ? "border-gold bg-gold/10 text-gold"
+                    : "border-line text-muted"
+                }`}
+              >
+                {pos}
+              </button>
+            ))}
+          </div>
+
+          {/* Label */}
+          <input
+            className="input text-xs py-1.5"
+            placeholder="Ad label (e.g. Summer Sale)"
+            value={ad.label}
+            onChange={(e) => updateItem(index, "label", e.target.value)}
+          />
+
+          {/* URL */}
+          <input
+            className="input text-xs py-1.5"
+            placeholder="Click-through URL"
+            value={ad.url}
+            onChange={(e) => updateItem(index, "url", e.target.value)}
+          />
+
+          {/* Image URL + upload */}
+          <input
+            className="input text-xs py-1.5"
+            placeholder="Image URL"
+            value={ad.image}
+            onChange={(e) => updateItem(index, "image", e.target.value)}
+          />
+          <input
+            type="file"
+            accept="image/*"
+            className="input text-xs py-1"
+            disabled={uploading === index}
+            onChange={(e) => handleUpload(e, index)}
+          />
+          {uploading === index && (
+            <p className="text-[11px] text-muted">Uploading...</p>
+          )}
+
+          {/* Preview */}
+          {ad.image && (
+            <img
+              src={ad.image}
+              alt={ad.label || "Ad"}
+              className="w-full h-16 object-cover rounded-lg border border-line"
+            />
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
 function renderField(
   field: CmsField,
   value: any,
@@ -1457,7 +1592,9 @@ case "image":
   );
     case "gallery":
       return <GalleryUploader value={value || []} onChange={onChange} />;
-    default:
+   case "advertisement":
+  return <AdvertisementUploader value={value || []} onChange={onChange} />;
+      default:
       return (
         <div>
           <TextInput
@@ -1666,7 +1803,7 @@ export function EditorCmsPage({ config }: { config: CmsConfig }) {
                       Title
                     </th>
                     <th className="px-4 py-4 text-xs font-medium text-muted uppercase tracking-wider">
-                      Added At
+                      Added At 
                     </th>
                     <th className="px-4 py-4 text-xs font-medium text-muted uppercase tracking-wider">
                       Status

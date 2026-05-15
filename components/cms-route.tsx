@@ -9,6 +9,7 @@ import { projectsCmsConfig } from "@/configs/cms/project.config";
 import { EditorConfigs } from '@/lib/editor';
 import { PageEditorCmsPage } from './editor-cms-page';
 import { BlogEditorPage } from './blogeditor';
+import SitemapDetailsPage from './sitemap-editor';
 type CmsRouteProps = {
   id: keyof typeof pagesCmsConfig;
 };
@@ -33,10 +34,10 @@ export function CmsRoute({ id }: CmsRouteProps) {
       return <BlogEditorPage config={config}/>
     case 'crm':
       return <CrmCmsPage config={config} />;
-
     case 'locations':
       return <LocationsCmsPage config={config} />;
-
+case 'sitemap':
+  return <SitemapDetailsPage />
     case 'generic':
     default:
       return <GenericCmsPage config={config} />;

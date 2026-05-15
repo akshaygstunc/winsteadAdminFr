@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import clsx from "clsx";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Sitemap } from "lucide-react";
 import { itemMatchesPath, NavItem, navSections } from "@/lib/nav-config";
 import { ThemeToggle } from "./ThemeToggle";
 
@@ -25,6 +25,7 @@ const roleAccessMap: Record<string, string[]> = {
     "/floor-plans",
     "/customization/developer-community",
     "/customization/communities",
+    "/sitemap"
   ],
 };
 
@@ -206,7 +207,7 @@ export function Sidebar() {
           </p>
         </div>
         <div className="p-2">
-        <ThemeToggle />
+          <ThemeToggle />
         </div>
       </div>
 
@@ -228,6 +229,23 @@ export function Sidebar() {
             </div>
           </div>
         ))}
+         <div>
+    <p className="mb-2 px-2 text-xs uppercase tracking-[0.24em] text-gold">
+      Others
+    </p>
+
+    <div className="space-y-1">
+      <NavEntry
+        key="/sitemap"
+        item={{
+          label: "Sitemap",
+          href: "/sitemap",
+          icon: Sitemap,
+        }}
+        pathname={pathname}
+      />
+    </div>
+  </div>
       </nav>
     </aside>
   );

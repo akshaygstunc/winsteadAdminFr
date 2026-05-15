@@ -131,11 +131,6 @@ export const navSections: NavSection[] = [
             href: "/customization/communities",
             icon: Building2,
           },
-          // {
-          //   label: "Mega Category Ads",
-          //   href: "/customization/mega-category-ads",
-          //   icon: Images,
-          // },
         ],
       },
       {
@@ -184,6 +179,7 @@ export const navSections: NavSection[] = [
             href: "/customization/sublocation",
             icon: MapPin,
           },
+
           // { label: "Awards", href: "/customization/awards", icon: Star },
           // {
           //   label: "Advertisements",
@@ -221,7 +217,7 @@ export const navSections: NavSection[] = [
           },
           { label: "User Access", href: "/master/user-access", icon: Users },
           // { label: "Custom SEO", href: "/master/custom-seo", icon: Globe },
-          // { label: "Sitemap", href: "/master/sitemap", icon: Globe },
+          { label: "Sitemap", href: "/sitemap", icon: Globe },
           // { label: "Page Logs", href: "/master/page-logs", icon: FileText },
         ],
       },

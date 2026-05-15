@@ -854,6 +854,7 @@ type RelationOptionsMap = Record<string, RelationOption[]>;
 
 function blankFromConfig(config: CmsConfig): CmsItem {
   const data: Record<string, any> = {};
+
   for (const field of config.fields) {
     if (
       [
@@ -874,6 +875,7 @@ function blankFromConfig(config: CmsConfig): CmsItem {
       data[field.key] = [];
     else data[field.key] = "";
   }
+
   return {
     title: "",
     subtitle: "",
@@ -882,10 +884,79 @@ function blankFromConfig(config: CmsConfig): CmsItem {
     image: "",
     description: "",
     sortOrder: 0,
+    advertisements: [] as { position: string; code: string }[],
     data,
   };
 }
+function AdvertisementsSection({
+  value,
+  onChange,
+}: {
+  value: { position: string; code: string }[];
+  onChange: (next: { position: string; code: string }[]) => void;
+}) {
+  const ads = Array.isArray(value) ? value : [];
 
+  const add = () => onChange([...ads, { position: "", code: "" }]);
+
+  const update = (index: number, key: "position" | "code", val: string) => {
+    const next = [...ads];
+    next[index] = { ...next[index], [key]: val };
+    onChange(next);
+  };
+
+  const remove = (index: number) => onChange(ads.filter((_, i) => i !== index));
+
+  return (
+    <div className="space-y-3">
+      <p className="text-xs font-medium text-muted uppercase tracking-wider">
+        Advertisements
+      </p>
+
+      <div className="rounded-[16px] border border-line bg-panel p-3 space-y-3">
+        {ads.map((ad, i) => (
+          <div
+            key={i}
+            className="rounded-[12px] border border-line bg-card p-3 space-y-2"
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-medium text-text">
+                Ad slot {i + 1}
+              </span>
+              <button
+                type="button"
+                onClick={() => remove(i)}
+                className="text-xs text-muted hover:text-red-500"
+              >
+                Remove
+              </button>
+            </div>
+            <TextInput
+              label="Position"
+              value={ad.position}
+              onChange={(v) => update(i, "position", v)}
+              placeholder="e.g. Top of article, After paragraph 3"
+            />
+            <TextInput
+              label="Ad code / URL"
+              value={ad.code}
+              onChange={(v) => update(i, "code", v)}
+              placeholder="https://ads.example.com/slot/..."
+            />
+          </div>
+        ))}
+
+        <button
+          type="button"
+          onClick={add}
+          className="w-full rounded-[12px] border border-dashed border-line py-2 text-xs text-muted hover:text-text transition-colors"
+        >
+          + Add advertisement
+        </button>
+      </div>
+    </div>
+  );
+}
 function getValue(item: CmsItem, field: CmsField) {
   if (field.key in item) return (item as any)[field.key];
   return item.data?.[field.key];
@@ -910,18 +981,20 @@ function setValue(item: CmsItem, field: CmsField, value: any): CmsItem {
 }
 
 async function fileToDataUrl(file: File) {
- try { const formData = new FormData();
-  formData.append("file", file);
-  const response = await api.post("/content/upload/gallery", formData, {});
-  return (
-    response?.data?.url ||
-    response?.data?.data?.url ||
-    response?.data?.fileUrl ||
-    response?.data?.data?.fileUrl ||
-    response?.data?.location ||
-    response?.data?.data?.location ||
-    ""
-  );}catch(e){
+  try {
+    const formData = new FormData();
+    formData.append("file", file);
+    const response = await api.post("/content/upload/gallery", formData, {});
+    return (
+      response?.data?.url ||
+      response?.data?.data?.url ||
+      response?.data?.fileUrl ||
+      response?.data?.data?.fileUrl ||
+      response?.data?.location ||
+      response?.data?.data?.location ||
+      ""
+    );
+  } catch (e) {
     alert(JSON.parse(e?.message)?.message || "Failed to upload file.");
   }
 }
@@ -950,51 +1023,47 @@ function GalleryUploader({
   const [uploading, setUploading] = useState(false);
 
   const uploadSingleFile = async (file: File): Promise<string> => {
-  try {
-    const formData = new FormData();
+    try {
+      const formData = new FormData();
 
-    formData.append("file", file);
+      formData.append("file", file);
 
-    const response = await api.post(
-      "/content/upload/gallery",
-      formData,
-      {},
-    );
+      const response = await api.post("/content/upload/gallery", formData, {});
 
-    const uploadedUrl =
-      response?.data?.url ||
-      response?.data?.data?.url ||
-      response?.data?.fileUrl ||
-      response?.data?.data?.fileUrl ||
-      response?.data?.location ||
-      response?.data?.data?.location ||
-      "";
+      const uploadedUrl =
+        response?.data?.url ||
+        response?.data?.data?.url ||
+        response?.data?.fileUrl ||
+        response?.data?.data?.fileUrl ||
+        response?.data?.location ||
+        response?.data?.data?.location ||
+        "";
 
-    if (!uploadedUrl) {
-      throw new Error("Upload API did not return image URL");
+      if (!uploadedUrl) {
+        throw new Error("Upload API did not return image URL");
+      }
+
+      return uploadedUrl;
+    } catch (error: any) {
+      console.error("UPLOAD ERROR:", error);
+
+      let apiMessage = "Failed to upload file";
+
+      if (Array.isArray(error?.response?.data?.message)) {
+        apiMessage = error.response.data.message.join(", ");
+      } else if (typeof error?.response?.data?.message === "string") {
+        apiMessage = error.response.data.message;
+      } else if (typeof error?.response?.data?.error === "string") {
+        apiMessage = error.response.data.error;
+      } else if (typeof error?.message === "string") {
+        apiMessage = error.message;
+      }
+
+      console.error("FINAL API MESSAGE:", apiMessage);
+
+      throw apiMessage;
     }
-
-    return uploadedUrl;
-  } catch (error: any) {
-  console.error("UPLOAD ERROR:", error);
-
-  let apiMessage = "Failed to upload file";
-
-  if (Array.isArray(error?.response?.data?.message)) {
-    apiMessage = error.response.data.message.join(", ");
-  } else if (typeof error?.response?.data?.message === "string") {
-    apiMessage = error.response.data.message;
-  } else if (typeof error?.response?.data?.error === "string") {
-    apiMessage = error.response.data.error;
-  } else if (typeof error?.message === "string") {
-    apiMessage = error.message;
-  }
-
-  console.error("FINAL API MESSAGE:", apiMessage);
-
-  throw apiMessage;
-}
-};
+  };
 
   const handleFiles = async (e: ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -1008,19 +1077,17 @@ function GalleryUploader({
         onChange([...nextImages]);
       }
     } catch (error: any) {
-  console.error("Gallery upload failed:", error);
+      console.error("Gallery upload failed:", error);
 
-  const message =
-    typeof error === "string"
-      ? error
-      : error?.message || "Upload failed";
+      const message =
+        typeof error === "string" ? error : error?.message || "Upload failed";
 
-  alert(message);
-} 
-// finally {
-//       setUploading(false);
-//       e.target.value = "";
-//     }
+      alert(message);
+    }
+    // finally {
+    //       setUploading(false);
+    //       e.target.value = "";
+    //     }
   };
 
   const addUrl = () => {
@@ -1148,7 +1215,7 @@ function renderField(
         />
       );
     case "relation-select": {
-        console.log(relationOptions,"relationOPTIONS")
+      console.log(relationOptions, "relationOPTIONS");
       const options = relationOptions[field.relation?.endpoint] || [];
       const isMultiple = Boolean((field as any).multiple);
       if (isMultiple) {
@@ -1346,6 +1413,8 @@ function renderField(
       );
     case "gallery":
       return <GalleryUploader value={value || []} onChange={onChange} />;
+    case "advertisement":
+      return <AdvertisementsSection value={value || []} onChange={onChange} />;
     default:
       return (
         <div>
@@ -1373,7 +1442,7 @@ function isFullWidth(field: CmsField) {
     "multiselect",
     "relation-select",
     "icon",
-    "editor"
+    "editor",
   ].includes(field.type);
 }
 
@@ -1389,15 +1458,15 @@ export function BlogEditorPage({ config }: { config: CmsConfig }) {
 
   const fields = useMemo(() => config.fields, [config]);
   function normalizeApiArray(response: any): any[] {
-  if (Array.isArray(response)) return response;
-  if (Array.isArray(response?.data)) return response.data;
-  if (Array.isArray(response?.items)) return response.items;
-  if (Array.isArray(response?.results)) return response.results;
-  if (Array.isArray(response?.payload)) return response.payload;
-  return [];
-}
-    useEffect(() => {
-        const fetchRelations = async () => {
+    if (Array.isArray(response)) return response;
+    if (Array.isArray(response?.data)) return response.data;
+    if (Array.isArray(response?.items)) return response.items;
+    if (Array.isArray(response?.results)) return response.results;
+    if (Array.isArray(response?.payload)) return response.payload;
+    return [];
+  }
+  useEffect(() => {
+    const fetchRelations = async () => {
       try {
         const endpoints = [
           "content/property-types",
@@ -1426,7 +1495,7 @@ export function BlogEditorPage({ config }: { config: CmsConfig }) {
     };
 
     fetchRelations();
-    },[])
+  }, []);
   const load = async (term = "") => {
     try {
       const rows = await api.get<CmsItem[]>(
@@ -1497,8 +1566,8 @@ export function BlogEditorPage({ config }: { config: CmsConfig }) {
       setMessage(null);
     }
   };
-const mainFields = fields.filter(f => f?.layout === "main");
-const sidebarFields = fields.filter(f => f?.layout === "sidebar");
+  const mainFields = fields.filter((f) => f?.layout === "main");
+  const sidebarFields = fields.filter((f) => f?.layout === "sidebar");
   return (
     <DashboardShell>
       <Header title={config.title} subtitle={config.subtitle} />
@@ -1507,80 +1576,76 @@ const sidebarFields = fields.filter(f => f?.layout === "sidebar");
         <SectionNotice message={message} error={error} />
 
         {/* Modal Form */}
-        <Modal
-  open={isModalOpen}
-  onClose={reset}
-  size="full"
->
-  <div className="flex flex-col h-[90vh]">
+        <Modal open={isModalOpen} onClose={reset} size="full">
+          <div className="flex flex-col h-[90vh]">
+            {/* 🔝 TOP BAR (LIKE IMAGE) */}
+            <div className="flex items-center justify-between border-b px-6 py-3 bg-white">
+              <h2 className="text-lg font-semibold">
+                {editingId ? "Edit Blog" : "Add Blog"}
+              </h2>
 
-    {/* 🔝 TOP BAR (LIKE IMAGE) */}
-    <div className="flex items-center justify-between border-b px-6 py-3 bg-white">
-      <h2 className="text-lg font-semibold">
-        {editingId ? "Edit Blog" : "Add Blog"}
-      </h2>
+              <div className="flex items-center gap-3">
+                <label className="flex items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={form.status === "published"}
+                    onChange={(e) =>
+                      setForm((prev) => ({
+                        ...prev,
+                        status: e.target.checked ? "published" : "draft",
+                      }))
+                    }
+                  />
+                  Publish
+                </label>
 
-      <div className="flex items-center gap-3">
-        <label className="flex items-center gap-2 text-sm">
-          <input
-            type="checkbox"
-            checked={form.status === "published"}
-            onChange={(e) =>
-              setForm(prev => ({
-                ...prev,
-                status: e.target.checked ? "published" : "draft",
-              }))
-            }
-          />
-          Publish
-        </label>
+                <ActionButton onClick={submit}>SAVE</ActionButton>
 
-        <ActionButton onClick={submit}>SAVE</ActionButton>
+                {editingId && (
+                  <ActionButton secondary onClick={() => remove(editingId)}>
+                    Delete
+                  </ActionButton>
+                )}
+              </div>
+            </div>
 
-        {editingId && (
-          <ActionButton secondary onClick={() => remove(editingId)}>
-            Delete
-          </ActionButton>
-        )}
-      </div>
-    </div>
+            {/* 🔽 MAIN CONTENT */}
+            <div className="flex flex-1 overflow-hidden">
+              {/* LEFT SIDE */}
+              <div className="flex-1 overflow-y-auto px-6 py-4">
+                {mainFields.map((field) => (
+                  <div key={field.key}>
+                    {renderField(
+                      field,
+                      getValue(form, field),
+                      (value) =>
+                        setForm((prev) => setValue(prev, field, value)),
+                      relationOptions,
+                    )}
+                  </div>
+                ))}
+              </div>
 
-    {/* 🔽 MAIN CONTENT */}
-    <div className="flex flex-1 overflow-hidden">
-
-      {/* LEFT SIDE */}
-      <div className="flex-1 overflow-y-auto px-6 py-4">
-
-        {mainFields.map((field) => (
-    <div key={field.key}>
-      {renderField(
-        field,
-        getValue(form, field),
-        (value) => setForm(prev => setValue(prev, field, value)),
-        relationOptions
-      )}
-    </div>
-  ))}
-      </div>
-
-      {/* RIGHT SIDEBAR */}
-      <div className="w-[320px] border-l bg-gray-50 px-4 py-4 overflow-y-auto space-y-4">
-
-   {sidebarFields.map((field) => (
-    <div key={field.key}>
-      {renderField(
-        field,
-        getValue(form, field),
-        (value) => setForm(prev => setValue(prev, field, value)),
-        relationOptions
-      )}
-    </div>
-  ))}
-
-      </div>
-    </div>
-  </div>
-</Modal>
+              {/* RIGHT SIDEBAR */}
+              <div className="w-[320px] border-l bg-gray-50 px-4 py-4 overflow-y-auto space-y-4">
+                
+                {sidebarFields.map((field) => (
+                  <div key={field.key}>
+                    {renderField(
+                      field,
+                      getValue(form, field),
+                      (value) =>
+                        setForm((prev) => setValue(prev, field, value)),
+                      relationOptions,
+                    )}
+                  </div>
+                ))}
+                {/* ✅ Advertisements section */}
+               
+              </div>
+            </div>
+          </div>
+        </Modal>
 
         {/* Listing */}
         <SectionCard

@@ -52,6 +52,7 @@ export type CmsItem = {
   image?: string;
   description?: string;
   sortOrder?: number;
+  advertisements?: { position: string; code: string }[]; 
   data?: Record<string, any>;
   createdAt?: string;
   updatedAt?: string;
@@ -737,6 +738,13 @@ export const EditorConfigs: Record<string, CmsConfig> = {
           label: "Meta Description",
           type: "textarea", // 🔥 FIXED
           layout: "sidebar",
+        },
+        {
+          key: "advertisements",
+          label: "Advertisements",
+          type: "advertisement" as CmsFieldType,
+          note: "Ads shown alongside this blog post",
+          layout: "sidebar", 
         },
       ],
       searchMeta("category", "metaTitle", "metaKeywords", "status"),

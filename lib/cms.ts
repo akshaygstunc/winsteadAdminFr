@@ -41,6 +41,9 @@ export type CmsFieldType =
   | "repeater"
   | "relation-multiselect"
   | "faq"
+  | "address"          // ← was used in page but missing here
+  | "gallery"          // ← was used in page but missing here
+  | "advertisement" 
   | "relation-select";
 
 export type CmsField = {
@@ -56,6 +59,7 @@ export type CmsField = {
   defaultValue?: any;
   group?: string;
   column?: "left" | "right";
+  layout?: "main" | "sidebar"; 
   showWhen?: CmsFieldCondition;
   fields?: CmsRepeaterField[];
   relation?: {
@@ -80,6 +84,8 @@ export type CmsConfig = {
   groups: CmsGroup[];
   fields: CmsField[];
   layout: string;
+  mode?: "singleton" | "collection";
+  cardMeta?: string[]; 
 };
 
 export type CmsItem = {
@@ -91,7 +97,9 @@ export type CmsItem = {
   image?: string;
   description?: string;
   sortOrder?: number;
+  advertisements?: { position: string; code: string }[];
   data?: Record<string, any>;
+  [key: string]: any;
 };
 
 
