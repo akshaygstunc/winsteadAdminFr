@@ -82,7 +82,6 @@ export const navSections: NavSection[] = [
       { label: "Blogs", href: "/blogs", icon: PenSquare },
       { label: "News & Media", href: "/media", icon: Images },
       { label: "Events", href: "/customization/events", icon: Images },
-      { label: "Pages", href: "/pages", icon: FileText },
       // {
       // {
       //   label: "Relationship Manager",

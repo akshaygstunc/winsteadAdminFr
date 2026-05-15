@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import clsx from "clsx";
-import { ChevronDown, Sitemap } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import { itemMatchesPath, NavItem, navSections } from "@/lib/nav-config";
 import { ThemeToggle } from "./ThemeToggle";
 
@@ -235,7 +235,7 @@ export function Sidebar() {
     </p>
 
     <div className="space-y-1">
-      <NavEntry
+      {/* <NavEntry
         key="/sitemap"
         item={{
           label: "Sitemap",
@@ -243,7 +243,7 @@ export function Sidebar() {
           icon: Sitemap,
         }}
         pathname={pathname}
-      />
+      /> */}
     </div>
   </div>
       </nav>
