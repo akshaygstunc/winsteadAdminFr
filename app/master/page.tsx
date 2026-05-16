@@ -54,6 +54,11 @@ const cards = [
     desc: "Admins, roles, and access state.",
   },
   {
+    href: "/master/news-media",
+    title: "News Media",
+    desc: "Admins, roles, and access state.",
+  },
+  {
     href: "/master/custom-seo",
     title: "Custom SEO",
     desc: "Canonical, robots, and OG defaults.",

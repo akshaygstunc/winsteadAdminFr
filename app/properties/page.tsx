@@ -22,7 +22,97 @@ import { TiptapEditor } from "@/components/TextEditor";
 import { GoogleAddressInput } from "@/components/GoogleAutoComplete";
 import { useRef } from "react";
 import ImagePickerModal from "./ImagePicker";
-import { Upload, UploadCloud } from "lucide-react";
+import { Upload } from "lucide-react";
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Helpers
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Format a number as AED price with comma separators */
+function formatAED(value: number | string | undefined): string {
+  const num = Number(value || 0);
+  if (!num) return "AED —";
+  return `AED ${num.toLocaleString("en-AE")}`;
+}
+
+/**
+ * Format property type into human-readable label.
+ * Handles objects with name/title, plain strings, and arrays.
+ * Examples:
+ *   { name: "apartment", bedrooms: 1 } → "1BR Apartment"
+ *   { name: "villa" }                  → "Villa"
+ *   "2br-apartment"                    → "2BR Apartment"
+ *   "studio"                           → "Studio"
+ */
+function formatPropertyType(type: any): string {
+  if (!type) return "";
+
+  // If it's an object with a name/title field
+  if (typeof type === "object" && !Array.isArray(type)) {
+    const rawName: string = type.name || type.title || "";
+    return normaliseTypeName(rawName, type.bedrooms);
+  }
+
+  // Plain string
+  if (typeof type === "string") {
+    return normaliseTypeName(type);
+  }
+
+  return String(type);
+}
+
+/**
+ * Core normaliser — converts raw type slugs/names to display labels.
+ * Injects bedroom count prefix when present and not already in the name.
+ */
+function normaliseTypeName(raw: string, bedrooms?: number): string {
+  if (!raw) return "";
+
+  // Clean slug → readable (e.g. "2br-apartment" → "2BR Apartment")
+  // Detect bedroom prefix in the string itself: "1br", "2br", "3br" etc.
+  const bedroomPrefixMatch = raw.match(/^(\d+)\s*br[-_\s]?/i);
+
+  let bedroomPrefix = "";
+  let baseName = raw;
+
+  if (bedroomPrefixMatch) {
+    bedroomPrefix = `${bedroomPrefixMatch[1]}BR `;
+    baseName = raw.slice(bedroomPrefixMatch[0].length);
+  } else if (bedrooms && bedrooms > 0) {
+    bedroomPrefix = `${bedrooms}BR `;
+  }
+
+  // Capitalise each word, clean separators
+  const label = baseName
+    .replace(/[-_]/g, " ")
+    .replace(/\b\w/g, (c) => c.toUpperCase())
+    .trim();
+
+  return `${bedroomPrefix}${label}`;
+}
+
+/**
+ * Format the full type column for a property.
+ * Handles arrays, single objects, strings.
+ */
+function formatTypes(typeField: any): string {
+  if (!typeField) return "—";
+
+  if (Array.isArray(typeField)) {
+    if (typeField.length === 0) return "—";
+    return typeField
+      .map((t) => formatPropertyType(t))
+      .filter(Boolean)
+      .join(", ");
+  }
+
+  return formatPropertyType(typeField) || "—";
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Types
+// ─────────────────────────────────────────────────────────────────────────────
+
 type FieldOption = {
   label: string;
   value: string;
@@ -35,9 +125,10 @@ type RelationConfig = {
 };
 
 type AmenityItem = {
+  _id?: string;
   title: string;
   icon: string;
-  description: string;
+  description?: string;
 };
 
 type FloorPlanItem = {
@@ -63,7 +154,8 @@ type PropertyForm = Property & {
   floorPlans?: string[];
   communities?: string;
   faq: any[];
-  bannerImages?: string[]; // ✅ NEW
+  bannerImages?: string[];
+  isStandalone?: boolean;
 };
 
 type DynamicField = {
@@ -81,6 +173,7 @@ type DynamicField = {
     | "editor";
   options?: FieldOption[];
   relation?: RelationConfig;
+  note?: string;
 };
 
 type FieldSection = {
@@ -88,10 +181,15 @@ type FieldSection = {
   title: string;
   columns?: 1 | 2 | 3;
   fields?: DynamicField[];
-  custom?: "gallery" | "amenities" | "floorPlans" | "file" | "faq";
+  custom?: "gallery" | "amenities" | "floorPlans" | "file" | "faq" | "banners";
 };
 
 type RelationData = Record<string, FieldOption[]>;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Constants
+// ─────────────────────────────────────────────────────────────────────────────
+
 const emptyForm: PropertyForm = {
   title: "",
   buildingName: "",
@@ -139,6 +237,8 @@ const emptyForm: PropertyForm = {
   subType: "",
   category: "",
   sublocation: "",
+  isStandalone: false,
+  communities: "",
 };
 
 const propertyFormSections: FieldSection[] = [
@@ -161,10 +261,10 @@ const propertyFormSections: FieldSection[] = [
         },
       },
       {
-  key: "banners",
-  title: "Banner Images",
-  custom: "banners",
-},
+        key: "banners",
+        title: "Banner Images",
+        custom: "banners",
+      } as any,
       {
         key: "subType",
         label: "Property Sub-Type",
@@ -180,7 +280,7 @@ const propertyFormSections: FieldSection[] = [
         label: "Communities",
         type: "relation-select",
         relation: {
-          entity: "content/developer-communities", // 👈 new endpoint
+          entity: "content/developer-communities",
           labelKey: "title",
           valueKey: "_id",
         },
@@ -238,7 +338,6 @@ const propertyFormSections: FieldSection[] = [
       { key: "address", label: "Address", type: "address" },
     ],
   },
-
   {
     key: "seo",
     title: "SEO",
@@ -292,35 +391,15 @@ const propertyFormSections: FieldSection[] = [
       },
       { key: "enquireFormImage", label: "Enquire Form Image", type: "image" },
       { key: "author", label: "Author", type: "text" },
-
       {
         key: "duringconstruction",
         label: "During Construction",
         type: "number",
       },
       { key: "handover", label: "Handover", type: "number" },
-      {
-        key: "propertydoc",
-        title: "Property Document",
-        custom: "file",
-      },
+      { key: "propertydoc", title: "Property Document", custom: "file" } as any,
     ],
   },
-  {
-    key: "descriptions",
-    title: "Descriptions",
-    columns: 1,
-    fields: [
-      { key: "shortDescription", label: "Short Description", type: "textarea" },
-      { key: "appDescription", label: "App Description", type: "textarea" },
-      { key: "fullDescription", label: "Full Description", type: "editor" },
-    ],
-  },
-  // {
-  //   key: "gallery",
-  //   title: "Gallery Images",
-  //   custom: "gallery",
-  // },
   {
     key: "flags",
     title: "Flags",
@@ -332,7 +411,36 @@ const propertyFormSections: FieldSection[] = [
       { key: "featured", label: "Featured", type: "toggle" },
     ],
   },
+  {
+    key: "amenities",
+    title: "Amenities",
+    custom: "amenities",
+  },
+  {
+    key: "floorPlans",
+    title: "Floor Plans",
+    custom: "floorPlans",
+  },
+  {
+    key: "faq",
+    title: "FAQs",
+    custom: "faq",
+  },
+  {
+    key: "descriptions",
+    title: "Descriptions",
+    columns: 2,
+    fields: [
+      { key: "shortDescription", label: "Short Description", type: "textarea" },
+      { key: "appDescription", label: "App Description", type: "textarea" },
+      { key: "fullDescription", label: "Full Description", type: "editor" },
+    ],
+  },
 ];
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Utilities
+// ─────────────────────────────────────────────────────────────────────────────
 
 function createSlug(value: string) {
   return value
@@ -340,15 +448,6 @@ function createSlug(value: string) {
     .trim()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/(^-|-$)+/g, "");
-}
-
-async function fileToDataUrl(file: File) {
-  return new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result || ""));
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
 }
 
 function normalizeApiArray(response: any): any[] {
@@ -359,6 +458,11 @@ function normalizeApiArray(response: any): any[] {
   if (Array.isArray(response?.payload)) return response.payload;
   return [];
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Sub-components (unchanged from original, kept for completeness)
+// ─────────────────────────────────────────────────────────────────────────────
+
 function BannerUploader({
   value,
   onChange,
@@ -369,15 +473,14 @@ function BannerUploader({
   return (
     <div className="space-y-4">
       <FieldLabel label="Banner Images" />
-      
       <p className="text-xs text-muted">
         Upload banner images (recommended 1260x420)
       </p>
-
       <GalleryUploader value={value} onChange={onChange} />
     </div>
   );
 }
+
 function Toggle({
   label,
   checked,
@@ -426,11 +529,9 @@ function MultiSelectInput({
   }, []);
 
   const toggleValue = (val: string) => {
-    if (value.includes(val)) {
-      onChange(value.filter((v) => v !== val));
-    } else {
-      onChange([...value, val]);
-    }
+    onChange(
+      value.includes(val) ? value.filter((v) => v !== val) : [...value, val],
+    );
   };
 
   const filteredOptions = options.filter((opt) =>
@@ -440,13 +541,10 @@ function MultiSelectInput({
   return (
     <div className="space-y-1.5" ref={ref}>
       <FieldLabel label={label} />
-
-      {/* Input box with tags */}
       <div
         className="input w-full min-h-[44px] flex flex-wrap gap-1.5 items-center cursor-text"
         onClick={() => setOpen(true)}
       >
-        {/* Selected tags */}
         {value.map((val) => {
           const item = options.find((o) => o.value === val);
           return (
@@ -468,8 +566,6 @@ function MultiSelectInput({
             </span>
           );
         })}
-
-        {/* Search input */}
         <input
           type="text"
           value={search}
@@ -482,8 +578,6 @@ function MultiSelectInput({
           className="flex-1 min-w-[80px] bg-transparent text-sm text-text placeholder:text-muted outline-none border-none"
         />
       </div>
-
-      {/* Dropdown */}
       {open && (
         <div className="relative z-50">
           <div className="absolute top-0 left-0 right-0 border border-line rounded-xl bg-panel shadow-lg max-h-56 overflow-y-auto">
@@ -498,11 +592,7 @@ function MultiSelectInput({
                   <div
                     key={option.value}
                     onClick={() => toggleValue(option.value)}
-                    className={`px-4 py-2.5 cursor-pointer flex justify-between items-center text-sm transition-colors ${
-                      selected
-                        ? "bg-card text-muted line-through"
-                        : "text-text hover:bg-card/60"
-                    }`}
+                    className={`px-4 py-2.5 cursor-pointer flex justify-between items-center text-sm transition-colors ${selected ? "bg-card text-muted line-through" : "text-text hover:bg-card/60"}`}
                   >
                     <span>{option.label}</span>
                     {selected && (
@@ -518,6 +608,7 @@ function MultiSelectInput({
     </div>
   );
 }
+
 function PdfUploader({
   value,
   onChange,
@@ -529,7 +620,6 @@ function PdfUploader({
     try {
       const formData = new FormData();
       formData.append("file", file);
-
       const res = await api.post<any>(`/content/upload/gallery`, formData);
       return res?.data?.url;
     } catch {
@@ -540,7 +630,6 @@ function PdfUploader({
 
   return (
     <div className="space-y-4">
-      {/* URL Input */}
       <input
         type="text"
         className="input"
@@ -548,8 +637,6 @@ function PdfUploader({
         value={value || ""}
         onChange={(e) => onChange(e.target.value)}
       />
-
-      {/* Upload */}
       <input
         type="file"
         accept="application/pdf"
@@ -557,13 +644,10 @@ function PdfUploader({
         onChange={async (e: ChangeEvent<HTMLInputElement>) => {
           const file = e.target.files?.[0];
           if (!file) return;
-
           const url = await uploadPdf(file);
           if (url) onChange(url);
         }}
       />
-
-      {/* Preview */}
       {value && (
         <div className="rounded-2xl border border-line p-3 text-sm text-muted">
           📄 PDF Uploaded
@@ -571,7 +655,6 @@ function PdfUploader({
             <a href={value} target="_blank" className="text-gold underline">
               View
             </a>
-
             <a href={value} download className="text-gold underline">
               Download
             </a>
@@ -581,6 +664,7 @@ function PdfUploader({
     </div>
   );
 }
+
 function FAQEditor({
   value,
   onChange,
@@ -589,20 +673,14 @@ function FAQEditor({
   onChange: (val: any[]) => void;
 }) {
   const items = Array.isArray(value) ? value : [];
-
   const updateItem = (index: number, key: string, val: string) => {
     const next = [...items];
     next[index] = { ...next[index], [key]: val };
     onChange(next);
   };
-
-  const addItem = () => {
-    onChange([...items, { question: "", answer: "" }]);
-  };
-
-  const removeItem = (index: number) => {
+  const addItem = () => onChange([...items, { question: "", answer: "" }]);
+  const removeItem = (index: number) =>
     onChange(items.filter((_, i) => i !== index));
-  };
 
   return (
     <div className="space-y-4">
@@ -610,12 +688,11 @@ function FAQEditor({
         <p className="text-sm font-medium text-gold">FAQs</p>
         <button
           onClick={addItem}
-          className=" border border-50 border-gold/50 bg-gold/10 text-gold px-4 py-2 rounded-2xl"
+          className="border border-gold/50 bg-gold/10 text-gold px-4 py-2 rounded-2xl"
         >
           Add FAQ
         </button>
       </div>
-
       {items.map((faq, index) => (
         <div key={index} className="border p-4 rounded-xl space-y-3">
           <input
@@ -641,6 +718,7 @@ function FAQEditor({
     </div>
   );
 }
+
 function GalleryUploader({
   value,
   onChange,
@@ -649,79 +727,82 @@ function GalleryUploader({
   onChange: (next: string[]) => void;
 }) {
   const images = Array.isArray(value) ? value : [];
-
   const [urlInput, setUrlInput] = useState("");
   const [uploading, setUploading] = useState(false);
+  const [assets, setAssets] = useState<any[]>([]);
+  const [loadingAssets, setLoadingAssets] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
   const uploadSingleFile = async (file: File): Promise<string> => {
-    try{
+    try {
       const formData = new FormData();
-    formData.append("file", file);
-
-    const response = await api.post("/content/upload/gallery", formData, {});
-
-    const uploadedUrl =
-      response?.data?.url ||
-      response?.data?.data?.url ||
-      response?.data?.fileUrl ||
-      response?.data?.data?.fileUrl ||
-      response?.data?.location ||
-      response?.data?.data?.location ||
-      "";
-
-    if (!uploadedUrl) {
-      setErrorMessage(`${response.error || "Unknown error"}: ${file.name}`);
-      throw new Error("Upload API did not return image URL");
-    }
-     return uploadedUrl;
-    }catch(err: any){
-      console.log(err,"resssssrrrrr")
-      const message = err?.response?.data?.message || err?.message || `Failed to upload ${file.name}`;
+      formData.append("file", file);
+      const response = await api.post("/content/upload/gallery", formData, {});
+      const uploadedUrl =
+        response?.data?.url ||
+        response?.data?.data?.url ||
+        response?.data?.fileUrl ||
+        response?.data?.location ||
+        "";
+      if (!uploadedUrl) {
+        setErrorMessage(`${response.error || "Unknown error"}: ${file.name}`);
+        throw new Error("Upload API did not return image URL");
+      }
+      return uploadedUrl;
+    } catch (err: any) {
+      const message =
+        err?.response?.data?.message ||
+        err?.message ||
+        `Failed to upload ${file.name}`;
       setErrorMessage(message);
       throw err;
     }
-    
-
-   
   };
+  useEffect(() => {
+    (async () => {
+      try {
+        setLoadingAssets(true);
 
+        const response = await api.get("/properties/assets");
+
+        const rows = Array.isArray(response)
+          ? response
+          : response?.data || response?.items || response?.results || [];
+
+        setAssets(Array.isArray(rows) ? rows : []);
+      } catch (err) {
+        console.error("Failed to load assets", err);
+      } finally {
+        setLoadingAssets(false);
+      }
+    })();
+  }, []);
   const handleFiles = async (e: ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
-
     if (!files.length) return;
-
     setUploading(true);
     setErrorMessage("");
-
     try {
       const nextImages = [...images];
-
       for (const file of files) {
         try {
           const uploadedUrl = await uploadSingleFile(file);
-
           nextImages.push(uploadedUrl);
-
           onChange([...nextImages]);
         } catch (err: any) {
-          const message =
+          setErrorMessage(
             err?.response?.data?.message ||
-            err?.message ||
-            `Failed to upload ${file.name}`;
-
-          setErrorMessage(message);
+              err?.message ||
+              `Failed to upload ${file.name}`,
+          );
         }
       }
     } catch (error: any) {
-      const message =
+      setErrorMessage(
         error?.response?.data?.message ||
-        error?.message ||
-        "Gallery upload failed";
-
-      setErrorMessage(message);
-
-      console.error("Gallery upload failed:", error);
+          error?.message ||
+          "Gallery upload failed",
+      );
     } finally {
       setUploading(false);
       e.target.value = "";
@@ -730,45 +811,23 @@ function GalleryUploader({
 
   const addUrl = () => {
     setErrorMessage("");
-
     const next = urlInput.trim();
-
     if (!next) {
       setErrorMessage("Please enter image URL");
       return;
     }
-
-    const alreadyExists = images.includes(next);
-
-    if (alreadyExists) {
+    if (images.includes(next)) {
       setErrorMessage("This image URL already exists");
       return;
     }
-
-    onChange([...(images || []), next]);
-
+    onChange([...images, next]);
     setUrlInput("");
   };
 
-  const updateImage = (index: number, nextValue: string) => {
-    const next = [...images];
-
-    next[index] = nextValue;
-
-    onChange(next);
-  };
-
-  const removeImage = (index: number) => {
-    setErrorMessage("");
-
-    onChange(images.filter((_, i) => i !== index));
-  };
-  console.log(errorMessage, "Gallery error message");
   return (
     <div className="space-y-4">
       <div>
         <FieldLabel label="Gallery Images" />
-        {errorMessage}
         <p className="mt-1 text-xs text-muted">
           Upload multiple property gallery images or paste image URLs.
           <br />
@@ -777,7 +836,6 @@ function GalleryUploader({
           </span>
         </p>
       </div>
-
       <div className="space-y-3 rounded-[24px] border border-line bg-panel/40 p-4">
         <div className="flex gap-2">
           <div className="flex-1">
@@ -788,41 +846,97 @@ function GalleryUploader({
               placeholder="https://example.com/image.jpg"
             />
           </div>
-
           <div className="flex items-end">
-            <ActionButton
-              secondary
-              onClick={addUrl}
-              disabled={uploading}
-            >
+            <ActionButton secondary onClick={addUrl} disabled={uploading}>
               Add URL
             </ActionButton>
           </div>
         </div>
-
-        <input
+        {/* <input
           className="input"
           type="file"
           accept="image/*"
           multiple
           onChange={handleFiles}
           disabled={uploading}
-        />
+        /> */}
+        {/* <div className="flex gap-2">
+          <label
+            className={`flex items-center gap-2 rounded-2xl border border-line bg-panel px-4 py-2.5 text-sm text-text hover:border-gold/50 transition cursor-pointer ${uploading ? "opacity-50 pointer-events-none" : ""}`}
+          >
+            <Upload className="h-4 w-4 text-muted" />
+            {uploading ? "Uploading..." : "Upload Images"}
+            <input
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={handleFiles}
+              disabled={uploading}
+              className="hidden"
+            />
+          </label>
+        </div> */}
+        <div className="space-y-2">
+          <FieldLabel label="Select or Uploaded Assets" />
 
-        {uploading ? (
-          <p className="text-xs text-muted">
-            Uploading images...
-          </p>
-        ) : null}
+          {loadingAssets ? (
+            <p className="text-xs text-muted">Loading assets...</p>
+          ) : !assets.length ? (
+            <p className="text-xs text-muted">No uploaded assets found.</p>
+          ) : (
+            <div className="grid grid-cols-3 md:grid-cols-5 gap-3 max-h-[300px] overflow-y-auto rounded-2xl border border-line p-3">
+              {assets.map((asset: any, i: number) => {
+                const url = asset.url || asset.image || asset.fileUrl || "";
+                if (!url) return null;
+                const selected = images.includes(url);
 
-        {errorMessage ? (
-          <p className="text-sm text-red-500 font-medium">
-            {errorMessage}
-          </p>
-        ) : null}
+                return (
+                  <button
+                    type="button"
+                    key={asset._id || url || i}
+                    onClick={() => {
+                      if (selected) {
+                        onChange(images.filter((img) => img !== url));
+                      } else {
+                        onChange([...images, url]);
+                      }
+                    }}
+                    className={`relative overflow-hidden rounded-xl border transition ${
+                      selected
+                        ? "border-gold ring-2 ring-gold"
+                        : "border-line hover:border-gold/40"
+                    }`}
+                  >
+                    <img
+                      src={url}
+                      alt={asset.name || ""}
+                      className="h-24 w-full object-cover"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).style.display = "none";
+                      }}
+                    />
+                    {asset.name && (
+                      <p className="text-[10px] text-muted truncate px-1 pb-1 text-left">
+                        {asset.name}
+                      </p>
+                    )}
+                    {selected && (
+                      <div className="absolute top-1 right-1 bg-gold text-black text-[10px] px-1.5 py-0.5 rounded">
+                        ✓
+                      </div>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+        {uploading && <p className="text-xs text-muted">Uploading images...</p>}
+        {errorMessage && (
+          <p className="text-sm text-red-500 font-medium">{errorMessage}</p>
+        )}
       </div>
-
-      {!!images.length && (
+      {images.length > 0 && (
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-2">
           {images.map((image, index) => (
             <div
@@ -832,21 +946,23 @@ function GalleryUploader({
               <TextInput
                 label={`Image ${index + 1}`}
                 value={image}
-                onChange={(next) => updateImage(index, next)}
+                onChange={(next) => {
+                  const n = [...images];
+                  n[index] = next;
+                  onChange(n);
+                }}
               />
-
               <div className="flex justify-between items-center">
-                {image ? (
+                {image && (
                   <img
                     src={image}
                     alt={`Gallery ${index + 1}`}
                     className="h-20 w-20 rounded-2xl border border-line object-cover"
                   />
-                ) : null}
-
+                )}
                 <ActionButton
                   secondary
-                  onClick={() => removeImage(index)}
+                  onClick={() => onChange(images.filter((_, i) => i !== index))}
                   disabled={uploading}
                 >
                   Remove
@@ -856,28 +972,14 @@ function GalleryUploader({
           ))}
         </div>
       )}
-
-      {!images.length ? (
+      {!images.length && (
         <div className="rounded-2xl border border-dashed border-line p-6 text-sm text-muted">
           No gallery images added yet.
         </div>
-      ) : null}
+      )}
     </div>
   );
 }
-type AmenityItem = {
-  _id?: string;
-  title: string;
-  icon: string;
-  description?: string;
-};
-
-type AmenityOption = {
-  _id: string;
-  title: string;
-  icon: string;
-  description?: string;
-};
 
 function AmenitiesEditor({
   value,
@@ -887,40 +989,33 @@ function AmenitiesEditor({
   onChange: (next: AmenityItem[]) => void;
 }) {
   const items = Array.isArray(value) ? value : [];
-
-  const [options, setOptions] = useState<AmenityOption[]>([]);
+  const [options, setOptions] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    const fetchAmenities = async () => {
+    (async () => {
       try {
         setLoading(true);
-
         const response = await api.get("/content/property-amenities");
         const rows = normalizeApiArray(response);
-
-        const nextOptions: AmenityOption[] = rows.map((row: any) => ({
-          _id: String(row?._id ?? row?.id ?? ""),
-          title: String(row?.name ?? row?.title ?? ""),
-          icon: String(row?.data?.icon ?? row?.image ?? ""),
-          description: String(row?.description ?? ""),
-        }));
-
-        setOptions(nextOptions);
+        setOptions(
+          rows.map((row: any) => ({
+            _id: String(row?._id ?? row?.id ?? ""),
+            title: String(row?.name ?? row?.title ?? ""),
+            icon: String(row?.data?.icon ?? row?.image ?? ""),
+            description: String(row?.description ?? ""),
+          })),
+        );
       } catch (error) {
         console.error("Failed to load amenities:", error);
       } finally {
         setLoading(false);
       }
-    };
-
-    fetchAmenities();
+    })();
   }, []);
 
-  const isSelected = (id: string) =>
-    items.some((item) => item._id === id);
-
-  const toggle = (option: AmenityOption) => {
+  const isSelected = (id: string) => items.some((item) => item._id === id);
+  const toggle = (option: any) => {
     if (isSelected(option._id)) {
       onChange(items.filter((item) => item._id !== option._id));
     } else {
@@ -935,21 +1030,16 @@ function AmenitiesEditor({
       ]);
     }
   };
-
-  // 👉 split selected / unselected
-  const selectedOptions = items;
   const unselectedOptions = options.filter(
-    (o) => !items.some((i) => i._id === o._id)
+    (o) => !items.some((i) => i._id === o._id),
   );
 
   return (
     <div className="space-y-3">
       <FieldLabel label="Amenities" />
-
-      {/* ================= SELECTED ================= */}
-      {selectedOptions.length > 0 && (
+      {items.length > 0 && (
         <div className="flex flex-wrap gap-2 border-black border py-5 px-5 rounded-2xl mb-4">
-          {selectedOptions.map((item) => (
+          {items.map((item) => (
             <div
               key={item._id}
               className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gold/20 border border-gold/30 text-gold text-sm"
@@ -961,9 +1051,7 @@ function AmenitiesEditor({
                   className="h-4 w-4 rounded object-cover"
                 />
               )}
-
               <span className="font-medium">{item.title}</span>
-
               <button
                 type="button"
                 onClick={() => toggle(item)}
@@ -975,23 +1063,16 @@ function AmenitiesEditor({
           ))}
         </div>
       )}
-
-      {/* ================= OPTIONS ================= */}
-      <div className="flex flex-wrap gap-3  py-10 ">
+      <div className="flex flex-wrap gap-3 py-10">
         {loading ? (
           <div className="text-sm text-muted">Loading...</div>
         ) : (
-          [...selectedOptions, ...unselectedOptions].map((opt) => {
+          [...items, ...unselectedOptions].map((opt) => {
             const selected = isSelected(opt._id);
-
             return (
               <label
                 key={opt._id}
-                className={`flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer text-sm transition
-                ${selected
-                    ? "bg-card border-gold text-gold"
-                    : "border-line text-text hover:bg-card/50"
-                  }`}
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer text-sm transition ${selected ? "bg-card border-gold text-gold" : "border-line text-text hover:bg-card/50"}`}
               >
                 <input
                   type="checkbox"
@@ -999,7 +1080,6 @@ function AmenitiesEditor({
                   onChange={() => toggle(opt)}
                   className="accent-yellow-500"
                 />
-
                 {opt.icon && (
                   <img
                     src={opt.icon}
@@ -1007,7 +1087,6 @@ function AmenitiesEditor({
                     className="h-4 w-4 rounded object-cover"
                   />
                 )}
-
                 <span className="font-medium">{opt.title}</span>
               </label>
             );
@@ -1018,69 +1097,312 @@ function AmenitiesEditor({
   );
 }
 
+// Drop-in replacement for FloorPlansEditor in your PropertiesPage file.
+// Paste this function in place of the existing FloorPlansEditor function.
+
 function FloorPlansEditor({
   value,
   onChange,
 }: {
-    value: string[];
-    onChange: (next: string[]) => void;
+  value: string[];
+  onChange: (next: string[]) => void;
 }) {
   const items = Array.isArray(value) ? value : [];
-
   const [options, setOptions] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    const fetchFloorPlans = async () => {
-      try {
-        setLoading(true);
+  // ── new plan form ──
+  const [showForm, setShowForm] = useState(false);
+  const [newPlan, setNewPlan] = useState({
+    title: "",
+    unitType: "",
+    bedrooms: 0,
+    bathrooms: 0,
+    size: "",
+    price: 0,
+    image: "",
+    category: "",
+    sortOrder: 0,
+  });
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
 
-        const response = await api.get("/content/floor-plans");
-        const rows = normalizeApiArray(response);
-
-        const nextOptions = rows.map((row: any) => ({
+  const loadOptions = async () => {
+    try {
+      setLoading(true);
+      const response = await api.get("/content/floor-plans");
+      const rows = normalizeApiArray(response);
+      setOptions(
+        rows.map((row: any) => ({
           _id: String(row?._id ?? row?.id ?? ""),
           title: String(row?.title ?? ""),
           unitType: String(row?.data?.unitType ?? row?.unitType ?? ""),
           bedrooms: Number(row?.data?.bedrooms ?? row?.bedrooms ?? 0),
           bathrooms: Number(row?.data?.bathrooms ?? row?.bathrooms ?? 0),
           image: String(row?.data?.image ?? row?.image ?? ""),
-        }));
+        })),
+      );
+    } catch (error) {
+      console.error("Failed to load floor plans:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-        setOptions(nextOptions);
-      } catch (error) {
-        console.error("Failed to load floor plans:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchFloorPlans();
+  useEffect(() => {
+    loadOptions();
   }, []);
 
   const isSelected = (id: string) => items.includes(id);
 
   const toggle = (option: any) => {
     if (!option?._id) return;
+    onChange(
+      isSelected(option._id)
+        ? items.filter((id) => id !== option._id)
+        : [...items, option._id],
+    );
+  };
 
-    if (isSelected(option._id)) {
-      onChange(items.filter((id) => id !== option._id));
-    } else {
-      onChange([...items, option._id]);
+  const uploadImage = async (file: File): Promise<string> => {
+    const formData = new FormData();
+    formData.append("file", file);
+    const res = await api.post("/content/upload/gallery", formData);
+    return res?.data?.url || res?.data?.data?.url || res?.data?.fileUrl || "";
+  };
+
+  const saveNewPlan = async () => {
+    if (!newPlan.title.trim()) {
+      setSaveError("Title is required.");
+      return;
+    }
+    try {
+      setSaving(true);
+      setSaveError("");
+      const res = await api.post("/content/floor-plans", {
+        title: newPlan.title,
+        data: {
+          unitType: newPlan.unitType,
+          bedrooms: Number(newPlan.bedrooms),
+          bathrooms: Number(newPlan.bathrooms),
+          size: newPlan.size,
+          price: Number(newPlan.price),
+          image: newPlan.image,
+          category: newPlan.category,
+          sortOrder: Number(newPlan.sortOrder),
+        },
+      });
+      const createdId =
+        res?.data?._id || res?.data?.id || res?._id || res?.id || "";
+      await loadOptions();
+      if (createdId) onChange([...items, String(createdId)]);
+      setNewPlan({
+        title: "",
+        unitType: "",
+        bedrooms: 0,
+        bathrooms: 0,
+        size: "",
+        price: 0,
+        image: "",
+        category: "",
+        sortOrder: 0,
+      });
+      setShowForm(false);
+    } catch (err: any) {
+      setSaveError(
+        err?.response?.data?.message ||
+          err?.message ||
+          "Failed to save floor plan.",
+      );
+    } finally {
+      setSaving(false);
     }
   };
 
-  // 👉 selected + unselected split
   const selectedOptions = options.filter((o) => items.includes(o._id));
   const unselectedOptions = options.filter((o) => !items.includes(o._id));
 
   return (
     <div className="space-y-3">
-      <FieldLabel label="Floor Plans" />
 
-      {/* ================= SELECTED (TOP) ================= */}
+      {/* ── Header ── */}
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <FieldLabel label="Floor Plans" />
+        <button
+          type="button"
+          onClick={() => {
+            setShowForm((p) => !p);
+            setSaveError("");
+          }}
+          className="flex items-center gap-1.5 rounded-2xl border border-gold/50 bg-gold/10 px-3 py-1.5 text-xs font-medium text-gold hover:bg-gold/20 transition"
+        >
+          {showForm ? "✕ Cancel" : "+ Create New"}
+        </button>
+      </div>
+
+      {/* ── Inline create form ── */}
+      {showForm && (
+        <div className="rounded-2xl border border-gold/30 bg-gold/5 p-4 sm:p-5 space-y-4">
+          <p className="text-sm font-semibold text-gold">New Floor Plan</p>
+
+          {/* Fields grid — 1 col on mobile, 2 on sm+ */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+            <TextInput
+              label="Title *"
+              value={newPlan.title}
+              onChange={(v) => setNewPlan((p) => ({ ...p, title: v }))}
+              placeholder="e.g. 2BR Apartment — Type A"
+            />
+            <TextInput
+              label="Unit Type"
+              value={newPlan.unitType}
+              onChange={(v) => setNewPlan((p) => ({ ...p, unitType: v }))}
+              placeholder="e.g. apartment"
+            />
+            <TextInput
+              label="Bedrooms"
+              type="number"
+              value={newPlan.bedrooms}
+              onChange={(v) =>
+                setNewPlan((p) => ({ ...p, bedrooms: Number(v) }))
+              }
+            />
+            <TextInput
+              label="Bathrooms"
+              type="number"
+              value={newPlan.bathrooms}
+              onChange={(v) =>
+                setNewPlan((p) => ({ ...p, bathrooms: Number(v) }))
+              }
+            />
+            <TextInput
+              label="Size (sqft / sqm)"
+              value={newPlan.size}
+              onChange={(v) => setNewPlan((p) => ({ ...p, size: v }))}
+              placeholder="e.g. 1200 sqft"
+            />
+            <TextInput
+              label="Price"
+              type="number"
+              value={newPlan.price}
+              onChange={(v) =>
+                setNewPlan((p) => ({ ...p, price: Number(v) }))
+              }
+            />
+            <TextInput
+              label="Category"
+              value={newPlan.category}
+              onChange={(v) => setNewPlan((p) => ({ ...p, category: v }))}
+              placeholder="e.g. residential"
+            />
+            <TextInput
+              label="Sort Order"
+              type="number"
+              value={newPlan.sortOrder}
+              onChange={(v) =>
+                setNewPlan((p) => ({ ...p, sortOrder: Number(v) }))
+              }
+            />
+          </div>
+
+          {/* ── Image field — same pattern as ImageField component ── */}
+          <div className="space-y-3">
+            <FieldLabel label="Floor Plan Image" />
+
+            {/* Upload + Select buttons */}
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                disabled={uploading}
+                onClick={() => fileRef.current?.click()}
+                className="flex items-center gap-2 rounded-2xl border border-line bg-panel px-4 py-2.5 text-sm text-text hover:border-gold/50 transition disabled:opacity-50"
+              >
+                <Upload className="h-4 w-4 text-muted" />
+                {uploading ? "Uploading..." : "Upload"}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setPickerOpen(true)}
+                className="flex items-center gap-2 rounded-2xl border border-gold/40 bg-gold/10 px-4 py-2.5 text-sm text-gold hover:bg-gold/20 transition"
+              >
+                <Upload className="h-4 w-4" />
+                Select Uploaded
+              </button>
+
+              <input
+                ref={fileRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={async (e: ChangeEvent<HTMLInputElement>) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  setUploading(true);
+                  const url = await uploadImage(file);
+                  if (url) setNewPlan((p) => ({ ...p, image: url }));
+                  setUploading(false);
+                  e.target.value = "";
+                }}
+              />
+            </div>
+
+            {/* Preview + clear */}
+            {newPlan.image && (
+              <div className="relative w-fit">
+                <img
+                  src={newPlan.image}
+                  alt="preview"
+                  className="h-20 w-20 rounded-2xl border border-line object-cover"
+                />
+                <button
+                  type="button"
+                  onClick={() => setNewPlan((p) => ({ ...p, image: "" }))}
+                  className="absolute -top-1.5 -right-1.5 rounded-full bg-red-500 text-white w-5 h-5 flex items-center justify-center text-xs hover:bg-red-600"
+                >
+                  ×
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* ImagePickerModal — same as used in ImageField */}
+          <ImagePickerModal
+            open={pickerOpen}
+            onClose={() => setPickerOpen(false)}
+            onSelect={(images) => {
+              if (images[0]) setNewPlan((p) => ({ ...p, image: images[0] }));
+              setPickerOpen(false);
+            }}
+          />
+
+          {saveError && (
+            <p className="text-sm text-red-500 font-medium">{saveError}</p>
+          )}
+
+          <div className="flex flex-wrap gap-3 pt-1">
+            <ActionButton onClick={saveNewPlan} disabled={saving}>
+              {saving ? "Saving..." : "Save & Select"}
+            </ActionButton>
+            <ActionButton
+              secondary
+              onClick={() => {
+                setShowForm(false);
+                setSaveError("");
+              }}
+            >
+              Cancel
+            </ActionButton>
+          </div>
+        </div>
+      )}
+
+      {/* ── Selected chips ── */}
       {selectedOptions.length > 0 && (
-        <div className="flex flex-wrap gap-2 border-black border py-5 px-5 rounded-2xl mb-4">
+        <div className="flex flex-wrap gap-2 border border-line py-4 px-4 rounded-2xl">
           {selectedOptions.map((opt) => (
             <div
               key={opt._id}
@@ -1093,13 +1415,10 @@ function FloorPlansEditor({
                   className="h-5 w-5 rounded object-cover"
                 />
               )}
-
               <span className="font-medium">{opt.title}</span>
-
               <span className="text-xs opacity-70">
                 {opt.bedrooms}B · {opt.bathrooms}Ba
               </span>
-
               <button
                 type="button"
                 onClick={() => toggle(opt)}
@@ -1112,22 +1431,25 @@ function FloorPlansEditor({
         </div>
       )}
 
-      {/* ================= OPTIONS (CHECKBOX GRID) ================= */}
-      <div className="flex flex-wrap gap-4 py-10 ">
+      {/* ── All checkboxes ── */}
+      <div className="flex flex-wrap gap-3 py-6">
         {loading ? (
           <div className="text-sm text-muted">Loading...</div>
+        ) : options.length === 0 ? (
+          <div className="text-sm text-muted">
+            No floor plans yet. Click "+ Create New" above to add one.
+          </div>
         ) : (
-            [...selectedOptions, ...unselectedOptions].map((opt) => {
-              const selected = isSelected(opt._id);
-
+          [...selectedOptions, ...unselectedOptions].map((opt) => {
+            const selected = isSelected(opt._id);
             return (
               <label
                 key={opt._id}
-                className={`flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer text-sm transition
-                ${selected
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer text-sm transition ${
+                  selected
                     ? "bg-card border-gold text-gold"
                     : "border-line text-text hover:bg-card/50"
-                  }`}
+                }`}
               >
                 <input
                   type="checkbox"
@@ -1135,7 +1457,6 @@ function FloorPlansEditor({
                   onChange={() => toggle(opt)}
                   className="accent-yellow-500"
                 />
-
                 {opt.image && (
                   <img
                     src={opt.image}
@@ -1143,9 +1464,7 @@ function FloorPlansEditor({
                     className="h-5 w-5 rounded object-cover"
                   />
                 )}
-
                 <span className="font-medium">{opt.title}</span>
-
                 <span className="text-xs text-muted">
                   {opt.bedrooms}B · {opt.bathrooms}Ba
                 </span>
@@ -1157,17 +1476,102 @@ function FloorPlansEditor({
     </div>
   );
 }
+function ImageField({
+  field,
+  value,
+  onChange,
+  uploadFile,
+}: {
+  field: DynamicField;
+  value: string;
+  onChange: (url: string) => void;
+  uploadFile: (file: File) => Promise<string>;
+}) {
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
 
-function getRelationLabel(
-  relations: RelationData,
-  entity: string,
-  value?: string | null,
-) {
-  if (!value) return "";
-  const option = (relations[entity] || []).find((item) => item.value === value);
-  return option?.label || value;
+  return (
+    <div className="space-y-3">
+      <FieldLabel label={field.label} />
+
+      {/* Two buttons */}
+      <div className="flex gap-2">
+        <button
+          type="button"
+          disabled={uploading}
+          onClick={() => fileRef.current?.click()}
+          className="flex items-center gap-2 rounded-2xl border border-line bg-panel px-4 py-2.5 text-sm text-text hover:border-gold/50 transition disabled:opacity-50"
+        >
+          <Upload className="h-4 w-4 text-muted" />
+          {uploading ? "Uploading..." : "Upload"}
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setPickerOpen(true)}
+          className="flex items-center gap-2 rounded-2xl border border-gold/40 bg-gold/10 px-4 py-2.5 text-sm text-gold hover:bg-gold/20 transition"
+        >
+          <Upload className="h-4 w-4" />
+          Select Uploaded
+        </button>
+
+        <input
+          ref={fileRef}
+          type="file"
+          accept="image/*,video/*"
+          className="hidden"
+          onChange={async (e) => {
+            const file = e.target.files?.[0];
+            if (!file) return;
+            setUploading(true);
+            const url = await uploadFile(file);
+            onChange(url);
+            setUploading(false);
+            e.target.value = "";
+          }}
+        />
+      </div>
+
+      {/* Preview + clear */}
+      {value && (
+        <div className="relative w-fit">
+          {value.match(/\.(mp4|webm|ogg)$/i) ? (
+            <video
+              src={value}
+              className="h-20 w-20 rounded-2xl border object-cover"
+              controls
+            />
+          ) : (
+            <img
+              src={value}
+              className="h-20 w-20 rounded-2xl border object-cover"
+            />
+          )}
+          <button
+            type="button"
+            onClick={() => onChange("")}
+            className="absolute -top-1.5 -right-1.5 rounded-full bg-red-500 text-white w-5 h-5 flex items-center justify-center text-xs hover:bg-red-600"
+          >
+            ×
+          </button>
+        </div>
+      )}
+
+      {field.note && <p className="text-gold text-xs">Note: {field.note}</p>}
+
+      {/* Reuse the existing ImagePickerModal — picks ONE image */}
+      <ImagePickerModal
+        open={pickerOpen}
+        onClose={() => setPickerOpen(false)}
+        onSelect={(images) => {
+          if (images[0]) onChange(images[0]);
+          setPickerOpen(false);
+        }}
+      />
+    </div>
+  );
 }
-
 function renderDynamicField(
   field: DynamicField,
   form: PropertyForm,
@@ -1179,24 +1583,17 @@ function renderDynamicField(
   const uploadSingleFile = async (file: File): Promise<string> => {
     const formData = new FormData();
     formData.append("file", file);
-
     const response = await api.post("/content/upload/gallery", formData);
-    console.log(response, "Upload response");
     const uploadedUrl =
       response?.data?.url ||
       response?.data?.data?.url ||
       response?.data?.fileUrl ||
-      response?.data?.data?.fileUrl ||
       response?.data?.location ||
-      response?.data?.data?.location ||
       "";
-
-    if (!uploadedUrl) {
-      throw new Error("Upload API did not return image URL");
-    }
-
+    if (!uploadedUrl) throw new Error("Upload API did not return image URL");
     return uploadedUrl;
   };
+
   switch (field.type) {
     case "text":
       return (
@@ -1206,21 +1603,16 @@ function renderDynamicField(
           onChange={(next) =>
             setForm((prev) => {
               const updated = { ...prev, [field.key]: next };
-
               if (field.key === "title") {
-                const oldSlug = prev.slug || "";
                 const generatedOldSlug = createSlug(prev.title || "");
-                if (!oldSlug || oldSlug === generatedOldSlug) {
+                if (!prev.slug || prev.slug === generatedOldSlug)
                   updated.slug = createSlug(next);
-                }
               }
-
               return updated;
             })
           }
         />
       );
-
     case "number":
       return (
         <TextInput
@@ -1228,24 +1620,17 @@ function renderDynamicField(
           type="number"
           value={Number(value ?? 0)}
           onChange={(next) =>
-            setForm((prev) => ({
-              ...prev,
-              [field.key]: Number(next),
-            }))
+            setForm((prev) => ({ ...prev, [field.key]: Number(next) }))
           }
         />
       );
-
     case "textarea":
       return (
         <TextArea
           label={field.label}
           value={String(value ?? "")}
           onChange={(next) =>
-            setForm((prev) => ({
-              ...prev,
-              [field.key]: next,
-            }))
+            setForm((prev) => ({ ...prev, [field.key]: next }))
           }
         />
       );
@@ -1255,49 +1640,91 @@ function renderDynamicField(
           label={field.label}
           value={String(value ?? "")}
           onChange={(next) =>
-            setForm((prev) => ({
-              ...prev,
-              [field.key]: next,
-            }))
+            setForm((prev) => ({ ...prev, [field.key]: next }))
           }
         />
       );
-
     case "select":
       return (
         <SelectInput
           label={field.label}
           value={String(value ?? "")}
           onChange={(next) =>
-            setForm((prev) => ({
-              ...prev,
-              [field.key]: next as never,
-            }))
+            setForm((prev) => ({ ...prev, [field.key]: next as never }))
           }
           options={field.options || []}
         />
       );
-
     case "relation-select":
+      // ── Communities ka special case ──
+      if (field.key === "communities") {
+        return (
+          <div className="space-y-2">
+            {/* Standalone checkbox */}
+            <label className="flex items-center gap-2 rounded-lg border border-line bg-panel px-3 py-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={Boolean(form.isStandalone)}
+                onChange={(e) =>
+                  setForm((prev) => ({
+                    ...prev,
+                    isStandalone: e.target.checked,
+                    communities: e.target.checked ? "NA" : "",
+                  }))
+                }
+                className="accent-yellow-500"
+              />
+              <span className="text-xs text-text">
+                Standalone Project{" "}
+                <span className="text-muted">(no community)</span>
+              </span>
+            </label>
+
+            {/* Community dropdown — sirf tab dikhao jab standalone nahi */}
+            {!form.isStandalone ? (
+              <div>
+                <FieldLabel label="Community" />
+                <select
+                  className="input w-full"
+                  value={String(form.communities || "")}
+                  onChange={(e) =>
+                    setForm((prev) => ({
+                      ...prev,
+                      communities: e.target.value,
+                    }))
+                  }
+                >
+                  <option value="">-- Select Community --</option>
+                  <option value="NA">NA (No Community)</option>
+                  {communityOptions.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            ) : (
+              <p className="text-xs text-muted px-1">
+                Standalone — community not required
+              </p>
+            )}
+          </div>
+        );
+      }
+
+      // ── Baki sab relation-select normal ──
       return (
         <div className="space-y-2">
           <FieldLabel label={field.label} />
           <select
             className="input w-full"
             value={String(value ?? "")}
-            onChange={(e) => {
-              console.log(`Setting ${field.key} =`, e.target.value); // ✅ raw value
-              setForm((prev) => ({
-                ...prev,
-                [field.key]: e.target.value,
-              }));
-            }}
+            onChange={(e) =>
+              setForm((prev) => ({ ...prev, [field.key]: e.target.value }))
+            }
           >
             <option value="">-- Select --</option>
-            {(field.key === "communities"
-              ? communityOptions
-              : relations[field.relation?.entity || ""] || []
-            ).map((opt) => (
+            {(relations[field.relation?.entity || ""] || []).map((opt) => (
               <option key={opt.value} value={opt.value}>
                 {opt.label}
               </option>
@@ -1309,15 +1736,9 @@ function renderDynamicField(
       return (
         <div className="space-y-2">
           <FieldLabel label="Address" />
-
           <GoogleAddressInput
             value={String(form.address || "")}
-            onChange={(val) =>
-              setForm((prev) => ({
-                ...prev,
-                address: val,
-              }))
-            }
+            onChange={(val) => setForm((prev) => ({ ...prev, address: val }))}
             onSelect={({ address, lat, lng }) =>
               setForm((prev) => ({
                 ...prev,
@@ -1327,8 +1748,6 @@ function renderDynamicField(
               }))
             }
           />
-
-          {/* Show lat/lng */}
           {form.latitude && form.longitude && (
             <p className="text-xs text-muted">
               Lat: {form.latitude} | Lng: {form.longitude}
@@ -1343,81 +1762,37 @@ function renderDynamicField(
           value={Array.isArray(value) ? (value as string[]) : []}
           options={relations[field.relation?.entity || ""] || []}
           onChange={(next) =>
-            setForm((prev) => ({
-              ...prev,
-              [field.key]: next as never,
-            }))
+            setForm((prev) => ({ ...prev, [field.key]: next as never }))
           }
         />
       );
-
     case "toggle":
       return (
         <Toggle
           label={field.label}
           checked={Boolean(value)}
           onChange={(next) =>
-            setForm((prev) => ({
-              ...prev,
-              [field.key]: next as never,
-            }))
+            setForm((prev) => ({ ...prev, [field.key]: next as never }))
           }
         />
       );
-
     case "image":
       return (
-        <div className="space-y-3">
-          <TextInput
-            label={field.label}
-            value={String(value ?? "")}
-            onChange={(next) =>
-              setForm((prev) => ({
-                ...prev,
-                [field.key]: next,
-              }))
-            }
-            placeholder="Paste image URL or upload below"
-          />
-          <div className="flex justify-between items-center">
-            <input
-              className="input"
-              type="file"
-              accept="image/*,video/*"
-              onChange={async (e: ChangeEvent<HTMLInputElement>) => {
-                const file = e.target.files?.[0];
-                if (!file) return;
-                const dataUrl = await uploadSingleFile(file);
-                setForm((prev) => ({
-                  ...prev,
-                  [field.key]: dataUrl,
-                }));
-              }}
-            />
-
-            {value && (
-              value?.match(/\.(mp4|webm|ogg)$/i) ? (
-                <video
-                  src={value}
-                  className="h-16 w-16 rounded-2xl border object-cover"
-                  controls
-                />
-              ) : (
-                <img
-                    src={value}
-                    className="h-16 w-16 rounded-2xl border object-cover"
-                  />
-              )
-            )}
-          </div>
-          <p className="text-gold text-xs">Note: {field.note}</p>
-        </div>
+        <ImageField
+          field={field}
+          value={String(value ?? "")}
+          onChange={(url) => setForm((prev) => ({ ...prev, [field.key]: url }))}
+          uploadFile={uploadSingleFile}
+        />
       );
-
     default:
       return null;
   }
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Page
+// ─────────────────────────────────────────────────────────────────────────────
 
 export default function PropertiesPage() {
   const [items, setItems] = useState<PropertyForm[]>([]);
@@ -1435,43 +1810,50 @@ export default function PropertiesPage() {
   const [mounted, setMounted] = useState(false);
   const [developerFilter, setDeveloperFilter] = useState("all");
   const [locationFilter, setLocationFilter] = useState("all");
+  const [previewModal, setPreviewModal] = useState<{
+    type: "floorPlans" | "amenities" | "faq";
+    property: PropertyForm;
+  } | null>(null);
+  const [manageModal, setManageModal] = useState<{
+    type: "floorPlans" | "amenities" | "faq";
+    property: PropertyForm;
+  } | null>(null);
+  const [imagePicker, setImagePicker] = useState<{
+    open: boolean;
+    type: "gallery" | "banner";
+    propertyId?: string;
+  }>({ open: false, type: "gallery" });
+
   const developerOptions = relations["content/developer-community"] || [];
   const locationOptions = relations["content/locations"] || [];
+  const typeFilterOptions = relations["content/property-types"] || [];
+
   useEffect(() => {
     setMounted(true);
   }, []);
+
   useEffect(() => {
-    const fetchCommunities = async () => {
-      if (!form.developer) {
-        setCommunityOptions([]);
-        return;
-      }
-
+    (async () => {
       try {
-        const res = await api.get(
-          `/content/communities?developer=${form.developer}`,
+        const url = form.developer
+          ? `/content/communities?developer=${form.developer}`
+          : `/content/communities`; // ← developer nahi hai toh sab fetch karo
+        const res = await api.get(url);
+        setCommunityOptions(
+          normalizeApiArray(res).map((row: any) => ({
+            label: String(row?.title ?? ""),
+            value: String(row?._id ?? ""),
+          })),
         );
-
-        const rows = normalizeApiArray(res);
-
-        const options = rows.map((row: any) => ({
-          label: String(row?.title ?? ""),
-          value: String(row?._id ?? ""),
-        }));
-
-        setCommunityOptions(options);
-      } catch (err) {
-        console.error("Failed to fetch communities", err);
+      } catch {
         setCommunityOptions([]);
       }
-    };
-
-    fetchCommunities();
+    })();
   }, [form.developer]);
+
   const load = async () => {
     try {
       const snapshot = await api.get<WorkspaceSnapshot>("/properties/admin");
-      console.log(snapshot, "Loaded properties snapshot");
       setItems(((snapshot as any) || []) as PropertyForm[]);
     } catch {
       setError("Failed to load properties.");
@@ -1480,13 +1862,11 @@ export default function PropertiesPage() {
 
   useEffect(() => {
     load();
-
-    const fetchRelations = async () => {
+    (async () => {
       try {
         const endpoints = [
           "content/property-types",
           "content/property-sub-types",
-          // 'content/property-categories',
           "content/developer-community",
           "content/developer-types",
           "content/locations",
@@ -1494,28 +1874,23 @@ export default function PropertiesPage() {
           "content/categories",
           "content/sub-locations",
         ];
-
         const responses = await Promise.all(
-          endpoints.map((endpoint) => api.get(`/${endpoint}`).catch(() => [])),
+          endpoints.map((ep) => api.get(`/${ep}`).catch(() => [])),
         );
-
         const nextRelations: RelationData = {};
-
-        endpoints.forEach((endpoint, index) => {
-          const rows = normalizeApiArray(responses[index]);
-          nextRelations[endpoint] = rows.map((row: any) => ({
-            label: String(row?.name ?? row?.title ?? row?.label ?? ""),
-            value: String(row?._id ?? row?.id ?? row?.value ?? ""),
-          }));
+        endpoints.forEach((ep, i) => {
+          nextRelations[ep] = normalizeApiArray(responses[i]).map(
+            (row: any) => ({
+              label: String(row?.name ?? row?.title ?? row?.label ?? ""),
+              value: String(row?._id ?? row?.id ?? row?.value ?? ""),
+            }),
+          );
         });
-
         setRelations(nextRelations);
       } catch {
-        // ignore relation loading errors for now
+        /* ignore */
       }
-    };
-
-    fetchRelations();
+    })();
   }, []);
 
   const filtered = useMemo(() => {
@@ -1528,34 +1903,18 @@ export default function PropertiesPage() {
       ]
         .join(" ")
         .toLowerCase();
-
-      const matchesSearch =
-        !search || searchText.includes(search.toLowerCase());
-
-      const matchesStatus =
-        statusFilter === "all" || item.status === statusFilter;
-
-      const matchesType =
-        typeFilter === "all" ||
-        item?.type?._id === typeFilter ||
-        item?.type === typeFilter;
-
-      const matchesDeveloper =
-        developerFilter === "all" ||
-        item?.developer?._id === developerFilter ||
-        item?.developer === developerFilter;
-
-      const matchesLocation =
-        locationFilter === "all" ||
-        item?.location?._id === locationFilter ||
-        item?.location === locationFilter;
-
       return (
-        matchesSearch &&
-        matchesStatus &&
-        matchesType &&
-        matchesDeveloper &&
-        matchesLocation
+        (!search || searchText.includes(search.toLowerCase())) &&
+        (statusFilter === "all" || item.status === statusFilter) &&
+        (typeFilter === "all" ||
+          item?.type?._id === typeFilter ||
+          item?.type === typeFilter) &&
+        (developerFilter === "all" ||
+          item?.developer?._id === developerFilter ||
+          item?.developer === developerFilter) &&
+        (locationFilter === "all" ||
+          item?.location?._id === locationFilter ||
+          item?.location === locationFilter)
       );
     });
   }, [
@@ -1566,53 +1925,40 @@ export default function PropertiesPage() {
     developerFilter,
     locationFilter,
   ]);
+
   const close = () => {
     setOpen(false);
     setEditingId(null);
     setForm(emptyForm);
   };
-  console.log("FORM LOCATION:", form.location);
+
   const submit = async () => {
     try {
       setError(null);
-
       const slug = form.slug || createSlug(form.title || "");
-
       const payload = {
         ...form,
-
         slug,
+        isStandalone: form.isStandalone || false,
+        communities: form.isStandalone ? "NA" : form.communities || "",
         url: form.url || `/property/${slug}`,
-
-        // ✅ NORMALIZE RELATIONS
-        // propertyType: form.propertyType || [],
         type: form.type || [],
         propertySubType: form.propertySubType || [],
         developer: form.developer || "",
         location: form.location || "",
-
-        // ✅ FIX CATEGORY
         categories: form.categories,
         category: form.category,
-
-        // ✅ ARRAYS SAFE
         gallery: form.gallery || [],
         amenities: form.amenities || [],
         floorPlans: form.floorPlans || [],
         faq: form.faq || [],
-
-        // ✅ TAG FIX
         tag: form.hotLaunch ? "HOT" : form.exclusive ? "Exclusive" : form.tag,
       };
-      console.log("Submitting payload location:", payload.location);
-      console.log("Submitting payload developer:", payload.developer);
-
       if (editingId) {
         await api.patch(`/properties/${editingId}`, payload);
       } else {
         await api.post(`/properties`, payload);
       }
-
       setMessage(editingId ? "Property updated." : "Property created.");
       close();
       load();
@@ -1627,82 +1973,57 @@ export default function PropertiesPage() {
       if (typeof val === "string") return val;
       return val._id || val.id || "";
     };
-
     const normalizeArrayIds = (val: any) => {
       if (!val) return [];
-
-      if (Array.isArray(val)) {
+      if (Array.isArray(val))
         return val
           .map((v) => (typeof v === "string" ? v : v?._id || v?.id || ""))
           .filter(Boolean);
-      }
-      console.log(item);
       return [typeof val === "string" ? val : val?._id || val?.id || ""].filter(
         Boolean,
       );
     };
-
     setForm({
       ...emptyForm,
       ...item,
       type: normalizeArrayIds(item.type),
       subType: normalizeArrayIds(item.subType),
-      // ✅ TYPE FIX (important)
       propertyType: normalizeArrayIds(item.propertyType || item.type),
       propertySubType: normalizeArrayIds(item.propertySubType || item.subType),
-
-      // ✅ DEVELOPER FIX
       developer: getId(item.developer),
-
-      // ✅ LOCATION FIX
       location: getId(item.location),
       sublocation: getId(item.sublocation),
-
-      // ✅ COMMUNITY (if exists)
-      communities: getId(item.communities),
-
-      // ✅ CATEGORY FIX (string → array)
+      communities:
+        getId(item.communities) === "NA" ? "NA" : getId(item.communities),
+      isStandalone:
+        Boolean(item.isStandalone) || getId(item.communities) === "NA",
       categories: item.categories,
-
-      // ✅ PROPERTY STATUS FIX (case normalize)
       propertyStatus: (item.propertyStatus || "ready").toLowerCase(),
-
-      // ✅ MEDIA SAFE
       gallery: Array.isArray(item.gallery) ? item.gallery : [],
       thumbnail: item.thumbnail || "",
       propertyBanner: item.propertyBanner || "",
       enquireFormImage: item.enquireFormImage || "",
       propertydoc: item.propertydoc || "",
-
-      // ✅ COMPLEX FIELDS
       amenities: Array.isArray(item.amenities) ? item.amenities : [],
       floorPlans: Array.isArray(item.floorPlans) ? item.floorPlans : [],
       faq: Array.isArray(item.faq) ? item.faq : [],
-
-      // ✅ NUMBERS SAFE
       price: Number(item.price || 0),
       bedrooms: Number(item.bedrooms || 0),
       bathrooms: Number(item.bathrooms || 0),
       sortOrder: Number(item.sortOrder || 0),
-
-      // ✅ FLAGS
       featured: Boolean(item.featured),
       active: Boolean(item.active),
       hotLaunch: Boolean(item.hotLaunch),
       exclusive: Boolean(item.exclusive),
-
-      // ✅ PAYMENT PLAN
       duringconstruction: Number(item.duringconstruction || 0),
       handover: Number(item.handover || 0),
     });
-
     setEditingId(item._id || null);
     setOpen(true);
   };
 
   const remove = async (id?: string) => {
     if (!id) return;
-
     try {
       await api.delete(`/properties/${id}`);
       setMessage("Property deleted.");
@@ -1711,93 +2032,66 @@ export default function PropertiesPage() {
       setError("Unable to delete property.");
     }
   };
- const [imagePicker, setImagePicker] = useState<{
-  open: boolean;
-  type: "gallery" | "banner"; // ✅ UPDATED
-  propertyId?: string;
-}>({
-  open: false,
-  type: "gallery",
-});
 
-  // Add these state variables inside PropertiesPage() — near your other useState hooks
-  const [previewModal, setPreviewModal] = useState<{
-    type: "floorPlans" | "amenities" | "faq";
-    property: PropertyForm;
-  } | null>(null);
-  const [manageModal, setManageModal] = useState<{
-    type: "floorPlans" | "amenities" | "faq";
-    property: PropertyForm;
-  } | null>(null);
-  const typeFilterOptions = relations["property-types"] || [];
   if (!mounted) return null;
+
   return (
     <DashboardShell>
       <Header
         title="Properties"
         subtitle="Expanded property form with API-driven relations, amenities, floor plans, and gallery uploads."
       />
-
       <SectionNotice message={message} error={error} />
 
       <SectionCard
         title="Property Listing"
-        subtitle="Filters, actions, and richer property cards closer to the admin product flow."
+        subtitle="Filters, actions, and richer property cards."
         action={
-          <div className="flex flex-wrap gap-3">
-            {/* SEARCH */}
+          <div className="flex flex-wrap gap-2">
             <input
-              className="input max-w-64"
+              className="input max-w-56"
               placeholder="Search property, city, developer"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
-
-            {/* PROPERTY TYPE */}
             <select
-              className="input max-w-48"
+              className="input max-w-44"
               value={typeFilter}
               onChange={(e) => setTypeFilter(e.target.value)}
             >
               <option value="all">All Types</option>
-              {typeFilterOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
+              {typeFilterOptions.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
                 </option>
               ))}
             </select>
-
-            {/* ✅ DEVELOPER FILTER */}
             <select
-              className="input max-w-48"
+              className="input max-w-44"
               value={developerFilter}
               onChange={(e) => setDeveloperFilter(e.target.value)}
             >
               <option value="all">All Developers</option>
-              {developerOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
+              {developerOptions.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
                 </option>
               ))}
             </select>
-
-            {/* ✅ LOCATION FILTER */}
             <select
-              className="input max-w-48"
+              className="input max-w-44"
               value={locationFilter}
               onChange={(e) => setLocationFilter(e.target.value)}
             >
               <option value="all">All Locations</option>
-              {locationOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}--
+              {locationOptions.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
                 </option>
               ))}
             </select>
-
-            {/* STATUS */}
             <select
-              className="input max-w-40"
+              className="input max-w-36"
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
             >
@@ -1808,8 +2102,6 @@ export default function PropertiesPage() {
               <option value="ready">Ready</option>
               <option value="sold">Sold</option>
             </select>
-
-            <ActionButton>Manage FAQ</ActionButton>
             <ActionButton onClick={() => setOpen(true)}>
               Add Property
             </ActionButton>
@@ -1823,321 +2115,285 @@ export default function PropertiesPage() {
           <table className="min-w-full text-sm">
             <thead className="bg-card/80 text-left text-xs uppercase tracking-wider text-muted">
               <tr>
-                <th className="px-4 py-3">SNO.</th>
-                <th className="px-4 py-3">Property</th>
-                <th className="px-4 py-3">Type</th>
-                <th className="px-4 py-3">Developer / Features</th>
-                <th className="px-4 py-3">Added At / Status</th>
-                <th className="px-4 py-3 text-center">Actions</th>
+                <th className="px-3 py-2.5 w-8">#</th>
+                <th className="px-3 py-2.5">Property</th>
+                <th className="px-3 py-2.5">Type</th>
+                <th className="px-3 py-2.5">Price</th>
+                <th className="px-3 py-2.5">Developer / Features</th>
+                <th className="px-3 py-2.5">Date / Status</th>
+                <th className="px-3 py-2.5 text-center">Actions</th>
               </tr>
             </thead>
-
             <tbody>
-              {filtered.map((property, index) => {
-                return (
-                  <tr
-                    key={property._id || property.title}
-                    className="border-t border-line hover:bg-card/50"
-                  >
-                    {/* SNO */}
-                    <td className="px-4 py-3 text-muted font-medium align-top w-10">
-                      {index + 1}
-                    </td>
+              {filtered.map((property, index) => (
+                <tr
+                  key={property._id || property.title}
+                  className="border-t border-line hover:bg-card/50 align-top"
+                >
+                  {/* # */}
+                  <td className="px-3 py-2.5 text-muted font-medium text-xs w-8">
+                    {index + 1}
+                  </td>
 
-                    {/* Property */}
-                    <td className="px-4 py-3 align-top">
-                      {/* Title */}
-                      <div className="font-medium text-text mb-1">
-                        {property.title}
-                      </div>
-
-                      {/* Location */}
-                      <div className="text-xs text-muted mb-1">
-                        {property.location?.title}
+                  {/* Property — compact */}
+                  <td className="px-3 py-2.5 min-w-[200px] max-w-[240px]">
+                    <div className="font-medium text-text text-sm leading-tight">
+                      {property.title}
+                    </div>
+                    {property.location?.title || property.location?.name ? (
+                      <div className="text-xs text-muted mt-0.5">
+                        {property.location?.title ?? property.location?.name}
                         {property.city ? `, ${property.city}` : ""}
                       </div>
-
-                      {/* Slug */}
-                      <div className="text-xs text-muted mb-2">
+                    ) : null}
+                    {property.slug && (
+                      <div className="text-[11px] text-muted/60 mt-0.5 truncate max-w-[200px]">
                         {property.slug}
                       </div>
+                    )}
 
-                      {/* Thumbnail */}
-
-                      <div>
-                        {Array.isArray(property?.gallery) && property.gallery.length > 0 ? (
-                          <div className="flex items-center gap-2">
-
-                            {/* IMAGES LIST */}
-                            <div className="flex items-center overflow-x-scroll ">
-                              {property.gallery.map((media: string, i: number) => {
-                                const isVideo = /\.(mp4|webm|ogg)$/i.test(media);
-
+                    {/* Gallery thumbnails — compact strip */}
+                    <div className="mt-1.5 flex items-center gap-1.5">
+                      {Array.isArray(property?.gallery) &&
+                      property.gallery.length > 0 ? (
+                        <>
+                          <div className="flex items-center gap-0.5 overflow-hidden max-w-[120px]">
+                            {property.gallery
+                              .slice(0, 5)
+                              .map((media: string, i: number) => {
+                                const isVideo = /\.(mp4|webm|ogg)$/i.test(
+                                  media,
+                                );
                                 return (
                                   <div
                                     key={i}
-                                    className="relative group cursor-pointer"
-                                    // onClick={() =>
-                                    //   setPreviewModal({
-                                    //     open: true,
-                                    //     media,
-                                    //   })
-                                    // }
+                                    className="relative group shrink-0"
                                   >
                                     {isVideo ? (
                                       <video
                                         src={media}
-                                        className="h-8 w-8 rounded border object-cover"
+                                        className="h-6 w-6 rounded object-cover border border-line"
                                         muted
                                       />
                                     ) : (
                                       <img
                                         src={media}
-                                        alt={property.title}
-                                        className="h-8 w-8 rounded object-cover border border-line bg-lightgray"
+                                        alt=""
+                                        className="h-6 w-6 rounded object-cover border border-line"
                                       />
                                     )}
-
-                                    {/* ❌ REMOVE BUTTON */}
                                     <button
                                       onClick={async (e) => {
-                                        e.stopPropagation(); // prevent preview click
-
+                                        e.stopPropagation();
                                         try {
-                                          const updatedGallery = property.gallery.filter(
-                                            (_: string, index: number) => index !== i
+                                          const updatedGallery =
+                                            property.gallery.filter(
+                                              (_: string, idx: number) =>
+                                                idx !== i,
+                                            );
+                                          const type = property?.type?.map(
+                                            (t: any) => t?._id,
                                           );
-
-                                          const type = property?.type?.map((t: any) => t?._id);
-                                          const subType = property?.subType?.map((t: any) => t?._id);
-
-                                          await api.patch(`/properties/${property._id}`, {
-                                            ...property,
-                                            developer: property?.developer?._id,
-                                            location: property?.location?._id,
-                                            type,
-                                            subType,
-                                            gallery: updatedGallery,
-                                          });
-
+                                          const subType =
+                                            property?.subType?.map(
+                                              (t: any) => t?._id,
+                                            );
+                                          await api.patch(
+                                            `/properties/${property._id}`,
+                                            {
+                                              ...property,
+                                              developer:
+                                                property?.developer?._id,
+                                              location: property?.location?._id,
+                                              type,
+                                              subType,
+                                              gallery: updatedGallery,
+                                            },
+                                          );
                                           await load();
                                         } catch (err) {
-                                          console.error("Remove image failed", err);
+                                          console.error(
+                                            "Remove image failed",
+                                            err,
+                                          );
                                         }
                                       }}
-                                      className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition"
+                                      className="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] rounded-full w-3.5 h-3.5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition"
                                     >
                                       ×
                                     </button>
                                   </div>
                                 );
                               })}
-                            </div>
-
-                            {/* ➕ UPLOAD BUTTON (ALWAYS VISIBLE) */}
-                           <div className="flex gap-2">
-
-  {/* Gallery Upload */}
-  <div
-    className="h-10 w-10 rounded-lg flex items-center justify-center border border-line cursor-pointer hover:bg-card"
-    onClick={() =>
-      setImagePicker({
-        open: true,
-        type: "gallery",
-        propertyId: property._id,
-      })
-    }
-  >
-    <Upload size={16} />
-  </div>
-
-  {/* Banner Upload */}
-  
-  
-
-</div>
+                            {property.gallery.length > 5 && (
+                              <span className="text-[10px] text-muted ml-0.5">
+                                +{property.gallery.length - 5}
+                              </span>
+                            )}
                           </div>
-                        ) : (
-                         <div className="flex gap-2">
-
-  {/* Gallery Upload */}
-  <div
-    className="h-10 w-10 rounded-lg flex items-center justify-center border border-line cursor-pointer hover:bg-card"
-    onClick={() =>
-      setImagePicker({
-        open: true,
-        type: "gallery",
-        propertyId: property._id,
-      })
-    }
-  >
-    <Upload size={16} />
-  </div>
-
-  {/* Banner Upload */}
-  <div
-    className="h-10 w-10 rounded-lg flex items-center justify-center border border-line cursor-pointer hover:bg-card"
-    onClick={() =>
-      setImagePicker({
-        open: true,
-        type: "banner",
-        propertyId: property._id,
-      })
-    }
-  >
-    🖼️
-  </div>
-
-</div>
-                        )}
-                      </div>
-                      {property?.bannerImages?.length > 0 && (
-  <div className="flex gap-1 mt-2">
-    {property?.bannerImages?.slice(0, 3).map((img, i) => (
-      <img
-        key={i}
-        src={img}
-        className="h-6 w-10 rounded object-cover border"
-      />
-    ))}
-  </div>
-)}
-                    </td>
-                    <td className="px-4 py-3 text-muted">
-                      {Array.isArray(property?.type)
-                        ? property.type.map((t: any) => t.title).join(", ")
-                        : property?.type?.title || "—"}
-                    </td>
-                    {/* Action — Developer / Floor Plans / Features / FAQ */}
-                    <td className="px-4 py-3 align-top max-w-[200px]">
-                      <div className="flex flex-wrap gap-1.5">
-                        {property?.developer?.title && (
-                          <span className="inline-flex items-center rounded px-2 py-1 text-xs font-medium bg-green-50 text-green-700 border border-green-200">
-                            {property.developer.title}
-                          </span>
-                        )}
-
-                        {/* Clickable Floor Plans badge */}
-                        {<button
-                              onClick={() =>
-                                setManageModal({
-                                  type: "floorPlans",
-                                  property,
-                                })
-                              }
-                              className="inline-flex items-center rounded px-2 py-1 text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 transition-colors cursor-pointer"
-                            >
-                          Floor Plans ({property?.floorPlans?.length})
-                            </button>
-                        }
-
-                        {/* Clickable Features / Amenities badge */}
-                        {
                           <button
+                            className="h-6 w-6 rounded flex items-center justify-center border border-line hover:bg-card shrink-0"
                             onClick={() =>
-                              setManageModal({
-                                type: "amenities",
-                                property,
+                              setImagePicker({
+                                open: true,
+                                type: "gallery",
+                                propertyId: property._id,
                               })
                             }
-                            className="inline-flex items-center rounded px-2 py-1 text-xs font-medium bg-purple-50 text-purple-700 border border-purple-200 hover:bg-purple-100 transition-colors cursor-pointer"
                           >
-                            Features ({property?.amenities?.length})
+                            <Upload size={11} className="text-gold" />
                           </button>
-                        }
+                        </>
+                      ) : (
+                        <button
+                          className="h-6 w-6 rounded flex items-center justify-center border border-dashed border-line hover:bg-card"
+                          onClick={() =>
+                            setImagePicker({
+                              open: true,
+                              type: "gallery",
+                              propertyId: property._id,
+                            })
+                          }
+                        >
+                          <Upload size={11} className="text-muted" />
+                        </button>
+                      )}
+                    </div>
 
-                        {/* Clickable FAQ badge */}
-                        {
-                          <button
-                            onClick={() =>
-                              setManageModal({ type: "faq", property })
-                            }
-                            className="inline-flex items-center rounded px-2 py-1 text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100 transition-colors cursor-pointer"
+                    {/* Banner images strip */}
+                    {Array.isArray(property?.bannerImages) &&
+                      property.bannerImages.length > 0 && (
+                        <div className="flex gap-0.5 mt-1">
+                          {property.bannerImages
+                            .slice(0, 3)
+                            .map((img: string, i: number) => (
+                              <img
+                                key={i}
+                                src={img}
+                                className="h-4 w-7 rounded object-cover border border-line"
+                              />
+                            ))}
+                          {property.bannerImages.length > 3 && (
+                            <span className="text-[10px] text-muted self-center ml-0.5">
+                              +{property.bannerImages.length - 3}
+                            </span>
+                          )}
+                        </div>
+                      )}
+                  </td>
+
+                  {/* Type — formatted */}
+                  <td className="px-3 py-2.5 min-w-[130px]">
+                    <div className="flex flex-wrap gap-1">
+                      {Array.isArray(property?.type) &&
+                      property.type.length > 0 ? (
+                        property.type.map((t: any, i: number) => (
+                          <span
+                            key={i}
+                            className="inline-flex items-center rounded-md px-1.5 py-0.5 text-[11px] font-medium bg-card border border-line text-text"
                           >
-                            FAQ ({property?.faq?.length})
-                          </button>
-                        }
-                        {<div
-  data-tooltip-target="tooltip-default"
-    className="inline-flex items-center rounded px-2 py-1 text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100 transition-colors cursor-pointer"
-    onClick={() =>
-      setImagePicker({
-        open: true,
-        type: "banner",
-        propertyId: property._id,
-      })
-    }
-  >
-    Banner
-    
-  </div>}
-                      </div>
-                    </td>
-                    {/* Action — Type & Developer as badges */}
-                    {/* <td className="px-4 py-3 align-top max-w-[200px]">
-                      <div className="flex flex-wrap gap-1.5">
-                        {property?.developer?.title && (
-                          <span className="inline-flex items-center rounded px-2 py-1 text-xs font-medium bg-green-50 text-green-700 border border-green-200">
-                            {property.developer.title}
+                            {formatPropertyType(t)}
                           </span>
-                        )}
-                        {property.floorPlans && (
-                          <span className="inline-flex items-center rounded px-2 py-1 text-xs font-medium bg-green-50 text-green-700 border border-green-200">
-                            Floor Plans ({property?.floorPlans?.length})
-                          </span>
-                        )}
-                        {property.faq && (
-                          <span className="inline-flex items-center rounded px-2 py-1 text-xs font-medium bg-green-50 text-green-700 border border-green-200">
-                            FAQ ({property?.faq?.length})
-                          </span>
-                        )}
-                        {property.amenities && (
-                          <span className="inline-flex items-center rounded px-2 py-1 text-xs font-medium bg-green-50 text-green-700 border border-green-200">
-                            Features ({property?.amenities?.length})
-                          </span>
-                        )}
-                        {/* <span className="inline-flex items-center rounded px-2 py-1 text-xs font-medium bg-card text-muted border border-line">
-                          Beds: {property.bedrooms || 0}
+                        ))
+                      ) : property?.type ? (
+                        <span className="inline-flex items-center rounded-md px-1.5 py-0.5 text-[11px] font-medium bg-card border border-line text-text">
+                          {formatPropertyType(property.type)}
                         </span>
-                        <span className="inline-flex items-center rounded px-2 py-1 text-xs font-medium bg-card text-muted border border-line">
-                          Baths: {property.bathrooms || 0}
-                        </span> 
-                      </div>
-                    </td>  */}
+                      ) : (
+                        <span className="text-xs text-muted">—</span>
+                      )}
+                    </div>
+                  </td>
 
-                    {/* Added At / Status */}
-                    <td className="px-4 py-3 align-top">
-                      <div className="font-medium text-text text-sm mb-1">
-                        {property?.createdAt
-                          ? new Date(property.createdAt).toLocaleDateString()
-                          : "—"}
-                      </div>
-                      <StatusBadge
-                        value={property.status || "draft"}
-                        tone={
-                          property.status === "active"
-                            ? "green"
-                            : property.status === "inactive"
-                              ? "red"
-                              : "slate"
+                  {/* Price — AED formatted */}
+                  <td className="px-3 py-2.5 whitespace-nowrap">
+                    <span className="text-sm font-medium text-text">
+                      {formatAED(property.price)}
+                    </span>
+                  </td>
+
+                  {/* Developer / Features */}
+                  <td className="px-3 py-2.5 min-w-[180px]">
+                    <div className="flex flex-wrap gap-1">
+                      {property?.developer?.title && (
+                        <span className="inline-flex items-center rounded px-1.5 py-0.5 text-[11px] font-medium bg-green-50 text-green-700 border border-green-200">
+                          {property.developer.title}
+                        </span>
+                      )}
+                      <button
+                        onClick={() =>
+                          setManageModal({ type: "floorPlans", property })
                         }
-                      />
-                    </td>
+                        className="inline-flex items-center rounded px-1.5 py-0.5 text-[11px] font-medium bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 transition-colors"
+                      >
+                        Plans ({property?.floorPlans?.length ?? 0})
+                      </button>
+                      <button
+                        onClick={() =>
+                          setManageModal({ type: "amenities", property })
+                        }
+                        className="inline-flex items-center rounded px-1.5 py-0.5 text-[11px] font-medium bg-purple-50 text-purple-700 border border-purple-200 hover:bg-purple-100 transition-colors"
+                      >
+                        Features ({property?.amenities?.length ?? 0})
+                      </button>
+                      <button
+                        onClick={() =>
+                          setManageModal({ type: "faq", property })
+                        }
+                        className="inline-flex items-center rounded px-1.5 py-0.5 text-[11px] font-medium bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100 transition-colors"
+                      >
+                        FAQ ({property?.faq?.length ?? 0})
+                      </button>
+                      <button
+                        onClick={() =>
+                          setImagePicker({
+                            open: true,
+                            type: "banner",
+                            propertyId: property._id,
+                          })
+                        }
+                        className="inline-flex items-center rounded px-1.5 py-0.5 text-[11px] font-medium bg-slate-50 text-slate-600 border border-slate-200 hover:bg-slate-100 transition-colors"
+                      >
+                        Banner
+                      </button>
+                    </div>
+                  </td>
 
-                    {/* Actions */}
-                    <td className="px-4 py-3 text-right align-top">
-                      <InlineActions
-                        onEdit={() => edit(property)}
-                        onDelete={() => remove(property._id)}
-                      />
-                    </td>
-                  </tr>
-                );
-              })}
+                  {/* Date / Status */}
+                  <td className="px-3 py-2.5 whitespace-nowrap">
+                    <div className="text-xs text-muted mb-1">
+                      {property?.createdAt
+                        ? new Date(property.createdAt).toLocaleDateString(
+                            "en-AE",
+                            { day: "2-digit", month: "short", year: "numeric" },
+                          )
+                        : "—"}
+                    </div>
+                    <StatusBadge
+                      value={property.status || "draft"}
+                      tone={
+                        property.status === "active"
+                          ? "green"
+                          : property.status === "inactive"
+                            ? "red"
+                            : "slate"
+                      }
+                    />
+                  </td>
+
+                  {/* Actions */}
+                  <td className="px-3 py-2.5 text-right">
+                    <InlineActions
+                      onEdit={() => edit(property)}
+                      onDelete={() => remove(property._id)}
+                    />
+                  </td>
+                </tr>
+              ))}
 
               {!filtered.length && (
                 <tr>
-                  <td colSpan={5} className="px-4 py-8 text-center text-muted">
+                  <td colSpan={7} className="px-4 py-8 text-center text-muted">
                     No properties found.
                   </td>
                 </tr>
@@ -2147,6 +2403,7 @@ export default function PropertiesPage() {
         </div>
       </SectionCard>
 
+      {/* ── Add / Edit Modal ── */}
       <Modal
         open={open}
         onClose={close}
@@ -2154,64 +2411,58 @@ export default function PropertiesPage() {
         subtitle="Expanded property form with SEO, geo, visibility, API relations, media, amenities, floor plans, and gallery uploads."
         size="xl"
       >
-        <div className="space-y-5 grid grid-cols-2">
+        <div className="grid grid-cols-2 gap-5">
           {propertyFormSections.map((section) => (
             <div
               key={section.key}
-              className="space-y-4 rounded-[24px] border border-line bg-panel/40 p-4"
+              className={`space-y-4 rounded-[24px] border border-line bg-panel/40 p-4 ${
+                section.custom === "amenities" ||
+                section.custom === "floorPlans" ||
+                section.custom === "faq" ||
+                section.custom === "gallery" ||
+                section.key === "descriptions"
+                  ? "col-span-2"
+                  : ""
+              }`}
             >
               <h3 className="text-sm font-semibold text-text">
                 {section.title}
               </h3>
-
               {section.custom === "faq" ? (
                 <FAQEditor
                   value={Array.isArray(form.faq) ? form.faq : []}
                   onChange={(next) =>
-                    setForm((prev) => ({
-                      ...prev,
-                      faq: next,
-                    }))
+                    setForm((prev) => ({ ...prev, faq: next }))
                   }
                 />
               ) : section.custom === "banners" ? (
-  <BannerUploader
-    value={Array.isArray(form.bannerImages) ? form.bannerImages : []}
-    onChange={(next) =>
-      setForm((prev) => ({
-        ...prev,
-        bannerImages: next,
-      }))
-    }
-  />
-) : section.custom === "amenities" ? (
+                <BannerUploader
+                  value={
+                    Array.isArray(form.bannerImages) ? form.bannerImages : []
+                  }
+                  onChange={(next) =>
+                    setForm((prev) => ({ ...prev, bannerImages: next }))
+                  }
+                />
+              ) : section.custom === "amenities" ? (
                 <AmenitiesEditor
                   value={Array.isArray(form.amenities) ? form.amenities : []}
                   onChange={(next) =>
-                    setForm((prev) => ({
-                      ...prev,
-                      amenities: next,
-                    }))
+                    setForm((prev) => ({ ...prev, amenities: next }))
                   }
                 />
               ) : section.custom === "floorPlans" ? (
                 <FloorPlansEditor
                   value={Array.isArray(form.floorPlans) ? form.floorPlans : []}
                   onChange={(next) =>
-                    setForm((prev) => ({
-                      ...prev,
-                      floorPlans: next,
-                    }))
+                    setForm((prev) => ({ ...prev, floorPlans: next }))
                   }
                 />
-              ) : section.custom === "file" ? ( // ✅ NEW
+              ) : section.custom === "file" ? (
                 <PdfUploader
                   value={form.propertydoc || ""}
                   onChange={(url) =>
-                    setForm((prev) => ({
-                      ...prev,
-                      propertydoc: url,
-                    }))
+                    setForm((prev) => ({ ...prev, propertydoc: url }))
                   }
                 />
               ) : (
@@ -2238,192 +2489,48 @@ export default function PropertiesPage() {
           submitLabel={editingId ? "Update Property" : "Create Property"}
         />
       </Modal>
+
       <PropertyImportModal
         open={open2}
         onClose={() => setOpen2(false)}
         fetchProperty={load}
       />
-      {/* Floor Plans / Amenities Preview Modal */}
-      {previewModal && (
-        <Modal
-          open={!!previewModal}
-          onClose={() => setPreviewModal(null)}
-          title={
-            previewModal.type === "floorPlans"
-              ? `Floor Plans — ${previewModal.property.title}`
-              : `Features / Amenities — ${previewModal.property.title}`
-          }
-          subtitle={
-            previewModal.type === "floorPlans"
-              ? "All floor plans attached to this property."
-              : "All amenities attached to this property."
-          }
-          size="xl"
-        >
-          {previewModal.type === "floorPlans" ? (
-            // ── FLOOR PLANS LIST ──
-            <div className="space-y-3">
-              {(previewModal.property.floorPlans || []).length === 0 ? (
-                <p className="text-sm text-muted">No floor plans added.</p>
-              ) : (
-                (previewModal.property.floorPlans || []).map((fp, i) => (
-                  <div
-                    key={fp._id || i}
-                    className="flex items-start gap-4 rounded-2xl border border-line bg-panel/60 p-4"
-                  >
-                    {/* Image */}
-                    {fp.image ? (
-                      <img
-                        src={fp.image}
-                        alt={fp.title}
-                        className="h-20 w-24 rounded-xl object-cover border border-line shrink-0"
-                      />
-                    ) : (
-                      <div className="h-20 w-24 rounded-xl bg-card border border-line shrink-0" />
-                    )}
 
-                    {/* Details */}
-                    <div className="flex-1 space-y-1">
-                      <div className="font-medium text-text">{fp.title}</div>
-                      <div className="text-xs text-muted">
-                        Unit Type:{" "}
-                        <span className="text-text">{fp.unitType || "—"}</span>
-                        {fp.category ? (
-                          <>
-                            {" "}
-                            &nbsp;·&nbsp; Category:{" "}
-                            <span className="text-text">{fp.category}</span>
-                          </>
-                        ) : null}
-                      </div>
-                      <div className="flex flex-wrap gap-3 text-xs text-muted mt-1">
-                        <span>🛏 {fp.bedrooms ?? 0} Beds</span>
-                        <span>🚿 {fp.bathrooms ?? 0} Baths</span>
-                        {fp.size ? <span>📐 {fp.size}</span> : null}
-                        {fp.price ? (
-                          <span className="text-gold font-medium">
-                            ₹{Number(fp.price).toLocaleString()}
-                          </span>
-                        ) : null}
-                      </div>
-                    </div>
-
-                    {/* Sort Order */}
-                    {fp.sortOrder !== undefined && (
-                      <div className="text-xs text-muted shrink-0">
-                        #{fp.sortOrder}
-                      </div>
-                    )}
-                  </div>
-                ))
-              )}
-            </div>
-          ) : previewModal.type === "amenities" ? (
-            // ── AMENITIES LIST ──
-            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-2">
-              {(previewModal.property.amenities || []).length === 0 ? (
-                <p className="text-sm text-muted col-span-full">
-                  No amenities added.
-                </p>
-              ) : (
-                (previewModal.property.amenities || []).map((amenity, i) => (
-                  <div
-                    key={amenity._id || i}
-                    className="flex items-center gap-3 rounded-2xl border border-line bg-panel/60 px-4 py-3"
-                  >
-                    {amenity.icon ? (
-                      <img
-                        src={amenity.icon}
-                        alt={amenity.title}
-                        className="h-9 w-9 rounded-lg object-cover border border-line shrink-0"
-                      />
-                    ) : (
-                      <div className="h-9 w-9 rounded-lg bg-card border border-line shrink-0" />
-                    )}
-                    <div>
-                      <div className="text-sm font-medium text-text">
-                        {amenity.title}
-                      </div>
-                      {amenity.description ? (
-                        <div className="text-xs text-muted mt-0.5">
-                          {amenity.description}
-                        </div>
-                      ) : null}
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          ) : (
-            // ── FAQ LIST ──
-            <div className="space-y-3">
-              {(previewModal.property.faq || []).length === 0 ? (
-                <p className="text-sm text-muted">No FAQs added.</p>
-              ) : (
-                (previewModal.property.faq || []).map((item, i) => (
-                  <div
-                    key={i}
-                    className="rounded-2xl border border-line bg-panel/60 p-4 space-y-2"
-                  >
-                    <div className="flex items-start gap-3">
-                      <span className="shrink-0 mt-0.5 flex h-6 w-6 items-center justify-center rounded-full bg-amber-100 text-amber-700 text-xs font-semibold">
-                        {i + 1}
-                      </span>
-                      <div className="font-medium text-text text-sm leading-snug">
-                        {item.question}
-                      </div>
-                    </div>
-                    {item.answer && (
-                      <div className="ml-9 text-sm text-muted leading-relaxed">
-                        {item.answer}
-                      </div>
-                    )}
-                  </div>
-                ))
-              )}
-            </div>
-          )}
-        </Modal>
-      )}
+      {/* ── Image Picker ── */}
       <ImagePickerModal
         open={imagePicker.open}
-        onClose={() => setImagePicker({ open: false })}
+        onClose={() => setImagePicker({ open: false, type: "gallery" })}
         onSelect={async (images) => {
-  if (!imagePicker.propertyId || images.length === 0) return;
-
-  try {
-    const current = items.find((p) => p._id === imagePicker.propertyId);
-
-    let updatedPayload: any = {};
-
-    if (imagePicker.type === "gallery") {
-      const updated = [...(current?.gallery || []), ...images];
-      updatedPayload.gallery = Array.from(new Set(updated));
-    }
-
-    if (imagePicker.type === "banner") {
-      const updated = [...(current?.bannerImages || []), ...images];
-      updatedPayload.bannerImages = Array.from(new Set(updated));
-    }
-
-    const type = current?.type?.map((t) => t?._id);
-    const subType = current?.subType?.map((t) => t?._id);
-
-    await api.patch(`/properties/${imagePicker.propertyId}`, {
-      ...current,
-      developer: current?.developer?._id,
-      location: current?.location?._id,
-      type,
-      subType,
-      ...updatedPayload,
-    });
-
-    await load();
-  } catch (err) {
-    console.error("Upload failed", err);
-  }
-}}
+          if (!imagePicker.propertyId || images.length === 0) return;
+          try {
+            const current = items.find((p) => p._id === imagePicker.propertyId);
+            let updatedPayload: any = {};
+            if (imagePicker.type === "gallery")
+              updatedPayload.gallery = Array.from(
+                new Set([...(current?.gallery || []), ...images]),
+              );
+            if (imagePicker.type === "banner")
+              updatedPayload.bannerImages = Array.from(
+                new Set([...(current?.bannerImages || []), ...images]),
+              );
+            const type = current?.type?.map((t: any) => t?._id);
+            const subType = current?.subType?.map((t: any) => t?._id);
+            await api.patch(`/properties/${imagePicker.propertyId}`, {
+              ...current,
+              developer: current?.developer?._id,
+              location: current?.location?._id,
+              type,
+              subType,
+              ...updatedPayload,
+            });
+            await load();
+          } catch (err) {
+            console.error("Upload failed", err);
+          }
+        }}
       />
+
+      {/* ── Manage Modal (Floor Plans / Amenities / FAQ) ── */}
       {manageModal && (
         <Modal
           open={!!manageModal}
@@ -2434,7 +2541,7 @@ export default function PropertiesPage() {
           {manageModal.type === "floorPlans" && (
             <FloorPlansEditor
               value={(manageModal.property.floorPlans || []).map((fp: any) =>
-                typeof fp === "string" ? fp : fp?.title
+                typeof fp === "string" ? fp : fp?.title,
               )}
               onChange={(next) =>
                 setManageModal((prev) =>
@@ -2448,7 +2555,6 @@ export default function PropertiesPage() {
               }
             />
           )}
-
           {manageModal.type === "amenities" && (
             <AmenitiesEditor
               value={manageModal.property.amenities || []}
@@ -2464,29 +2570,24 @@ export default function PropertiesPage() {
               }
             />
           )}
-
           {manageModal.type === "faq" && (
             <FAQEditor
               value={manageModal.property.faq || []}
               onChange={(next) =>
                 setManageModal((prev) =>
                   prev
-                    ? {
-                        ...prev,
-                        property: { ...prev.property, faq: next },
-                      }
+                    ? { ...prev, property: { ...prev.property, faq: next } }
                     : null,
                 )
               }
             />
           )}
-
           <div className="flex justify-end mt-4">
             <ActionButton
               onClick={async () => {
                 const p = manageModal.property;
-                const type = p?.type?.map((ty) => ty?._id);
-                const subType = p?.subType?.map((ty) => ty?._id);
+                const type = p?.type?.map((ty: any) => ty?._id);
+                const subType = p?.subType?.map((ty: any) => ty?._id);
                 await api.patch(`/properties/${p._id}`, {
                   ...p,
                   developer: p?.developer?._id,
@@ -2497,7 +2598,6 @@ export default function PropertiesPage() {
                   subType,
                   faq: p.faq,
                 });
-
                 await load();
                 setManageModal(null);
               }}

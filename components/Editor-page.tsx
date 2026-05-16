@@ -848,6 +848,7 @@ import {
   TextInput,
 } from "@/components/crud-kit";
 import { TiptapEditor } from "./TextEditor";
+import { MediaPickerField } from "./MediaPickerField";
 
 type RelationOption = { label: string; value: string };
 type RelationOptionsMap = Record<string, RelationOption[]>;
@@ -872,6 +873,7 @@ function blankFromConfig(config: CmsConfig): CmsItem {
     else if (field.type === "multiselect") data[field.key] = [];
     else if (field.type === "relation-select" && (field as any).multiple)
       data[field.key] = [];
+    else if (field.type === "advertisement") data[field.key] = [];
     else data[field.key] = "";
   }
   return {
@@ -946,7 +948,8 @@ function GalleryUploader({
   const images = Array.isArray(value) ? value : [];
   const [urlInput, setUrlInput] = useState("");
   const [uploading, setUploading] = useState(false);
-
+const [assets, setAssets] = useState<any[]>([]);
+const [loadingAssets, setLoadingAssets] = useState(false);
   const uploadSingleFile = async (file: File): Promise<string> => {
     const formData = new FormData();
     formData.append("file", file);
@@ -962,7 +965,26 @@ function GalleryUploader({
     if (!uploadedUrl) throw new Error("Upload API did not return image URL");
     return uploadedUrl;
   };
+useEffect(() => {
+  (async () => {
+    try {
+      setLoadingAssets(true);
 
+      // REPLACE with:
+const response = await api.get("/properties/assets");
+
+const rows = Array.isArray(response)
+  ? response
+  : response?.data || response?.items || response?.results || [];
+
+setAssets(Array.isArray(rows) ? rows : []);
+    } catch (err) {
+      console.error("Failed to load assets", err);
+    } finally {
+      setLoadingAssets(false);
+    }
+  })();
+}, []);
   const handleFiles = async (e: ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (!files.length) return;
@@ -1024,6 +1046,50 @@ function GalleryUploader({
         {uploading ? (
           <p className="text-xs text-muted">Uploading images...</p>
         ) : null}
+        <div className="space-y-2">
+  <FieldLabel label="Select From Uploaded Assets" />
+
+  {loadingAssets ? (
+    <p className="text-xs text-muted">Loading assets...</p>
+  ) : (
+    <div className="grid grid-cols-3 md:grid-cols-5 gap-3 max-h-[300px] overflow-y-auto rounded-2xl border border-line p-3">
+      {assets.map((asset: any) => {
+        const selected = images.includes(asset.url);
+
+        return (
+          <button
+            type="button"
+            key={asset._id || asset.url}
+            onClick={() => {
+              if (selected) {
+                onChange(images.filter((img) => img !== asset.url));
+              } else {
+                onChange([...images, asset.url]);
+              }
+            }}
+            className={`relative overflow-hidden rounded-xl border transition ${
+              selected
+                ? "border-gold ring-2 ring-gold"
+                : "border-line hover:border-gold/40"
+            }`}
+          >
+            <img
+              src={asset.url}
+              alt=""
+              className="h-24 w-full object-cover"
+            />
+
+            {selected && (
+              <div className="absolute top-1 right-1 bg-gold text-black text-[10px] px-1.5 py-0.5 rounded">
+                ✓
+              </div>
+            )}
+          </button>
+        );
+      })}
+    </div>
+  )}
+</div>
       </div>
       {!!images.length && (
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-2">
@@ -1070,11 +1136,220 @@ function GalleryUploader({
   );
 }
 
+// ── Media Image Picker ─────────────────────────────────────────────────────
+function MediaImagePicker({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (url: string) => void;
+}) {
+  const [mediaItems, setMediaItems] = useState<CmsItem[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        setLoading(true);
+        const res = await api.get<any>("/properties/assets");
+const rows = Array.isArray(res)
+  ? res
+  : res?.data || res?.items || res?.results || [];
+setMediaItems(Array.isArray(rows) ? rows : []);
+      } catch {
+        console.error("Failed to load media items");
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
+  if (loading) return <p className="text-xs text-muted">Loading media...</p>;
+  if (!mediaItems.length) return null;
+
+  return (
+    <div className="space-y-2">
+      <FieldLabel label="Select From Existing Media" />
+      <div className="grid grid-cols-3 md:grid-cols-5 gap-3 max-h-[260px] overflow-y-auto rounded-2xl border border-line p-3">
+        {mediaItems
+          .filter((m) => m.url)
+          .map((m) => {
+            const selected = value === m.url;
+            return (
+              <button
+                type="button"
+                key={m._id || m.image}
+                onClick={() => onChange(selected ? "" : m.url)}
+                className={`relative overflow-hidden rounded-xl border transition ${
+                  selected
+                    ? "border-gold ring-2 ring-gold"
+                    : "border-line hover:border-gold/40"
+                }`}
+              >
+                <img
+                  src={m.url}
+                  alt={m.title || ""}
+                  className="h-20 w-full object-cover"
+                />
+                {selected && (
+                  <div className="absolute top-1 right-1 bg-gold text-black text-[10px] px-1.5 py-0.5 rounded">
+                    ✓
+                  </div>
+                )}
+                {m.title && (
+                  <p className="text-[10px] text-muted px-1 pb-1 truncate text-left">
+                    {m.title}
+                  </p>
+                )}
+              </button>
+            );
+          })}
+      </div>
+    </div>
+  );
+}
+
+function AdvertisementUploader({
+  value,
+  onChange,
+}: {
+  value: { label: string; url: string; image: string; position: string }[];
+  onChange: (val: any[]) => void;
+}) {
+  const items = Array.isArray(value) ? value : [];
+  const [uploading, setUploading] = useState<number | null>(null);
+
+  const addItem = () =>
+    onChange([...items, { label: "", url: "", image: "", position: "sidebar" }]);
+
+  const removeItem = (index: number) =>
+    onChange(items.filter((_, i) => i !== index));
+
+  const updateItem = (index: number, key: string, val: string) => {
+    const next = [...items];
+    next[index] = { ...next[index], [key]: val };
+    onChange(next);
+  };
+
+  const handleUpload = async (e: ChangeEvent<HTMLInputElement>, index: number) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(index);
+    try {
+      const url = await uploadAsset(file);
+      if (url) updateItem(index, "image", url);
+    } finally {
+      setUploading(null);
+      e.target.value = "";
+    }
+  };
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <p className="text-xs font-medium text-gold uppercase tracking-wider">
+          Advertisements
+        </p>
+        <button
+          type="button"
+          onClick={addItem}
+          className="text-xs border border-gold/40 bg-gold/10 text-gold px-3 py-1 rounded-xl"
+        >
+          + Add
+        </button>
+      </div>
+
+      {!items.length && (
+        <p className="text-xs text-muted border border-dashed border-line rounded-xl px-3 py-4 text-center">
+          No ads yet.
+        </p>
+      )}
+
+      {items.map((ad, index) => (
+        <div key={index} className="border border-line rounded-xl p-3 space-y-2 bg-panel/30">
+          {/* Header row */}
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-medium text-text">Ad #{index + 1}</p>
+            <button
+              type="button"
+              className="text-[11px] text-red-400"
+              onClick={() => removeItem(index)}
+            >
+              Remove
+            </button>
+          </div>
+
+          {/* Position pills — compact */}
+          <div className="flex flex-wrap gap-1">
+            {["sidebar", "top", "bottom", "inline"].map((pos) => (
+              <button
+                key={pos}
+                type="button"
+                onClick={() => updateItem(index, "position", pos)}
+                className={`text-[11px] px-2 py-0.5 rounded-lg border capitalize ${
+                  ad.position === pos
+                    ? "border-gold bg-gold/10 text-gold"
+                    : "border-line text-muted"
+                }`}
+              >
+                {pos}
+              </button>
+            ))}
+          </div>
+
+          {/* Label */}
+          <input
+            className="input text-xs py-1.5"
+            placeholder="Ad label (e.g. Summer Sale)"
+            value={ad.label}
+            onChange={(e) => updateItem(index, "label", e.target.value)}
+          />
+
+          {/* URL */}
+          <input
+            className="input text-xs py-1.5"
+            placeholder="Click-through URL"
+            value={ad.url}
+            onChange={(e) => updateItem(index, "url", e.target.value)}
+          />
+
+          {/* Image URL + upload */}
+          <input
+            className="input text-xs py-1.5"
+            placeholder="Image URL"
+            value={ad.image}
+            onChange={(e) => updateItem(index, "image", e.target.value)}
+          />
+          <input
+            type="file"
+            accept="image/*"
+            className="input text-xs py-1"
+            disabled={uploading === index}
+            onChange={(e) => handleUpload(e, index)}
+          />
+          {uploading === index && (
+            <p className="text-[11px] text-muted">Uploading...</p>
+          )}
+
+          {/* Preview */}
+          {ad.image && (
+            <img
+              src={ad.image}
+              alt={ad.label || "Ad"}
+              className="w-full h-16 object-cover rounded-lg border border-line"
+            />
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
 function renderField(
   field: CmsField,
   value: any,
   onChange: (value: any) => void,
   relationOptions: RelationOptionsMap = {},
+  isMediaEntity = false,
 ) {
   switch (field.type) {
     case "textarea":
@@ -1258,53 +1533,23 @@ function renderField(
           ) : null}
         </div>
       );
-    case "video":
-    case "image":
-      return (
-        <div className="space-y-4 w-full">
-          <TextInput
-            label={field.label}
-            value={value || ""}
-            onChange={onChange}
-            placeholder={`Paste ${field.type} URL or upload below`}
-          />
-          <div>
-            <FieldLabel label={`${field.label} Upload`} />
-            <input
-              className="input"
-              type="file"
-              accept={field.type === "video" ? "video/*" : "image/*"}
-              onChange={async (e: ChangeEvent<HTMLInputElement>) => {
-                const file = e.target.files?.[0];
-                if (!file) return;
-                const uploadedUrl = await fileToDataUrl(file);
-                onChange(uploadedUrl);
-              }}
-            />
-          </div>
-          {value && (
-            <div className="w-48 rounded-2xl overflow-hidden border border-line bg-black">
-              {field.type === "video" ? (
-                <video
-                  src={value}
-                  controls
-                  className="w-full h-[250px] md:h-[350px] object-cover"
-                />
-              ) : (
-                <img
-                  src={value}
-                  alt={field.label}
-                  className="w-48 h-30 object-cover"
-                />
-              )}
-            </div>
-          )}
-          {field.note && <p className="text-xs text-muted">{field.note}</p>}
-        </div>
-      );
+  case "video":
+ case "image":
+   return (
+     <MediaPickerField
+       label={field.label}
+       value={value || ""}
+       onChange={onChange}
+       mediaType={field.type as "image" | "video"}
+       note={field.note}
+       placeholder={field.placeholder}
+     />
+   );
     case "gallery":
       return <GalleryUploader value={value || []} onChange={onChange} />;
-    default:
+   case "advertisement":
+  return <AdvertisementUploader value={value || []} onChange={onChange} />;
+      default:
       return (
         <div>
           <TextInput
@@ -1331,7 +1576,7 @@ function isFullWidth(field: CmsField) {
     "multiselect",
     "relation-select",
     "icon",
-    "editor"
+    "editor",
   ].includes(field.type);
 }
 
@@ -1450,6 +1695,7 @@ export function EditorCmsPage({ config }: { config: CmsConfig }) {
                     getValue(form, field),
                     (value) => setForm((prev) => setValue(prev, field, value)),
                     relationOptions,
+                     config.entity === "media",
                   )}
                 </div>
               ))}
@@ -1512,7 +1758,7 @@ export function EditorCmsPage({ config }: { config: CmsConfig }) {
                       Title
                     </th>
                     <th className="px-4 py-4 text-xs font-medium text-muted uppercase tracking-wider">
-                      Added At
+                      Added At 
                     </th>
                     <th className="px-4 py-4 text-xs font-medium text-muted uppercase tracking-wider">
                       Status
@@ -1530,12 +1776,12 @@ export function EditorCmsPage({ config }: { config: CmsConfig }) {
                         {index + 1}
                       </td>
                       <td className="px-4 py-4">
-                        <div className="h-12 w-12 overflow-hidden rounded-xl border border-line bg-card">
+                        <div className="h-12 w-12 overflow-hidden rounded-xl border border-line bg-gray">
                           {item.image ? (
                             <img
                               src={item.image}
                               alt={item.title}
-                              className="h-full w-full object-cover"
+                              className="h-full w-full object-contain bg-gray"
                             />
                           ) : (
                             <div className="h-full w-full bg-gradient-to-br from-violet-500/15 to-gold/10" />

@@ -26,6 +26,7 @@ import {
 } from "@/components/crud-kit";
 import { TiptapEditor } from "./TextEditor";
 import { ExternalLink, Pencil, Trash2 } from "lucide-react";
+import { MediaPickerField } from "./MediaPickerField";
 
 function blankFromConfig(config: CmsConfig): CmsItem {
   const data: Record<string, any> = {};
@@ -89,7 +90,9 @@ function blankFromConfig(config: CmsConfig): CmsItem {
       case "faq":
         data[field.key] = [];
         break;
-
+      case "advertisement":
+        data[field.key] = [];
+        break;
       default:
         data[field.key] = "";
         break;
@@ -122,19 +125,21 @@ function setValue(item: CmsItem, field: CmsField, value: any): CmsItem {
 }
 
 async function fileToDataUrl(file: File) {
-  try{const formData = new FormData();
-  formData.append("file", file);
-  const response = await api.post("/content/upload/gallery", formData, {});
-  console.log(response, "Upload response");
-  const uploadedUrl =
-    response?.data?.url ||
-    response?.data?.data?.url ||
-    response?.data?.fileUrl ||
-    response?.data?.data?.fileUrl ||
-    response?.data?.location ||
-    response?.data?.data?.location ||
-    "";
-  return uploadedUrl;}catch(err){
+  try {
+    const formData = new FormData();
+    formData.append("file", file);
+    const response = await api.post("/content/upload/gallery", formData, {});
+    console.log(response, "Upload response");
+    const uploadedUrl =
+      response?.data?.url ||
+      response?.data?.data?.url ||
+      response?.data?.fileUrl ||
+      response?.data?.data?.fileUrl ||
+      response?.data?.location ||
+      response?.data?.data?.location ||
+      "";
+    return uploadedUrl;
+  } catch (err) {
     alert(JSON.parse(e?.message)?.message || "Failed to upload file.");
     throw err;
   }
@@ -421,6 +426,7 @@ function GalleryUploader({
                   src={image}
                   alt={`Gallery ${index + 1}`}
                   className="h-20 w-20 rounded-2xl border border-line object-cover"
+                  loading="lazy"
                 />
               ) : null}
 
@@ -443,6 +449,169 @@ function GalleryUploader({
           No gallery images added yet.
         </div>
       ) : null}
+    </div>
+  );
+}
+function AdvertisementUploader({
+  value,
+  onChange,
+}: {
+  value: { label: string; url: string; image: string; position: string }[];
+  onChange: (val: any[]) => void;
+}) {
+  const items = Array.isArray(value) ? value : [];
+  const [uploading, setUploading] = useState<number | null>(null);
+
+  const positions = [
+    "top-banner",
+    "mid-article",
+    "sidebar",
+    "bottom",
+    "sticky",
+    "inline",
+  ];
+
+  const addItem = () =>
+    onChange([
+      ...items,
+      { label: "", url: "", image: "", position: "top-banner" },
+    ]);
+
+  const removeItem = (index: number) =>
+    onChange(items.filter((_, i) => i !== index));
+
+  const updateItem = (index: number, key: string, val: string) => {
+    const next = [...items];
+    next[index] = { ...next[index], [key]: val };
+    onChange(next);
+  };
+
+  const handleUpload = async (
+    e: ChangeEvent<HTMLInputElement>,
+    index: number,
+  ) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(index);
+    try {
+      const uploadedUrl = await fileToDataUrl(file);
+      updateItem(index, "image", uploadedUrl);
+    } catch (err) {
+      console.error("Ad image upload failed:", err);
+    } finally {
+      setUploading(null);
+      e.target.value = "";
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <p className="text-sm font-medium text-gold">Advertisements</p>
+        <button
+          onClick={addItem}
+          className="border border-gold/50 bg-gold/10 text-gold px-4 py-2 rounded-2xl text-sm"
+        >
+          + Add Advertisement
+        </button>
+      </div>
+
+      {!items.length && (
+        <div className="rounded-2xl border border-dashed border-line p-6 text-sm text-muted">
+          No advertisements added yet.
+        </div>
+      )}
+
+      {items.map((ad, index) => (
+        <div
+          key={index}
+          className="border border-line rounded-xl p-4 space-y-4 bg-panel/40"
+        >
+          <div className="flex justify-between items-center">
+            <p className="text-sm font-medium text-text">Ad #{index + 1}</p>
+            <button
+              className="text-red-500 text-sm"
+              onClick={() => removeItem(index)}
+            >
+              Remove
+            </button>
+          </div>
+
+          {/* Position selector */}
+          <div>
+            <FieldLabel label="Position" />
+            <div className="grid grid-cols-3 gap-2">
+              {[
+                "top-banner",
+                "mid-article",
+                "sidebar",
+                "bottom",
+                "sticky",
+                "inline",
+              ].map((pos) => (
+                <button
+                  key={pos}
+                  type="button"
+                  onClick={() => updateItem(index, "position", pos)}
+                  className={`rounded-xl border px-3 py-2 text-xs capitalize ${
+                    ad.position === pos
+                      ? "border-gold bg-gold/10 text-gold"
+                      : "border-line bg-panel text-text"
+                  }`}
+                >
+                  {pos.replace("-", " ")}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Label + URL */}
+          <div className="grid grid-cols-2 gap-3">
+            <TextInput
+              label="Ad Label / Title"
+              value={ad.label}
+              onChange={(v) => updateItem(index, "label", v)}
+              placeholder="e.g. Summer Sale"
+            />
+            <TextInput
+              label="Click-through URL"
+              value={ad.url}
+              onChange={(v) => updateItem(index, "url", v)}
+              placeholder="https://..."
+            />
+          </div>
+
+          {/* Image */}
+          <div className="space-y-3">
+            <TextInput
+              label="Ad Image URL"
+              value={ad.image}
+              onChange={(v) => updateItem(index, "image", v)}
+              placeholder="Paste image URL or upload below"
+            />
+            <div>
+              <FieldLabel label="Upload Ad Image" />
+              <input
+                className="input"
+                type="file"
+                accept="image/*"
+                disabled={uploading === index}
+                onChange={(e) => handleUpload(e, index)}
+              />
+              {uploading === index && (
+                <p className="text-xs text-muted mt-1">Uploading...</p>
+              )}
+            </div>
+            {ad.image && (
+              <img
+                src={ad.image}
+                alt={ad.label || `Ad ${index + 1}`}
+                className="h-24 w-full object-cover rounded-xl border border-line"
+              />
+            )}
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
@@ -484,6 +653,18 @@ function renderField(
       return (
         <TextArea label={field.label} value={value || ""} onChange={onChange} />
       );
+      case "video":
+case "image":
+  return (
+    <MediaPickerField
+      label={field.label}
+      value={value || ""}
+      onChange={onChange}
+      mediaType={field.type as "image" | "video"}
+      note={field.note}
+      placeholder={field.placeholder}
+    />
+  );
     case "select":
       return (
         <SelectInput
@@ -666,6 +847,8 @@ function renderField(
           {field.note && <p className="text-xs text-muted">{field.note}</p>}
         </div>
       );
+    case "advertisement":
+      return <AdvertisementUploader value={value || []} onChange={onChange} />;
     default:
       return (
         <div>
@@ -808,6 +991,7 @@ export function GenericCmsPage({ config }: { config: CmsConfig }) {
       "video",
       "faq",
       "address",
+      "advertisement",
     ];
 
     return fullWidthTypes.includes(field.type) ? "col-span-6" : "col-span-3";
@@ -1085,7 +1269,7 @@ export function GenericCmsPage({ config }: { config: CmsConfig }) {
                                         ? `${item.property.area}`
                                         : null,
                                       item?.property?.price
-                                        ? `₹ ${item.property.price.toLocaleString()} AED`
+                                        ? `AED ${item.property.price.toLocaleString()} AED`
                                         : null,
                                     ]
                                       .filter(Boolean)
@@ -1352,6 +1536,7 @@ export function GenericCmsPage({ config }: { config: CmsConfig }) {
                                     src={item.image}
                                     alt={item.title}
                                     className="h-full w-full object-cover"
+                                    loading="lazy"
                                   />
                                 ) : (
                                   <div className="h-full w-full bg-gradient-to-br from-violet-500/15 to-gold/10" />
@@ -1370,9 +1555,12 @@ export function GenericCmsPage({ config }: { config: CmsConfig }) {
                                 </p>
                               ) : null}
                               {item.description ? (
-                                <p className="mt-1 text-xs text-muted/60 line-clamp-1">
-                                  {item.description}
-                                </p>
+                                <div
+                                  className="mt-1 text-xs text-muted/60 line-clamp-1"
+                                  dangerouslySetInnerHTML={{
+                                    __html: item.description,
+                                  }}
+                                />
                               ) : null}
                             </td>
 

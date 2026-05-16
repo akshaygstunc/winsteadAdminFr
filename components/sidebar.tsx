@@ -25,6 +25,7 @@ const roleAccessMap: Record<string, string[]> = {
     "/floor-plans",
     "/customization/developer-community",
     "/customization/communities",
+    "/sitemap"
   ],
 };
 
@@ -206,7 +207,7 @@ export function Sidebar() {
           </p>
         </div>
         <div className="p-2">
-        <ThemeToggle />
+          <ThemeToggle />
         </div>
       </div>
 
@@ -228,6 +229,7 @@ export function Sidebar() {
             </div>
           </div>
         ))}
+        
       </nav>
     </aside>
   );

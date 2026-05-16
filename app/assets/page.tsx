@@ -43,7 +43,7 @@ function findDuplicates(assets: Asset[]): Set<string> {
   return new Set(
     Object.entries(urlCount)
       .filter(([, count]) => count > 1)
-      .map(([url]) => url)
+      .map(([url]) => url),
   );
 }
 
@@ -97,7 +97,10 @@ function AssetCard({
 
       {/* Name */}
       <td className="px-4 py-4">
-        <p className="text-sm font-medium text-text truncate max-w-[320px]" title={asset.name}>
+        <p
+          className="text-sm font-medium text-text truncate max-w-[320px]"
+          title={asset.name}
+        >
           {asset.name || "Unnamed"}
         </p>
       </td>
@@ -282,8 +285,10 @@ function DeleteModal({
           <h2 className="text-base font-semibold text-text">Delete Asset</h2>
           <p className="mt-2 text-sm text-muted">
             Are you sure you want to delete{" "}
-            <span className="text-text font-medium">{asset.name || "this asset"}</span>?
-            This action cannot be undone.
+            <span className="text-text font-medium">
+              {asset.name || "this asset"}
+            </span>
+            ? This action cannot be undone.
           </p>
         </div>
 
@@ -310,6 +315,7 @@ function DeleteModal({
           >
             {loading ? "Deleting..." : "Yes, Delete"}
           </button>
+          
         </div>
       </div>
     </div>
@@ -325,6 +331,11 @@ export default function AssetsPage() {
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<"all" | "duplicates">("all");
+  const [sortBy, setSortBy] = useState<
+    "latest" | "oldest" | "name-asc" | "name-desc" | "size-asc" | "size-desc"
+  >("latest");
+  const [currentPage, setCurrentPage] = useState(1);
+const [pageSize, setPageSize] = useState(10);
   const [viewAsset, setViewAsset] = useState<Asset | null>(null);
   const [deleteAsset, setDeleteAsset] = useState<Asset | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
@@ -352,12 +363,47 @@ export default function AssetsPage() {
 
   const duplicateUrls = findDuplicates(assets);
 
-  const filtered = assets.filter((asset) => {
-    const matchesSearch =
-      !search || asset.name?.toLowerCase().includes(search.toLowerCase()) || asset.url?.toLowerCase().includes(search.toLowerCase());
-    const matchesDuplicate = filter === "all" || duplicateUrls.has(asset.url);
-    return matchesSearch && matchesDuplicate;
-  });
+  const filtered = [...assets]
+    .filter((asset) => {
+      const matchesSearch =
+        !search ||
+        asset.name?.toLowerCase().includes(search.toLowerCase()) ||
+        asset.url?.toLowerCase().includes(search.toLowerCase());
+
+      const matchesDuplicate = filter === "all" || duplicateUrls.has(asset.url);
+
+      return matchesSearch && matchesDuplicate;
+    })
+    .sort((a, b) => {
+      switch (sortBy) {
+        case "latest":
+          return (
+            new Date(b.uploadedAt || 0).getTime() -
+            new Date(a.uploadedAt || 0).getTime()
+          );
+
+        case "oldest":
+          return (
+            new Date(a.uploadedAt || 0).getTime() -
+            new Date(b.uploadedAt || 0).getTime()
+          );
+
+        case "name-asc":
+          return (a.name || "").localeCompare(b.name || "");
+
+        case "name-desc":
+          return (b.name || "").localeCompare(a.name || "");
+
+        case "size-asc":
+          return (a.size || 0) - (b.size || 0);
+
+        case "size-desc":
+          return (b.size || 0) - (a.size || 0);
+
+        default:
+          return 0;
+      }
+    });
 
   const toggleSelect = (id: string) => {
     setSelected((prev) => {
@@ -366,7 +412,18 @@ export default function AssetsPage() {
       return next;
     });
   };
+const totalPages = Math.ceil(filtered.length / pageSize);
 
+const paginatedAssets = filtered.slice(
+  (currentPage - 1) * pageSize,
+  currentPage * pageSize
+);
+
+useEffect(() => {
+  if (currentPage > totalPages) {
+    setCurrentPage(1);
+  }
+}, [filtered.length, totalPages, currentPage]);
   const selectAll = () => {
     if (selected.size === filtered.length) {
       setSelected(new Set());
@@ -400,7 +457,7 @@ export default function AssetsPage() {
     setLoading(true);
     try {
       await Promise.all(
-        Array.from(selected).map((id) => api.delete(`/content/assets/${id}`))
+        Array.from(selected).map((id) => api.delete(`/content/assets/${id}`)),
       );
       setMessage(`${selected.size} asset(s) deleted.`);
       setAssets((prev) => prev.filter((a) => !selected.has(a._id)));
@@ -428,7 +485,11 @@ export default function AssetsPage() {
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
           {[
             { label: "Total Assets", value: assets.length },
-            { label: "Duplicates", value: duplicateCount, highlight: duplicateCount > 0 },
+            {
+              label: "Duplicates",
+              value: duplicateCount,
+              highlight: duplicateCount > 0,
+            },
             { label: "Selected", value: selected.size },
             { label: "Showing", value: filtered.length },
           ].map((stat) => (
@@ -437,7 +498,9 @@ export default function AssetsPage() {
               className="card rounded-[20px] border border-line bg-panel/60 px-4 py-4"
             >
               <p className="text-xs text-muted">{stat.label}</p>
-              <p className={`mt-1 text-2xl font-semibold ${stat.highlight ? "text-red-400" : "text-text"}`}>
+              <p
+                className={`mt-1 text-2xl font-semibold ${stat.highlight ? "text-red-400" : "text-text"}`}
+              >
                 {stat.value}
               </p>
             </div>
@@ -463,6 +526,18 @@ export default function AssetsPage() {
                 <option value="all">All Assets</option>
                 <option value="duplicates">Duplicates Only</option>
               </select>
+              <select
+                className="input min-w-44"
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as any)}
+              >
+                <option value="latest">Latest First</option>
+                <option value="oldest">Oldest First</option>
+                <option value="name-asc">Name A-Z</option>
+                <option value="name-desc">Name Z-A</option>
+                <option value="size-asc">Size Low → High</option>
+                <option value="size-desc">Size High → Low</option>
+              </select>
               <ActionButton secondary onClick={selectAll}>
                 {selected.size === filtered.length && filtered.length > 0
                   ? "Deselect All"
@@ -479,6 +554,19 @@ export default function AssetsPage() {
               <ActionButton secondary onClick={load}>
                 Refresh
               </ActionButton>
+              <select
+  className="input min-w-28"
+  value={pageSize}
+  onChange={(e) => {
+    setPageSize(Number(e.target.value));
+    setCurrentPage(1);
+  }}
+>
+  <option value={10}>10 / page</option>
+  <option value={25}>25 / page</option>
+  <option value={50}>50 / page</option>
+  <option value={100}>100 / page</option>
+</select>
             </div>
           }
         >
@@ -494,42 +582,100 @@ export default function AssetsPage() {
             </div>
           ) : (
             <div className="overflow-hidden rounded-[28px] border border-line bg-panel/70">
-  <p className="px-5 pt-4 pb-2 text-xs text-muted">
-    Showing {filtered.length} of {filtered.length} entries
+              <p className="px-5 pt-4 pb-2 text-xs text-muted">
+                Showing {(currentPage - 1) * pageSize + 1}–
+{Math.min(currentPage * pageSize, filtered.length)} of{" "}
+{filtered.length} entries
+              </p>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left">
+                  <thead className="border-b border-line bg-card/50">
+                    <tr>
+                      <th className="px-4 py-3 text-xs font-medium text-muted uppercase tracking-wider w-12">
+                        SNO.
+                      </th>
+                      <th className="px-4 py-3 text-xs font-medium text-muted uppercase tracking-wider w-20">
+                        Image
+                      </th>
+                      <th className="px-4 py-3 text-xs font-medium text-muted uppercase tracking-wider">
+                        Name
+                      </th>
+                      <th className="px-4 py-3 text-xs font-medium text-muted uppercase tracking-wider">
+                        Size
+                      </th>
+                      <th className="px-4 py-3 text-xs font-medium text-muted uppercase tracking-wider">
+                        Uploaded At
+                      </th>
+                      <th className="px-4 py-3 text-xs font-medium text-muted uppercase tracking-wider">
+                        Status
+                      </th>
+                      <th className="px-4 py-3 text-xs font-medium text-muted uppercase tracking-wider text-right">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {paginatedAssets.map((asset, index) => (
+                      <AssetCard
+                        key={asset._id}
+                        index={(currentPage - 1) * pageSize + index}
+                        asset={asset}
+                        isDuplicate={duplicateUrls.has(asset.url)}
+                        onView={setViewAsset}
+                        onDelete={setDeleteAsset}
+                        selected={selected.has(asset._id)}
+                        onSelect={toggleSelect}
+                      />
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              {!filtered.length && (
+                <div className="p-8 text-sm text-muted">No assets found.</div>
+              )}
+              <div className="flex items-center justify-between px-5 py-4 border-t border-line">
+  <p className="text-sm text-muted">
+    Page {currentPage} of {totalPages || 1}
   </p>
-  <div className="overflow-x-auto">
-    <table className="w-full text-left">
-      <thead className="border-b border-line bg-card/50">
-        <tr>
-          <th className="px-4 py-3 text-xs font-medium text-muted uppercase tracking-wider w-12">SNO.</th>
-          <th className="px-4 py-3 text-xs font-medium text-muted uppercase tracking-wider w-20">Image</th>
-          <th className="px-4 py-3 text-xs font-medium text-muted uppercase tracking-wider">Name</th>
-          <th className="px-4 py-3 text-xs font-medium text-muted uppercase tracking-wider">Size</th>
-          <th className="px-4 py-3 text-xs font-medium text-muted uppercase tracking-wider">Uploaded At</th>
-          <th className="px-4 py-3 text-xs font-medium text-muted uppercase tracking-wider">Status</th>
-          <th className="px-4 py-3 text-xs font-medium text-muted uppercase tracking-wider text-right">Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        {filtered.map((asset, index) => (
-          <AssetCard
-            key={asset._id}
-            index={index}
-            asset={asset}
-            isDuplicate={duplicateUrls.has(asset.url)}
-            onView={setViewAsset}
-            onDelete={setDeleteAsset}
-            selected={selected.has(asset._id)}
-            onSelect={toggleSelect}
-          />
-        ))}
-      </tbody>
-    </table>
+
+  <div className="flex items-center gap-2">
+    <button
+      disabled={currentPage === 1}
+      onClick={() => setCurrentPage((p) => p - 1)}
+      className="rounded-xl border border-line px-4 py-2 text-sm disabled:opacity-40"
+    >
+      Previous
+    </button>
+
+    {Array.from({ length: totalPages }, (_, i) => i + 1)
+      .slice(
+        Math.max(currentPage - 3, 0),
+        Math.max(currentPage - 3, 0) + 5
+      )
+      .map((page) => (
+        <button
+          key={page}
+          onClick={() => setCurrentPage(page)}
+          className={`h-10 min-w-[40px] rounded-xl border text-sm transition ${
+            currentPage === page
+              ? "border-gold bg-gold/10 text-gold"
+              : "border-line hover:bg-card"
+          }`}
+        >
+          {page}
+        </button>
+      ))}
+
+    <button
+      disabled={currentPage === totalPages}
+      onClick={() => setCurrentPage((p) => p + 1)}
+      className="rounded-xl border border-line px-4 py-2 text-sm disabled:opacity-40"
+    >
+      Next
+    </button>
   </div>
-  {!filtered.length && (
-    <div className="p-8 text-sm text-muted">No assets found.</div>
-  )}
 </div>
+            </div>
           )}
         </SectionCard>
       </div>

@@ -80,9 +80,8 @@ export const navSections: NavSection[] = [
       // { label: "Explore", href: "/explore", icon: Globe },
       { label: "Podcast", href: "/podcast", icon: Mic },
       { label: "Blogs", href: "/blogs", icon: PenSquare },
-      { label: "Media", href: "/media", icon: Images },
+      { label: "News & Media", href: "/media", icon: Images },
       { label: "Events", href: "/customization/events", icon: Images },
-      { label: "Pages", href: "/pages", icon: FileText },
       // {
       // {
       //   label: "Relationship Manager",
@@ -116,11 +115,11 @@ export const navSections: NavSection[] = [
             href: "/customization/footer-menu-2",
             icon: MenuSquare,
           },
-          {
-            label: "Categories",
-            href: "/customization/categories",
-            icon: FolderKanban,
-          },
+          // {
+          //   label: "Categories",
+          //   href: "/customization/categories",
+          //   icon: FolderKanban,
+          // },
           {
             label: "Developer",
             href: "/customization/developer-community",
@@ -131,11 +130,6 @@ export const navSections: NavSection[] = [
             href: "/customization/communities",
             icon: Building2,
           },
-          // {
-          //   label: "Mega Category Ads",
-          //   href: "/customization/mega-category-ads",
-          //   icon: Images,
-          // },
         ],
       },
       {
@@ -184,6 +178,7 @@ export const navSections: NavSection[] = [
             href: "/customization/sublocation",
             icon: MapPin,
           },
+
           // { label: "Awards", href: "/customization/awards", icon: Star },
           // {
           //   label: "Advertisements",
@@ -219,9 +214,9 @@ export const navSections: NavSection[] = [
             href: "/career-page",
             icon: Globe,
           },
+          { label: "News-Media Page", href: "/master/news-media", icon: FileText },
           { label: "User Access", href: "/master/user-access", icon: Users },
-          // { label: "Custom SEO", href: "/master/custom-seo", icon: Globe },
-          // { label: "Sitemap", href: "/master/sitemap", icon: Globe },
+          { label: "Sitemap", href: "/sitemap", icon: Globe },
           // { label: "Page Logs", href: "/master/page-logs", icon: FileText },
         ],
       },

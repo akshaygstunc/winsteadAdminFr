@@ -1,65 +1,3 @@
-// 'use client';
-// import { useEffect, useState } from 'react';
-// import { DashboardShell } from '@/components/dashboard-shell';
-// import { Header } from '@/components/header';
-// import { DataTable } from '@/components/data-table';
-// import { api } from '@/lib/api';
-// import { WorkspaceSnapshot } from '@/lib/types';
-// import { MetricTile, SectionCard, StatusBadge } from '@/components/ui';
-
-// export default function DashboardPage() {
-//   const [data, setData] = useState<WorkspaceSnapshot | null>(null);
-//   useEffect(() => {
-//     api.get<WorkspaceSnapshot>('/workspace/snapshot').then(setData).catch(() => undefined);
-//   }, []);
-//   return (
-//     <DashboardShell>
-//       <Header title="Welcome to Dashboard" subtitle="This pass restructures the starter around the actual screens visible in the video: properties, contact queues, assessments, tasks, media, icons, about, and playbooks." />
-//       <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-2">
-//         <MetricTile label="Active Properties" value={data?.stats.activeListings ?? '--'} note="Live inventory currently shown in the system." />
-//         <MetricTile label="Contact Queues" value={data?.contactQueues.length ?? '--'} note="Queue items waiting for review or publishing." />
-//         <MetricTile label="Lead Conversion" value={data ? `${data.stats.conversionRate}%` : '--'} note="Qualified lead progression inside the luxury funnel." />
-//         <MetricTile label="Pending Assessments" value={data?.stats.pendingAssessments ?? '--'} note="Assessments that still need scheduling or review." />
-//         <MetricTile label="Open Tasks" value={data?.stats.openTasks ?? '--'} note="Operational work still moving through the approval flow." />
-//         <MetricTile label="Playbooks" value={data?.playbooks.length ?? '--'} note="Reusable workflows and guided scripts for the team." />
-//       </div>
-//       <div className="mt-6 panel-grid">
-//         <SectionCard title="Featured Properties" subtitle="Close match to the listing-heavy screen shown in the walkthrough.">
-//           <DataTable headers={['Property', 'Location', 'Price', 'Status']}>
-//             {(data?.properties || []).slice(0, 5).map((property) => (
-//               <tr key={property.title} className="border-t border-line text-sm text-muted">
-//                 <td className="px-5 py-4 text-text">{property.title}</td>
-//                 <td className="px-5 py-4">{property.location}</td>
-//                 <td className="px-5 py-4">${property.price.toLocaleString()}</td>
-//                 <td className="px-5 py-4"><StatusBadge value={property.status} tone={property.status === 'available' ? 'green' : property.status === 'booked' ? 'gold' : 'slate'} /></td>
-//               </tr>
-//             ))}
-//           </DataTable>
-//         </SectionCard>
-//         <SectionCard title="Assessment Requests" subtitle="Card-based review flow similar to the request review screen.">
-//           <div className="grid gap-4 md:grid-cols-2">
-//             {(data?.assessmentRequests || []).slice(0, 4).map((request) => (
-//               <div key={request.id} className="rounded-3xl border border-line bg-panel/60 p-4">
-//                 <div className="flex items-start justify-between gap-4">
-//                   <div>
-//                     <p className="text-sm font-semibold text-text">{request.name}</p>
-//                     <p className="mt-1 text-sm text-muted">{request.city} • {request.intent}</p>
-//                   </div>
-//                   <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-line bg-white/5 text-sm font-semibold text-gold">{request.avatar}</div>
-//                 </div>
-//                 <div className="mt-4 grid gap-3 sm:grid-cols-2">
-//                   <div className="rounded-2xl border border-line bg-card/70 p-3"><p className="text-xs uppercase tracking-[0.24em] text-gold">Budget</p><p className="mt-2 text-sm text-text">{request.budget}</p></div>
-//                   <div className="rounded-2xl border border-line bg-card/70 p-3"><p className="text-xs uppercase tracking-[0.24em] text-gold">Stage</p><p className="mt-2 text-sm text-text">{request.stage}</p></div>
-//                 </div>
-//               </div>
-//             ))}
-//           </div>
-//         </SectionCard>
-//       </div>
-//     </DashboardShell>
-//   );
-// }
-
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -166,14 +104,12 @@ function Sparkline({ data, positive }: { data: number[]; positive: boolean }) {
 
     ctx.clearRect(0, 0, w, h);
 
-    // Draw filled area
     ctx.beginPath();
     data.forEach((v, i) => {
       const x = i * step;
       const y = h - ((v - min) / range) * (h - 10) - 5;
       i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
     });
-    // Close path for fill
     ctx.lineTo((data.length - 1) * step, h);
     ctx.lineTo(0, h);
     ctx.closePath();
@@ -187,7 +123,6 @@ function Sparkline({ data, positive }: { data: number[]; positive: boolean }) {
     ctx.fillStyle = grad;
     ctx.fill();
 
-    // Draw line
     ctx.beginPath();
     data.forEach((v, i) => {
       const x = i * step;
@@ -204,7 +139,7 @@ function Sparkline({ data, positive }: { data: number[]; positive: boolean }) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Unified MetricCard — replaces both MetricTile and ContactQueryCard
+// Unified MetricCard
 // ─────────────────────────────────────────────────────────────────────────────
 
 interface MetricCardProps {
@@ -229,7 +164,6 @@ function MetricCard({
     <div className="card rounded-3xl border border-line bg-panel/60 px-5 py-5 flex items-center justify-between gap-4">
       <div className="flex flex-col gap-1 min-w-0">
         <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-gold/80 to-transparent" />
-
         <span className="text-[10px] font-semibold tracking-[0.22em] uppercase text-muted">
           {label}
         </span>
@@ -265,7 +199,6 @@ function MetricCard({
         {hasData ? (
           <Sparkline data={sparkline} positive={positive} />
         ) : (
-          // Flat placeholder line when no time-series data
           <div className="w-[130px] h-[44px] flex items-center">
             <div className="w-full h-px bg-line opacity-40" />
           </div>
@@ -335,9 +268,6 @@ function ContactQueryChart({ data }: { data: number[] }) {
 // Helpers — derive per-filter values for non-array stats
 // ─────────────────────────────────────────────────────────────────────────────
 
-/** Build a synthetic sparkline + delta for scalar stats (activeListings, conversionRate).
- *  Since these are point-in-time scalars (not timestamped arrays), we fabricate a
- *  plausible recent trend using a seeded variance so it feels data-driven. */
 function scalarSparkline(value: number, filter: TimeFilter): number[] {
   if (!value) return [];
   const points =
@@ -348,13 +278,35 @@ function scalarSparkline(value: number, filter: TimeFilter): number[] {
         : filter === "Month"
           ? 10
           : 12;
-  // Deterministic pseudo-random walk ending at `value`
   const seed = value * 0.1;
   return Array.from({ length: points }, (_, i) => {
     const progress = i / (points - 1);
     const noise = Math.sin(i * 2.3 + seed) * seed * 0.4;
     return Math.max(0, Math.round(value * progress + noise));
   });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Helper — resolve location display string
+// ─────────────────────────────────────────────────────────────────────────────
+
+function resolveLocation(location: any): string {
+  if (!location) return "—";
+  if (typeof location === "string") return location;
+  return location.name ?? location.title ?? "—";
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Helper — normalise API response to array
+// ─────────────────────────────────────────────────────────────────────────────
+
+function normaliseToArray(response: any): any[] {
+  if (Array.isArray(response)) return response;
+  if (Array.isArray(response?.data)) return response.data;
+  if (Array.isArray(response?.items)) return response.items;
+  if (Array.isArray(response?.results)) return response.results;
+  if (Array.isArray(response?.payload)) return response.payload;
+  return [];
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -367,13 +319,28 @@ export default function DashboardPage() {
   );
   const [filter, setFilter] = useState<TimeFilter>("Today");
 
+  // ── Properties from /properties/admin ────────────────────────────────────
+  const [properties, setProperties] = useState<any[]>([]);
+  const [propertiesLoading, setPropertiesLoading] = useState(true);
+
   const filters: TimeFilter[] = ["Today", "Week", "Month", "Year"];
 
+  // Fetch workspace snapshot (metrics, contact queues, etc.)
   useEffect(() => {
     api
       .get<WorkspaceSnapshot>("/workspace/snapshot")
       .then(setWorkspaceData)
       .catch(() => undefined);
+  }, []);
+
+  // Fetch all properties from the dedicated properties API
+  useEffect(() => {
+    setPropertiesLoading(true);
+    api
+      .get("/properties/admin")
+      .then((res) => setProperties(normaliseToArray(res)))
+      .catch(() => setProperties([]))
+      .finally(() => setPropertiesLoading(false));
   }, []);
 
   // ── Contact queries — bucketed by filter ──────────────────────────────────
@@ -382,16 +349,18 @@ export default function DashboardPage() {
     workspaceData?.contactQueues || [],
     filter,
   );
-  // Fall back to synthetic sparkline when bucketed data has < 2 points
-  // (e.g. API data has no createdAt timestamps, or all items fall outside the range)
   const contactSparkline =
     _contactBucketed.length >= 2
       ? _contactBucketed
       : scalarSparkline(contactTotal, filter);
   const contactDelta = calculateDelta(contactSparkline);
 
-  // ── Active properties — synthetic sparkline from scalar stat ─────────────
-  const activePropValue = workspaceData?.stats.activeListings ?? 0;
+  // ── Active properties — use real count from properties API ────────────────
+  // Prefer the live count; fall back to workspaceData scalar if not loaded yet
+  const activePropValue =
+    properties.length > 0
+      ? properties.filter((p) => p.status === "active" || p.active).length
+      : (workspaceData?.stats.activeListings ?? 0);
   const activePropSparkline = scalarSparkline(
     typeof activePropValue === "number" ? activePropValue : 0,
     filter,
@@ -428,7 +397,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* ── Metric cards — all now show sparkline graph ───────────── */}
+      {/* ── Metric cards ──────────────────────────────────────────── */}
       <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-2 mb-6">
         <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-gold/80 to-transparent" />
 
@@ -457,12 +426,92 @@ export default function DashboardPage() {
 
       {/* ── Original sections ─────────────────────────────────────── */}
       <div className="mt-6 panel-grid">
+        {/* ── Featured Properties — all properties from /properties/admin ── */}
         <SectionCard
           title="Featured Properties"
-          subtitle="Close match to the listing-heavy screen shown in the walkthrough."
+          subtitle={
+            propertiesLoading
+              ? "Loading properties…"
+              : `${properties.length} propert${properties.length === 1 ? "y" : "ies"} in the system`
+          }
         >
-          <DataTable headers={["Property", "Location", "Price", "Status"]}>
-            {(workspaceData?.properties || []).slice(0, 5).map((property) => (
+          {propertiesLoading ? (
+            <div className="px-5 py-8 text-sm text-muted text-center">
+              Loading…
+            </div>
+          ) : properties.length === 0 ? (
+            <div className="px-5 py-8 text-sm text-muted text-center">
+              No properties found.
+            </div>
+          ) : (
+            <div className="overflow-hidden rounded-2xl border border-line">
+              {/* Sticky header */}
+              <table className="min-w-full text-sm">
+                <thead className="bg-card/80 text-left text-xs uppercase tracking-wider text-muted">
+                  <tr>
+                    <th className="px-5 py-4 text-xs font-semibold uppercase tracking-[0.24em] text-gold">Property</th>
+                    <th className="px-5 py-4 text-xs font-semibold uppercase tracking-[0.24em] text-gold">Location</th>
+                    <th className="px-5 py-4 text-xs font-semibold uppercase tracking-[0.24em] text-gold">Price</th>
+                    <th className="px-5 py-4 text-xs font-semibold uppercase tracking-[0.24em] text-gold">Status</th>
+                  </tr>
+                </thead>
+              </table>
+              {/* Scrollable body — ~6 rows at ~53px each */}
+              <div className="overflow-y-auto" style={{ maxHeight: "318px" }}>
+                <table className="min-w-full text-sm">
+                  <tbody>
+                    {properties.map((property) => (
+                      <tr
+                        key={property._id || property.title}
+                        className="border-t border-line text-sm text-muted hover:bg-card/40 transition-colors"
+                      >
+                        <td className="px-5 py-3 text-text">{property.title}</td>
+                        <td className="px-5 py-3">
+                          {resolveLocation(property.location)}
+                        </td>
+                        <td className="px-5 py-3">
+                          AED {Number(property.price || 0).toLocaleString()}
+                        </td>
+                        <td className="px-5 py-3">
+                          <StatusBadge
+                            value={property.status}
+                            tone={
+                              property.status === "active"
+                                ? "green"
+                                : property.status === "inactive"
+                                  ? "red"
+                                  : property.status === "draft"
+                                    ? "slate"
+                                    : property.status === "sold"
+                                      ? "slate"
+                                      : "gold"
+                            }
+                          />
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </SectionCard>
+
+        <SectionCard
+          title="Contact Query Analytics"
+          subtitle={`Daily trend of incoming contact queries — ${filter} view.`}
+        >
+          <ContactQueryChart data={contactSparkline} />
+        </SectionCard>
+      </div>
+    </DashboardShell>
+  );
+}
+
+
+
+
+ {/* {(workspaceData?.properties || []).map((property) => (
               <tr
                 key={property.title}
                 className="border-t border-line text-sm text-muted"
@@ -470,7 +519,7 @@ export default function DashboardPage() {
                 <td className="px-5 py-4 text-text">{property.title}</td>
                 <td className="px-5 py-4">{property.location}</td>
                 <td className="px-5 py-4">
-                  ${property.price.toLocaleString()}
+                  AED {property.price.toLocaleString()}
                 </td>
                 <td className="px-5 py-4">
                   <StatusBadge
@@ -485,17 +534,4 @@ export default function DashboardPage() {
                   />
                 </td>
               </tr>
-            ))}
-          </DataTable>
-        </SectionCard>
-
-        <SectionCard
-          title="Contact Query Analytics"
-          subtitle={`Daily trend of incoming contact queries — ${filter} view.`}
-        >
-          <ContactQueryChart data={contactSparkline} />
-        </SectionCard>
-      </div>
-    </DashboardShell>
-  );
-}
+            ))} */}

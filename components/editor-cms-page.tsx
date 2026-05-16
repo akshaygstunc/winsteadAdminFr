@@ -15,6 +15,7 @@ import {
   TextArea,
   TextInput,
 } from "@/components/crud-kit";
+import { MediaPickerField } from "./MediaPickerField";
 
 const ROOT_KEYS = [
   "title",
@@ -530,6 +531,7 @@ function renderField(
   value: any,
   onChange: (value: any) => void,
   relationOptions: Record<string, { label: string; value: string }[]>,
+  isMediaEntity?: boolean,
 ) {
   const uploadAsset = async (file: File) => {
     try {
@@ -731,51 +733,17 @@ function renderField(
         </div>
       );
 
-    case "video":
+     case "video":
     case "image":
       return (
-        <div className="space-y-3">
-          <TextInput
-            label={field.label}
-            value={value || ""}
-            onChange={onChange}
-            placeholder={field.placeholder || "Paste media URL or upload below"}
-          />
-          <div>
-            <FieldLabel label={`${field.label} Upload`} />
-            <input
-              className="input"
-              type="file"
-              accept={field.type === "video" ? "video/*" : "image/*"}
-              onChange={async (e: ChangeEvent<HTMLInputElement>) => {
-                const file = e.target.files?.[0];
-                if (!file) return;
-                const dataUrl = await uploadAsset(file);
-                onChange(dataUrl);
-              }}
-            />
-          </div>
-
-          {value ? (
-            field.type === "video" ? (
-              <video
-                src={value}
-                controls
-                className="h-36 w-full rounded-2xl border border-line object-cover"
-              />
-            ) : (
-              <img
-                src={value}
-                alt={field.label}
-                className="h-36 w-full rounded-2xl border border-line object-cover"
-              />
-            )
-          ) : null}
-
-          {field.note ? (
-            <p className="text-xs text-muted">{field.note}</p>
-          ) : null}
-        </div>
+        <MediaPickerField
+          label={field.label}
+          value={value || ""}
+          onChange={onChange}
+          mediaType={field.type as "image" | "video"}
+          note={field.note}
+          placeholder={field.placeholder}
+        />
       );
 
     default:
@@ -795,18 +763,21 @@ function renderField(
   }
 }
 
+// AFTER
 function FieldGroup({
   title,
   fields,
   form,
   setForm,
   relationOptions,
+  isMediaEntity,
 }: {
   title: string;
   fields: CmsField[];
   form: CmsItem;
   setForm: React.Dispatch<React.SetStateAction<CmsItem>>;
   relationOptions: Record<string, { label: string; value: string }[]>;
+  isMediaEntity?: boolean;
 }) {
   if (!fields.length) return null;
 
@@ -817,31 +788,13 @@ function FieldGroup({
       <div className="space-y-4">
         {fields.map((field) => (
           <div key={field.key}>
-            {renderField(
-              field,
-              getValue(form, field),
-              (value) =>
-                setForm((prev) => {
-                  let next = setValue(prev, field, value);
-
-                  if (field.key === "title") {
-                    const currentSlug = next.slug || "";
-                    const oldSlug = prev.slug || "";
-                    const generatedOldSlug = createSlug(prev.title || "");
-
-                    if (
-                      !currentSlug ||
-                      currentSlug === oldSlug ||
-                      currentSlug === generatedOldSlug
-                    ) {
-                      next = { ...next, slug: createSlug(String(value || "")) };
-                    }
-                  }
-
-                  return next;
-                }),
-              relationOptions,
-            )}
+{renderField(
+  field,
+  getValue(form, field),
+  (value) => setForm((prev) => setValue(prev, field, value)),
+  relationOptions,
+  isMediaEntity,
+)}
           </div>
         ))}
       </div>
@@ -1077,6 +1030,8 @@ export function PageEditorCmsPage({ config }: { config: CmsConfig }) {
                     form={form}
                     setForm={setForm}
                     relationOptions={relationOptions}
+                     isMediaEntity={true}
+
                   />
                 ))}
               </div>
@@ -1094,6 +1049,7 @@ export function PageEditorCmsPage({ config }: { config: CmsConfig }) {
                     form={form}
                     setForm={setForm}
                     relationOptions={relationOptions}
+                    
                   />
                 ))}
 
@@ -1181,6 +1137,7 @@ export function PageEditorCmsPage({ config }: { config: CmsConfig }) {
                               src={item.image}
                               alt={item.title}
                               className="h-full w-full object-cover"
+                              loading="lazy"
                             />
                           ) : (
                             <div className="h-full w-full bg-gradient-to-br from-violet-500/15 to-gold/10" />
