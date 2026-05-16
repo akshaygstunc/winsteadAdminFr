@@ -1263,7 +1263,7 @@ export function BlogEditorPage({ config }: { config: CmsConfig }) {
         </span>
       )}
     </div>
-  ) : (
+  ) : (              
     <span className="text-[11px] text-muted/50">—</span>
   )}
 </td>
