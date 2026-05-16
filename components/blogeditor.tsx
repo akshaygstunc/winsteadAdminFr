@@ -1160,6 +1160,9 @@ export function BlogEditorPage({ config }: { config: CmsConfig }) {
                     <th className="px-4 py-4 text-xs font-medium text-muted uppercase tracking-wider">
                       Status
                     </th>
+                    <th className="px-4 py-4 text-xs font-medium text-muted uppercase tracking-wider">
+  Ads
+</th>
                     <th className="px-4 py-4 text-xs font-medium text-muted uppercase tracking-wider text-right"></th>
                   </tr>
                 </thead>
@@ -1240,6 +1243,30 @@ export function BlogEditorPage({ config }: { config: CmsConfig }) {
                           }
                         />
                       </td>
+                      <td className="px-4 py-4">
+  {Array.isArray(item.advertisements) && item.advertisements.length > 0 ? (
+    <div className="flex flex-col gap-1">
+      <span className="inline-flex items-center gap-1 rounded-lg bg-gold/15 border border-gold/30 px-2 py-0.5 text-[11px] font-medium text-gold w-fit">
+        ✦ {item.advertisements.length} ad{item.advertisements.length > 1 ? "s" : ""}
+      </span>
+      {/* Show position labels if present */}
+      {item.advertisements.slice(0, 2).map((ad: any, i: number) =>
+        ad.position ? (
+          <span key={i} className="text-[10px] text-muted truncate max-w-[100px]">
+            {ad.position}
+          </span>
+        ) : null,
+      )}
+      {item.advertisements.length > 2 && (
+        <span className="text-[10px] text-muted">
+          +{item.advertisements.length - 2} more
+        </span>
+      )}
+    </div>
+  ) : (
+    <span className="text-[11px] text-muted/50">—</span>
+  )}
+</td>
                       <td className="px-4 py-4 text-right">
                         <InlineActions
                           onEdit={() => edit(item)}
