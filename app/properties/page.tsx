@@ -1097,6 +1097,9 @@ function AmenitiesEditor({
   );
 }
 
+// Drop-in replacement for FloorPlansEditor in your PropertiesPage file.
+// Paste this function in place of the existing FloorPlansEditor function.
+
 function FloorPlansEditor({
   value,
   onChange,
@@ -1108,31 +1111,53 @@ function FloorPlansEditor({
   const [options, setOptions] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
+  // ── new plan form ──
+  const [showForm, setShowForm] = useState(false);
+  const [newPlan, setNewPlan] = useState({
+    title: "",
+    unitType: "",
+    bedrooms: 0,
+    bathrooms: 0,
+    size: "",
+    price: 0,
+    image: "",
+    category: "",
+    sortOrder: 0,
+  });
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const loadOptions = async () => {
+    try {
+      setLoading(true);
+      const response = await api.get("/content/floor-plans");
+      const rows = normalizeApiArray(response);
+      setOptions(
+        rows.map((row: any) => ({
+          _id: String(row?._id ?? row?.id ?? ""),
+          title: String(row?.title ?? ""),
+          unitType: String(row?.data?.unitType ?? row?.unitType ?? ""),
+          bedrooms: Number(row?.data?.bedrooms ?? row?.bedrooms ?? 0),
+          bathrooms: Number(row?.data?.bathrooms ?? row?.bathrooms ?? 0),
+          image: String(row?.data?.image ?? row?.image ?? ""),
+        })),
+      );
+    } catch (error) {
+      console.error("Failed to load floor plans:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    (async () => {
-      try {
-        setLoading(true);
-        const response = await api.get("/content/floor-plans");
-        const rows = normalizeApiArray(response);
-        setOptions(
-          rows.map((row: any) => ({
-            _id: String(row?._id ?? row?.id ?? ""),
-            title: String(row?.title ?? ""),
-            unitType: String(row?.data?.unitType ?? row?.unitType ?? ""),
-            bedrooms: Number(row?.data?.bedrooms ?? row?.bedrooms ?? 0),
-            bathrooms: Number(row?.data?.bathrooms ?? row?.bathrooms ?? 0),
-            image: String(row?.data?.image ?? row?.image ?? ""),
-          })),
-        );
-      } catch (error) {
-        console.error("Failed to load floor plans:", error);
-      } finally {
-        setLoading(false);
-      }
-    })();
+    loadOptions();
   }, []);
 
   const isSelected = (id: string) => items.includes(id);
+
   const toggle = (option: any) => {
     if (!option?._id) return;
     onChange(
@@ -1141,14 +1166,243 @@ function FloorPlansEditor({
         : [...items, option._id],
     );
   };
+
+  const uploadImage = async (file: File): Promise<string> => {
+    const formData = new FormData();
+    formData.append("file", file);
+    const res = await api.post("/content/upload/gallery", formData);
+    return res?.data?.url || res?.data?.data?.url || res?.data?.fileUrl || "";
+  };
+
+  const saveNewPlan = async () => {
+    if (!newPlan.title.trim()) {
+      setSaveError("Title is required.");
+      return;
+    }
+    try {
+      setSaving(true);
+      setSaveError("");
+      const res = await api.post("/content/floor-plans", {
+        title: newPlan.title,
+        data: {
+          unitType: newPlan.unitType,
+          bedrooms: Number(newPlan.bedrooms),
+          bathrooms: Number(newPlan.bathrooms),
+          size: newPlan.size,
+          price: Number(newPlan.price),
+          image: newPlan.image,
+          category: newPlan.category,
+          sortOrder: Number(newPlan.sortOrder),
+        },
+      });
+      const createdId =
+        res?.data?._id || res?.data?.id || res?._id || res?.id || "";
+      await loadOptions();
+      if (createdId) onChange([...items, String(createdId)]);
+      setNewPlan({
+        title: "",
+        unitType: "",
+        bedrooms: 0,
+        bathrooms: 0,
+        size: "",
+        price: 0,
+        image: "",
+        category: "",
+        sortOrder: 0,
+      });
+      setShowForm(false);
+    } catch (err: any) {
+      setSaveError(
+        err?.response?.data?.message ||
+          err?.message ||
+          "Failed to save floor plan.",
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const selectedOptions = options.filter((o) => items.includes(o._id));
   const unselectedOptions = options.filter((o) => !items.includes(o._id));
 
   return (
     <div className="space-y-3">
-      <FieldLabel label="Floor Plans" />
+
+      {/* ── Header ── */}
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <FieldLabel label="Floor Plans" />
+        <button
+          type="button"
+          onClick={() => {
+            setShowForm((p) => !p);
+            setSaveError("");
+          }}
+          className="flex items-center gap-1.5 rounded-2xl border border-gold/50 bg-gold/10 px-3 py-1.5 text-xs font-medium text-gold hover:bg-gold/20 transition"
+        >
+          {showForm ? "✕ Cancel" : "+ Create New"}
+        </button>
+      </div>
+
+      {/* ── Inline create form ── */}
+      {showForm && (
+        <div className="rounded-2xl border border-gold/30 bg-gold/5 p-4 sm:p-5 space-y-4">
+          <p className="text-sm font-semibold text-gold">New Floor Plan</p>
+
+          {/* Fields grid — 1 col on mobile, 2 on sm+ */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+            <TextInput
+              label="Title *"
+              value={newPlan.title}
+              onChange={(v) => setNewPlan((p) => ({ ...p, title: v }))}
+              placeholder="e.g. 2BR Apartment — Type A"
+            />
+            <TextInput
+              label="Unit Type"
+              value={newPlan.unitType}
+              onChange={(v) => setNewPlan((p) => ({ ...p, unitType: v }))}
+              placeholder="e.g. apartment"
+            />
+            <TextInput
+              label="Bedrooms"
+              type="number"
+              value={newPlan.bedrooms}
+              onChange={(v) =>
+                setNewPlan((p) => ({ ...p, bedrooms: Number(v) }))
+              }
+            />
+            <TextInput
+              label="Bathrooms"
+              type="number"
+              value={newPlan.bathrooms}
+              onChange={(v) =>
+                setNewPlan((p) => ({ ...p, bathrooms: Number(v) }))
+              }
+            />
+            <TextInput
+              label="Size (sqft / sqm)"
+              value={newPlan.size}
+              onChange={(v) => setNewPlan((p) => ({ ...p, size: v }))}
+              placeholder="e.g. 1200 sqft"
+            />
+            <TextInput
+              label="Price"
+              type="number"
+              value={newPlan.price}
+              onChange={(v) =>
+                setNewPlan((p) => ({ ...p, price: Number(v) }))
+              }
+            />
+            <TextInput
+              label="Category"
+              value={newPlan.category}
+              onChange={(v) => setNewPlan((p) => ({ ...p, category: v }))}
+              placeholder="e.g. residential"
+            />
+            <TextInput
+              label="Sort Order"
+              type="number"
+              value={newPlan.sortOrder}
+              onChange={(v) =>
+                setNewPlan((p) => ({ ...p, sortOrder: Number(v) }))
+              }
+            />
+          </div>
+
+          {/* ── Image field — same pattern as ImageField component ── */}
+          <div className="space-y-3">
+            <FieldLabel label="Floor Plan Image" />
+
+            {/* Upload + Select buttons */}
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                disabled={uploading}
+                onClick={() => fileRef.current?.click()}
+                className="flex items-center gap-2 rounded-2xl border border-line bg-panel px-4 py-2.5 text-sm text-text hover:border-gold/50 transition disabled:opacity-50"
+              >
+                <Upload className="h-4 w-4 text-muted" />
+                {uploading ? "Uploading..." : "Upload"}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setPickerOpen(true)}
+                className="flex items-center gap-2 rounded-2xl border border-gold/40 bg-gold/10 px-4 py-2.5 text-sm text-gold hover:bg-gold/20 transition"
+              >
+                <Upload className="h-4 w-4" />
+                Select Uploaded
+              </button>
+
+              <input
+                ref={fileRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={async (e: ChangeEvent<HTMLInputElement>) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  setUploading(true);
+                  const url = await uploadImage(file);
+                  if (url) setNewPlan((p) => ({ ...p, image: url }));
+                  setUploading(false);
+                  e.target.value = "";
+                }}
+              />
+            </div>
+
+            {/* Preview + clear */}
+            {newPlan.image && (
+              <div className="relative w-fit">
+                <img
+                  src={newPlan.image}
+                  alt="preview"
+                  className="h-20 w-20 rounded-2xl border border-line object-cover"
+                />
+                <button
+                  type="button"
+                  onClick={() => setNewPlan((p) => ({ ...p, image: "" }))}
+                  className="absolute -top-1.5 -right-1.5 rounded-full bg-red-500 text-white w-5 h-5 flex items-center justify-center text-xs hover:bg-red-600"
+                >
+                  ×
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* ImagePickerModal — same as used in ImageField */}
+          <ImagePickerModal
+            open={pickerOpen}
+            onClose={() => setPickerOpen(false)}
+            onSelect={(images) => {
+              if (images[0]) setNewPlan((p) => ({ ...p, image: images[0] }));
+              setPickerOpen(false);
+            }}
+          />
+
+          {saveError && (
+            <p className="text-sm text-red-500 font-medium">{saveError}</p>
+          )}
+
+          <div className="flex flex-wrap gap-3 pt-1">
+            <ActionButton onClick={saveNewPlan} disabled={saving}>
+              {saving ? "Saving..." : "Save & Select"}
+            </ActionButton>
+            <ActionButton
+              secondary
+              onClick={() => {
+                setShowForm(false);
+                setSaveError("");
+              }}
+            >
+              Cancel
+            </ActionButton>
+          </div>
+        </div>
+      )}
+
+      {/* ── Selected chips ── */}
       {selectedOptions.length > 0 && (
-        <div className="flex flex-wrap gap-2 border-black border py-5 px-5 rounded-2xl mb-4">
+        <div className="flex flex-wrap gap-2 border border-line py-4 px-4 rounded-2xl">
           {selectedOptions.map((opt) => (
             <div
               key={opt._id}
@@ -1176,16 +1430,26 @@ function FloorPlansEditor({
           ))}
         </div>
       )}
-      <div className="flex flex-wrap gap-4 py-10">
+
+      {/* ── All checkboxes ── */}
+      <div className="flex flex-wrap gap-3 py-6">
         {loading ? (
           <div className="text-sm text-muted">Loading...</div>
+        ) : options.length === 0 ? (
+          <div className="text-sm text-muted">
+            No floor plans yet. Click "+ Create New" above to add one.
+          </div>
         ) : (
           [...selectedOptions, ...unselectedOptions].map((opt) => {
             const selected = isSelected(opt._id);
             return (
               <label
                 key={opt._id}
-                className={`flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer text-sm transition ${selected ? "bg-card border-gold text-gold" : "border-line text-text hover:bg-card/50"}`}
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer text-sm transition ${
+                  selected
+                    ? "bg-card border-gold text-gold"
+                    : "border-line text-text hover:bg-card/50"
+                }`}
               >
                 <input
                   type="checkbox"

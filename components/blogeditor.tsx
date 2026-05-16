@@ -405,25 +405,39 @@ function GalleryUploader({
 
 // ─── AdvertisementsSection ────────────────────────────────────────────────────
 
+// Drop-in replacement for AdvertisementsSection in your BlogEditorPage file.
+
+type AdSlot = {
+  position: string;
+  code: string;
+  image: string;
+  text: string;
+  link: string;
+};
+
+const emptyAdSlot = (): AdSlot => ({
+  position: "",
+  code: "",
+  image: "",
+  text: "",
+  link: "",
+});
+
 function AdvertisementsSection({
   value,
   onChange,
 }: {
-  value: { position: string; code: string; image?: string }[];
-  onChange: (next: { position: string; code: string; image?: string }[]) => void;
+  value: AdSlot[];
+  onChange: (next: AdSlot[]) => void;
 }) {
   const ads = Array.isArray(value) ? value : [];
   const [uploading, setUploading] = useState<Record<number, boolean>>({});
   const [pickerOpenIndex, setPickerOpenIndex] = useState<number | null>(null);
   const fileRefs = useRef<Record<number, HTMLInputElement | null>>({});
 
-  const add = () => onChange([...ads, { position: "", code: "", image: "" }]);
+  const add = () => onChange([...ads, emptyAdSlot()]);
 
-  const update = (
-    index: number,
-    key: "position" | "code" | "image",
-    val: string,
-  ) => {
+  const update = (index: number, key: keyof AdSlot, val: string) => {
     const next = [...ads];
     next[index] = { ...next[index], [key]: val };
     onChange(next);
@@ -465,19 +479,23 @@ function AdvertisementsSection({
         {ads.map((ad, i) => (
           <div
             key={i}
-            className="rounded-[12px] border border-line bg-card p-3 space-y-2"
+            className="rounded-[12px] border border-line bg-card p-3 space-y-3"
           >
+            {/* Slot header */}
             <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-text">Ad slot {i + 1}</span>
+              <span className="text-xs font-semibold text-text">
+                Ad Slot {i + 1}
+              </span>
               <button
                 type="button"
                 onClick={() => remove(i)}
-                className="text-xs text-muted hover:text-red-500"
+                className="text-xs text-muted hover:text-red-500 transition-colors"
               >
                 Remove
               </button>
             </div>
 
+            {/* position */}
             <TextInput
               label="Position"
               value={ad.position}
@@ -485,14 +503,31 @@ function AdvertisementsSection({
               placeholder="e.g. Top of article, After paragraph 3"
             />
 
-            <TextInput
-              label="Ad code / URL"
-              value={ad.code}
-              onChange={(v) => update(i, "code", v)}
-              placeholder="https://ads.example.com/slot/..."
+            {/* text */}
+            <TextArea
+              label="Advertisement Text"
+              value={ad.text}
+              onChange={(v) => update(i, "text", v)}
+              rows={3}
             />
 
-            {/* ── Ad Image ── */}
+            {/* link */}
+            <TextInput
+              label="Link / Destination URL"
+              value={ad.link}
+              onChange={(v) => update(i, "link", v)}
+              placeholder="https://..."
+            />
+
+            {/* code */}
+            <TextInput
+              label="Ad Code / Embed"
+              value={ad.code}
+              onChange={(v) => update(i, "code", v)}
+              placeholder="<script> or ad network code"
+            />
+
+            {/* image */}
             <div className="space-y-2">
               <FieldLabel label="Ad Image" />
 
@@ -521,7 +556,9 @@ function AdvertisementsSection({
                 </button>
 
                 <input
-                  ref={(el) => { fileRefs.current[i] = el; }}
+                  ref={(el) => {
+                    fileRefs.current[i] = el;
+                  }}
                   type="file"
                   accept="image/*"
                   className="hidden"
@@ -529,7 +566,7 @@ function AdvertisementsSection({
                 />
               </div>
 
-              {/* Paste URL fallback */}
+              {/* paste URL fallback */}
               <input
                 className="input text-xs w-full"
                 value={ad.image || ""}
@@ -537,7 +574,7 @@ function AdvertisementsSection({
                 placeholder="Or paste image URL..."
               />
 
-              {/* Preview */}
+              {/* preview */}
               {ad.image && (
                 <div className="relative w-full rounded-xl overflow-hidden border border-line bg-black">
                   <img
@@ -555,6 +592,26 @@ function AdvertisementsSection({
                 </div>
               )}
             </div>
+
+            {/* Payload preview — so you can verify keys */}
+            <details className="group">
+              <summary className="cursor-pointer text-[10px] text-muted hover:text-gold transition-colors select-none">
+                Preview payload keys
+              </summary>
+              <pre className="mt-1.5 rounded-xl bg-black/80 p-3 text-[10px] text-green-400 overflow-x-auto">
+                {JSON.stringify(
+                  {
+                    position: ad.position || "",
+                    text: ad.text || "",
+                    link: ad.link || "",
+                    code: ad.code || "",
+                    image: ad.image || "",
+                  },
+                  null,
+                  2,
+                )}
+              </pre>
+            </details>
           </div>
         ))}
 
@@ -567,7 +624,7 @@ function AdvertisementsSection({
         </button>
       </div>
 
-      {/* Single shared picker modal, keyed by slot index */}
+      {/* Single shared picker modal keyed by slot index */}
       <ImagePickerModal
         open={pickerOpenIndex !== null}
         onClose={() => setPickerOpenIndex(null)}
@@ -1009,17 +1066,22 @@ export function BlogEditorPage({ config }: { config: CmsConfig }) {
                     </div>
                   ))}
 
-                {/* ── Advertisements — always rendered if field exists ── */}
-                {advertisementField && (
-                  <AdvertisementsSection
-                    value={getValue(form, advertisementField) || []}
-                    onChange={(next) =>
-                      setForm((prev) =>
-                        setValue(prev, advertisementField, next),
-                      )
-                    }
-                  />
-                )}
+                {/* ── Advertisements ── */}
+{advertisementField ? (
+  <AdvertisementsSection
+    value={getValue(form, advertisementField) || []}
+    onChange={(next) =>
+      setForm((prev) => setValue(prev, advertisementField, next))
+    }
+  />
+) : (
+  <AdvertisementsSection
+    value={(form as any).advertisements || []}
+    onChange={(next) =>
+      setForm((prev) => ({ ...prev, advertisements: next }))
+    }
+  />
+)}
 
                 {/* Fallback: if no advertisement field in config, show standalone */}
                 {!advertisementField && (

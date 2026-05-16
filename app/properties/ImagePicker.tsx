@@ -291,13 +291,13 @@ export default function ImagePickerModal({
 
                 {/* Actions */}
                 <div className="flex justify-end gap-2 pt-2 border-t border-line">
-                    <button onClick={handleClose} className="btn-secondary">
+                    <button onClick={handleClose} className="btn-secondary border">
                         Cancel
                     </button>
                     <button
                         onClick={handleSelect}
                         disabled={!canConfirm}
-                        className="btn disabled:opacity-40 disabled:cursor-not-allowed"
+                        className="btn disabled:opacity-40 disabled:cursor-not-allowed border"
                     >
                         {tab === "upload"
                             ? `Save ${images.length > 0 ? `(${images.length})` : ""}`
