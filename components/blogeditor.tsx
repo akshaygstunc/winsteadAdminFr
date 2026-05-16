@@ -88,23 +88,33 @@ function blankFromConfig(config: CmsConfig): CmsItem {
 }
 
 function getValue(item: CmsItem, field: CmsField) {
+  const topLevelKeys = [
+    "title",
+    "subtitle",
+    "slug",
+    "status",
+    "image",
+    "description",
+    "sortOrder",
+    "advertisements", // ← ADD THIS
+  ];
+  if (topLevelKeys.includes(field.key)) return (item as any)[field.key];
   if (field.key in item) return (item as any)[field.key];
   return item.data?.[field.key];
 }
 
 function setValue(item: CmsItem, field: CmsField, value: any): CmsItem {
-  if (
-    field.key in item ||
-    [
-      "title",
-      "subtitle",
-      "slug",
-      "status",
-      "image",
-      "description",
-      "sortOrder",
-    ].includes(field.key)
-  ) {
+  const topLevelKeys = [
+    "title",
+    "subtitle",
+    "slug",
+    "status",
+    "image",
+    "description",
+    "sortOrder",
+    "advertisements", // ← ADD THIS
+  ];
+  if (field.key in item || topLevelKeys.includes(field.key)) {
     return { ...item, [field.key]: value };
   }
   return { ...item, data: { ...(item.data || {}), [field.key]: value } };
@@ -1067,21 +1077,23 @@ export function BlogEditorPage({ config }: { config: CmsConfig }) {
                   ))}
 
                 {/* ── Advertisements ── */}
-{advertisementField ? (
-  <AdvertisementsSection
-    value={getValue(form, advertisementField) || []}
-    onChange={(next) =>
-      setForm((prev) => setValue(prev, advertisementField, next))
-    }
-  />
-) : (
-  <AdvertisementsSection
-    value={(form as any).advertisements || []}
-    onChange={(next) =>
-      setForm((prev) => ({ ...prev, advertisements: next }))
-    }
-  />
-)}
+                {advertisementField ? (
+                  <AdvertisementsSection
+                    value={getValue(form, advertisementField) || []}
+                    onChange={(next) =>
+                      setForm((prev) =>
+                        setValue(prev, advertisementField, next),
+                      )
+                    }
+                  />
+                ) : (
+                  <AdvertisementsSection
+                    value={(form as any).advertisements || []}
+                    onChange={(next) =>
+                      setForm((prev) => ({ ...prev, advertisements: next }))
+                    }
+                  />
+                )}
 
                 {/* Fallback: if no advertisement field in config, show standalone */}
                 {!advertisementField && (
