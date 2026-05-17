@@ -199,6 +199,7 @@ export const navSections: NavSection[] = [
           { label: "Privacy Page", href: "/privacy", icon: FileText },
           { label: "Term Page", href: "/term", icon: FileText },
           { label: "Developer Page", href: "/developer-page", icon: FileText },
+          { label: "Blog Page", href: "/blogs-page", icon: FileText },
           {
             label: "Contact Us Page",
             href: "/contact-us-page",
