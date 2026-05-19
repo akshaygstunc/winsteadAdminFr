@@ -202,10 +202,10 @@ export const navSections: NavSection[] = [
           { label: "Blog Page", href: "/blogs-page", icon: FileText },
           {
             label: "Contact Us Page",
-            href: "/contact-us-page",
+            href: "/contact-us-page",    
             icon: FileText,
           },
-          {
+          {   
             label: "Events Page",
             href: "/gallery-page",
             icon: FileText,

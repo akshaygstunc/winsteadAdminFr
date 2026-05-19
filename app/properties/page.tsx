@@ -1916,7 +1916,16 @@ export default function PropertiesPage() {
           item?.location?._id === locationFilter ||
           item?.location === locationFilter)
       );
-    });
+    })
+    .sort((a, b) => {
+  const aOrder = Number(a.sortOrder) || 0;
+  const bOrder = Number(b.sortOrder) || 0;
+  // Push zeros/unset to the end, sorted items come first
+  if (aOrder === 0 && bOrder === 0) return 0;
+  if (aOrder === 0) return 1;
+  if (bOrder === 0) return -1;
+  return aOrder - bOrder;
+});
   }, [
     items,
     search,
@@ -1939,6 +1948,7 @@ export default function PropertiesPage() {
       const payload = {
         ...form,
         slug,
+        sortOrder: Number(form.sortOrder || 0),
         isStandalone: form.isStandalone || false,
         communities: form.isStandalone ? "NA" : form.communities || "",
         url: form.url || `/property/${slug}`,
@@ -1986,6 +1996,7 @@ export default function PropertiesPage() {
     setForm({
       ...emptyForm,
       ...item,
+      sortOrder: Number(item.sortOrder || 0),
       type: normalizeArrayIds(item.type),
       subType: normalizeArrayIds(item.subType),
       propertyType: normalizeArrayIds(item.propertyType || item.type),
