@@ -82,7 +82,6 @@ function blankFromConfig(config: CmsConfig): CmsItem {
     image: "",
     description: "",
     sortOrder: 0,
-    advertisements: [],
     data,
   };
 }
@@ -96,7 +95,6 @@ function getValue(item: CmsItem, field: CmsField) {
     "image",
     "description",
     "sortOrder",
-    "advertisements", // ← ADD THIS
   ];
   if (topLevelKeys.includes(field.key)) return (item as any)[field.key];
   if (field.key in item) return (item as any)[field.key];
@@ -112,7 +110,6 @@ function setValue(item: CmsItem, field: CmsField, value: any): CmsItem {
     "image",
     "description",
     "sortOrder",
-    "advertisements", // ← ADD THIS
   ];
   if (field.key in item || topLevelKeys.includes(field.key)) {
     return { ...item, [field.key]: value };
