@@ -1924,7 +1924,7 @@ export default function PropertiesPage() {
   if (aOrder === 0 && bOrder === 0) return 0;
   if (aOrder === 0) return 1;
   if (bOrder === 0) return -1;
-  return aOrder - bOrder;
+  return aOrder - bOrder;   
 });
   }, [
     items,
