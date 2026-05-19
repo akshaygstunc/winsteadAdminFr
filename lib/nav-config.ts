@@ -205,7 +205,7 @@ export const navSections: NavSection[] = [
             href: "/contact-us-page",    
             icon: FileText,
           },
-          {
+          {   
             label: "Events Page",
             href: "/gallery-page",
             icon: FileText,
