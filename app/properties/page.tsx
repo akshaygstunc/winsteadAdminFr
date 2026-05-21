@@ -318,12 +318,12 @@ const propertyFormSections: FieldSection[] = [
       {
         key: "location",
         label: "Location",
-        type: "relation-select",
-        relation: {
-          entity: "content/locations",
-          labelKey: "name",
-          valueKey: "_id",
-        },
+        type: "select",
+        options: [
+          { label: "Dubai", value: "Dubai" },
+          // future:
+          // { label: "Abu Dhabi", value: "abu-dhabi" },
+        ],
       },
       {
         key: "sublocation",
@@ -471,11 +471,16 @@ function BannerUploader({
   onChange: (next: string[]) => void;
 }) {
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <FieldLabel label="Banner Images" />
-      <p className="text-xs text-muted">
-        Upload banner images (recommended 1260x420)
-      </p>
+      <div className="flex items-center gap-2 flex-wrap">
+        <p className="text-xs text-muted">
+          Upload banner images for this property.
+        </p>
+        <span className="inline-flex items-center gap-1 rounded-lg border border-amber-200 bg-amber-50 px-2 py-0.5 text-[11px] text-amber-700">
+          📐 Recommended: <span className="font-semibold">1260×420px</span>
+        </span>
+      </div>
       <GalleryUploader value={value} onChange={onChange} />
     </div>
   );
@@ -835,9 +840,24 @@ function GalleryUploader({
             Note: Dimension should be 1260x420
           </span>
         </p>
+        <div className="mt-1 flex flex-wrap gap-2">
+          {[
+            { label: "Gallery", size: "1260×420px" },
+            { label: "Thumbnail", size: "380×300px" },
+            { label: "Banner", size: "1260×420px" },
+            { label: "Floor Plan", size: "800×600px" },
+          ].map((g) => (
+            <span
+              key={g.label}
+              className="inline-flex items-center gap-1 rounded-lg border border-line bg-panel px-2 py-0.5 text-[11px] text-muted"
+            >
+              <span className="font-medium text-text">{g.label}:</span> {g.size}
+            </span>
+          ))}
+        </div>
       </div>
       <div className="space-y-3 rounded-[24px] border border-line bg-panel/40 p-4">
-        <div className="flex gap-2">
+        <div className="flex flex-col sm:flex-row gap-2">
           <div className="flex-1">
             <TextInput
               label="Add Image URL"
@@ -884,14 +904,23 @@ function GalleryUploader({
           ) : !assets.length ? (
             <p className="text-xs text-muted">No uploaded assets found.</p>
           ) : (
-            <div className="grid grid-cols-3 md:grid-cols-5 gap-3 max-h-[300px] overflow-y-auto rounded-2xl border border-line p-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 sm:gap-3 max-h-[300px] overflow-y-auto rounded-2xl border border-line p-2 sm:p-3">
               {assets.map((asset: any, i: number) => {
                 const url = asset.url || asset.image || asset.fileUrl || "";
                 if (!url) return null;
                 const selected = images.includes(url);
-
+                const assetPath =
+                  asset.path ||
+                  asset.key ||
+                  (() => {
+                    try {
+                      return new URL(url).pathname.slice(1);
+                    } catch {
+                      return url;
+                    }
+                  })();
                 return (
-                  <button
+                  <div
                     type="button"
                     key={asset._id || url || i}
                     onClick={() => {
@@ -925,7 +954,43 @@ function GalleryUploader({
                         ✓
                       </div>
                     )}
-                  </button>
+                    <button
+                      type="button"
+                      onClick={async (e) => {
+                        e.stopPropagation();
+                        if (
+                          !confirm("Delete this image from assets permanently?")
+                        )
+                          return;
+                        try {
+                          await api.delete(
+                            `/media-assets/assets?path=${encodeURIComponent(assetPath)}`,
+                          );
+                          setAssets((prev) =>
+                            prev.filter((a) => (a.url || a.fileUrl) !== url),
+                          );
+                          onChange(images.filter((img) => img !== url));
+                        } catch {
+                          alert("Failed to delete asset.");
+                        }
+                      }}
+                      className="absolute bottom-1 right-1 rounded-lg bg-red-500 text-white w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition hover:bg-red-600 z-10"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-3 w-3"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                      >
+                        <polyline points="3 6 5 6 21 6" />
+                        <path d="M19 6l-1 14H6L5 6" />
+                        <path d="M10 11v6M14 11v6" />
+                        <path d="M9 6V4h6v2" />
+                      </svg>
+                    </button>
+                  </div>
                 );
               })}
             </div>
@@ -957,7 +1022,7 @@ function GalleryUploader({
                   <img
                     src={image}
                     alt={`Gallery ${index + 1}`}
-                    className="h-20 w-20 rounded-2xl border border-line object-cover"
+                    className="h-16 w-16 sm:h-20 sm:w-20 rounded-2xl border border-line object-cover shrink-0"
                   />
                 )}
                 <ActionButton
@@ -1103,17 +1168,18 @@ function AmenitiesEditor({
 function FloorPlansEditor({
   value,
   onChange,
+  propertyId = "",
 }: {
   value: string[];
   onChange: (next: string[]) => void;
+  propertyId?: string;
 }) {
   const items = Array.isArray(value) ? value : [];
   const [options, setOptions] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
-
-  // ── new plan form ──
   const [showForm, setShowForm] = useState(false);
-  const [newPlan, setNewPlan] = useState({
+  const [editingPlan, setEditingPlan] = useState<any | null>(null); // null = new, object = edit
+  const [planForm, setPlanForm] = useState({
     title: "",
     unitType: "",
     bedrooms: 0,
@@ -1128,12 +1194,17 @@ function FloorPlansEditor({
   const [saveError, setSaveError] = useState("");
   const [uploading, setUploading] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const loadOptions = async () => {
     try {
       setLoading(true);
-      const response = await api.get("/content/floor-plans");
+      // Agar propertyId hai toh sirf us property ke floor plans fetch karo
+      const endpoint = propertyId
+        ? `/content/floor-plans?propertyId=${propertyId}`
+        : `/content/floor-plans`;
+      const response = await api.get(endpoint);
       const rows = normalizeApiArray(response);
       setOptions(
         rows.map((row: any) => ({
@@ -1142,7 +1213,11 @@ function FloorPlansEditor({
           unitType: String(row?.data?.unitType ?? row?.unitType ?? ""),
           bedrooms: Number(row?.data?.bedrooms ?? row?.bedrooms ?? 0),
           bathrooms: Number(row?.data?.bathrooms ?? row?.bathrooms ?? 0),
+          size: String(row?.data?.size ?? row?.size ?? ""),
+          price: Number(row?.data?.price ?? row?.price ?? 0),
           image: String(row?.data?.image ?? row?.image ?? ""),
+          category: String(row?.data?.category ?? row?.category ?? ""),
+          sortOrder: Number(row?.data?.sortOrder ?? row?.sortOrder ?? 0),
         })),
       );
     } catch (error) {
@@ -1154,7 +1229,7 @@ function FloorPlansEditor({
 
   useEffect(() => {
     loadOptions();
-  }, []);
+  }, [propertyId]);
 
   const isSelected = (id: string) => items.includes(id);
 
@@ -1174,43 +1249,80 @@ function FloorPlansEditor({
     return res?.data?.url || res?.data?.data?.url || res?.data?.fileUrl || "";
   };
 
-  const saveNewPlan = async () => {
-    if (!newPlan.title.trim()) {
+  const openNewForm = () => {
+    setEditingPlan(null);
+    setPlanForm({
+      title: "",
+      unitType: "",
+      bedrooms: 0,
+      bathrooms: 0,
+      size: "",
+      price: 0,
+      image: "",
+      category: "",
+      sortOrder: 0,
+    });
+    setSaveError("");
+    setShowForm(true);
+  };
+
+  const openEditForm = (opt: any, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setEditingPlan(opt);
+    setPlanForm({
+      title: opt.title,
+      unitType: opt.unitType,
+      bedrooms: opt.bedrooms,
+      bathrooms: opt.bathrooms,
+      size: opt.size,
+      price: opt.price,
+      image: opt.image,
+      category: opt.category,
+      sortOrder: opt.sortOrder,
+    });
+    setSaveError("");
+    setShowForm(true);
+  };
+
+  const savePlan = async () => {
+    if (!planForm.title.trim()) {
       setSaveError("Title is required.");
       return;
     }
     try {
       setSaving(true);
       setSaveError("");
-      const res = await api.post("/content/floor-plans", {
-        title: newPlan.title,
+      const payload = {
+        title: planForm.title,
+        // propertyId map karo
+        propertyId: propertyId || undefined,
         data: {
-          unitType: newPlan.unitType,
-          bedrooms: Number(newPlan.bedrooms),
-          bathrooms: Number(newPlan.bathrooms),
-          size: newPlan.size,
-          price: Number(newPlan.price),
-          image: newPlan.image,
-          category: newPlan.category,
-          sortOrder: Number(newPlan.sortOrder),
+          unitType: planForm.unitType,
+          bedrooms: Number(planForm.bedrooms),
+          bathrooms: Number(planForm.bathrooms),
+          size: planForm.size,
+          price: Number(planForm.price),
+          image: planForm.image,
+          category: planForm.category,
+          sortOrder: Number(planForm.sortOrder),
         },
-      });
-      const createdId =
-        res?.data?._id || res?.data?.id || res?._id || res?.id || "";
-      await loadOptions();
-      if (createdId) onChange([...items, String(createdId)]);
-      setNewPlan({
-        title: "",
-        unitType: "",
-        bedrooms: 0,
-        bathrooms: 0,
-        size: "",
-        price: 0,
-        image: "",
-        category: "",
-        sortOrder: 0,
-      });
+      };
+
+      if (editingPlan) {
+        // Edit existing
+        await api.patch(`/content/floor-plans/${editingPlan._id}`, payload);
+        await loadOptions();
+      } else {
+        // Create new
+        const res = await api.post("/content/floor-plans", payload);
+        const createdId =
+          res?.data?._id || res?.data?.id || res?._id || res?.id || "";
+        await loadOptions();
+        if (createdId) onChange([...items, String(createdId)]);
+      }
+
       setShowForm(false);
+      setEditingPlan(null);
     } catch (err: any) {
       setSaveError(
         err?.response?.data?.message ||
@@ -1222,97 +1334,125 @@ function FloorPlansEditor({
     }
   };
 
+  const deletePlan = async (opt: any, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!confirm(`Delete "${opt.title}" floor plan permanently?`)) return;
+    setDeletingId(opt._id);
+    try {
+      await api.delete(`/content/floor-plans/${opt._id}`);
+      setOptions((prev) => prev.filter((o) => o._id !== opt._id));
+      onChange(items.filter((id) => id !== opt._id));
+    } catch {
+      alert("Failed to delete floor plan.");
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
   const selectedOptions = options.filter((o) => items.includes(o._id));
   const unselectedOptions = options.filter((o) => !items.includes(o._id));
 
   return (
     <div className="space-y-3">
-
-      {/* ── Header ── */}
+      {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-2">
         <FieldLabel label="Floor Plans" />
         <button
           type="button"
-          onClick={() => {
-            setShowForm((p) => !p);
-            setSaveError("");
-          }}
+          onClick={() =>
+            showForm && !editingPlan ? setShowForm(false) : openNewForm()
+          }
           className="flex items-center gap-1.5 rounded-2xl border border-gold/50 bg-gold/10 px-3 py-1.5 text-xs font-medium text-gold hover:bg-gold/20 transition"
         >
-          {showForm ? "✕ Cancel" : "+ Create New"}
+          {showForm && !editingPlan ? "✕ Cancel" : "+ Create New"}
         </button>
       </div>
 
-      {/* ── Inline create form ── */}
+      {/* Create / Edit Form */}
       {showForm && (
-        <div className="rounded-2xl border border-gold/30 bg-gold/5 p-4 sm:p-5 space-y-4">
-          <p className="text-sm font-semibold text-gold">New Floor Plan</p>
+        <div className="rounded-2xl border border-gold/30 bg-gold/5 p-3 sm:p-5 space-y-4 overflow-hidden">
+          <div className="flex items-center justify-between">
+            <p className="text-sm font-semibold text-gold">
+              {editingPlan ? `Edit: ${editingPlan.title}` : "New Floor Plan"}
+            </p>
+            {editingPlan && (
+              <button
+                type="button"
+                onClick={() => {
+                  setShowForm(false);
+                  setEditingPlan(null);
+                }}
+                className="text-xs text-muted hover:text-text"
+              >
+                ✕ Cancel Edit
+              </button>
+            )}
+          </div>
 
-          {/* Fields grid — 1 col on mobile, 2 on sm+ */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <TextInput
               label="Title *"
-              value={newPlan.title}
-              onChange={(v) => setNewPlan((p) => ({ ...p, title: v }))}
+              value={planForm.title}
+              onChange={(v) => setPlanForm((p) => ({ ...p, title: v }))}
               placeholder="e.g. 2BR Apartment — Type A"
             />
             <TextInput
               label="Unit Type"
-              value={newPlan.unitType}
-              onChange={(v) => setNewPlan((p) => ({ ...p, unitType: v }))}
+              value={planForm.unitType}
+              onChange={(v) => setPlanForm((p) => ({ ...p, unitType: v }))}
               placeholder="e.g. apartment"
             />
             <TextInput
               label="Bedrooms"
               type="number"
-              value={newPlan.bedrooms}
+              value={planForm.bedrooms}
               onChange={(v) =>
-                setNewPlan((p) => ({ ...p, bedrooms: Number(v) }))
+                setPlanForm((p) => ({ ...p, bedrooms: Number(v) }))
               }
             />
             <TextInput
               label="Bathrooms"
               type="number"
-              value={newPlan.bathrooms}
+              value={planForm.bathrooms}
               onChange={(v) =>
-                setNewPlan((p) => ({ ...p, bathrooms: Number(v) }))
+                setPlanForm((p) => ({ ...p, bathrooms: Number(v) }))
               }
             />
             <TextInput
               label="Size (sqft / sqm)"
-              value={newPlan.size}
-              onChange={(v) => setNewPlan((p) => ({ ...p, size: v }))}
+              value={planForm.size}
+              onChange={(v) => setPlanForm((p) => ({ ...p, size: v }))}
               placeholder="e.g. 1200 sqft"
             />
             <TextInput
               label="Price"
               type="number"
-              value={newPlan.price}
-              onChange={(v) =>
-                setNewPlan((p) => ({ ...p, price: Number(v) }))
-              }
+              value={planForm.price}
+              onChange={(v) => setPlanForm((p) => ({ ...p, price: Number(v) }))}
             />
             <TextInput
               label="Category"
-              value={newPlan.category}
-              onChange={(v) => setNewPlan((p) => ({ ...p, category: v }))}
+              value={planForm.category}
+              onChange={(v) => setPlanForm((p) => ({ ...p, category: v }))}
               placeholder="e.g. residential"
             />
             <TextInput
               label="Sort Order"
               type="number"
-              value={newPlan.sortOrder}
+              value={planForm.sortOrder}
               onChange={(v) =>
-                setNewPlan((p) => ({ ...p, sortOrder: Number(v) }))
+                setPlanForm((p) => ({ ...p, sortOrder: Number(v) }))
               }
             />
           </div>
 
-          {/* ── Image field — same pattern as ImageField component ── */}
-          <div className="space-y-3">
+          {/* Image upload */}
+          <div className="space-y-2">
             <FieldLabel label="Floor Plan Image" />
-
-            {/* Upload + Select buttons */}
+            <p className="text-xs text-muted">
+              Recommended size:{" "}
+              <span className="font-semibold text-gold">800x600px</span>
+            </p>
             <div className="flex flex-wrap gap-2">
               <button
                 type="button"
@@ -1323,16 +1463,13 @@ function FloorPlansEditor({
                 <Upload className="h-4 w-4 text-muted" />
                 {uploading ? "Uploading..." : "Upload"}
               </button>
-
               <button
                 type="button"
                 onClick={() => setPickerOpen(true)}
                 className="flex items-center gap-2 rounded-2xl border border-gold/40 bg-gold/10 px-4 py-2.5 text-sm text-gold hover:bg-gold/20 transition"
               >
-                <Upload className="h-4 w-4" />
-                Select Uploaded
+                <Upload className="h-4 w-4" /> Select Uploaded
               </button>
-
               <input
                 ref={fileRef}
                 type="file"
@@ -1343,24 +1480,22 @@ function FloorPlansEditor({
                   if (!file) return;
                   setUploading(true);
                   const url = await uploadImage(file);
-                  if (url) setNewPlan((p) => ({ ...p, image: url }));
+                  if (url) setPlanForm((p) => ({ ...p, image: url }));
                   setUploading(false);
                   e.target.value = "";
                 }}
               />
             </div>
-
-            {/* Preview + clear */}
-            {newPlan.image && (
+            {planForm.image && (
               <div className="relative w-fit">
                 <img
-                  src={newPlan.image}
+                  src={planForm.image}
                   alt="preview"
-                  className="h-20 w-20 rounded-2xl border border-line object-cover"
+                  className="h-16 w-16 sm:h-20 sm:w-20 rounded-2xl border border-line object-cover shrink-0"
                 />
                 <button
                   type="button"
-                  onClick={() => setNewPlan((p) => ({ ...p, image: "" }))}
+                  onClick={() => setPlanForm((p) => ({ ...p, image: "" }))}
                   className="absolute -top-1.5 -right-1.5 rounded-full bg-red-500 text-white w-5 h-5 flex items-center justify-center text-xs hover:bg-red-600"
                 >
                   ×
@@ -1369,12 +1504,11 @@ function FloorPlansEditor({
             )}
           </div>
 
-          {/* ImagePickerModal — same as used in ImageField */}
           <ImagePickerModal
             open={pickerOpen}
             onClose={() => setPickerOpen(false)}
-            onSelect={(images) => {
-              if (images[0]) setNewPlan((p) => ({ ...p, image: images[0] }));
+            onSelect={(imgs) => {
+              if (imgs[0]) setPlanForm((p) => ({ ...p, image: imgs[0] }));
               setPickerOpen(false);
             }}
           />
@@ -1383,14 +1517,19 @@ function FloorPlansEditor({
             <p className="text-sm text-red-500 font-medium">{saveError}</p>
           )}
 
-          <div className="flex flex-wrap gap-3 pt-1">
-            <ActionButton onClick={saveNewPlan} disabled={saving}>
-              {saving ? "Saving..." : "Save & Select"}
+          <div className="flex flex-col sm:flex-row gap-3 pt-1">
+            <ActionButton onClick={savePlan} disabled={saving}>
+              {saving
+                ? "Saving..."
+                : editingPlan
+                  ? "Update Floor Plan"
+                  : "Save & Select"}
             </ActionButton>
             <ActionButton
               secondary
               onClick={() => {
                 setShowForm(false);
+                setEditingPlan(null);
                 setSaveError("");
               }}
             >
@@ -1400,9 +1539,9 @@ function FloorPlansEditor({
         </div>
       )}
 
-      {/* ── Selected chips ── */}
+      {/* Selected chips */}
       {selectedOptions.length > 0 && (
-        <div className="flex flex-wrap gap-2 border border-line py-4 px-4 rounded-2xl">
+        <div className="flex flex-wrap gap-2 border border-line py-3 px-3 sm:py-4 sm:px-4 rounded-2xl overflow-hidden">
           {selectedOptions.map((opt) => (
             <div
               key={opt._id}
@@ -1431,31 +1570,33 @@ function FloorPlansEditor({
         </div>
       )}
 
-      {/* ── All checkboxes ── */}
-      <div className="flex flex-wrap gap-3 py-6">
+      {/* All options with edit + delete */}
+      <div className="flex flex-wrap gap-2 sm:gap-3 py-4 sm:py-6">
         {loading ? (
           <div className="text-sm text-muted">Loading...</div>
         ) : options.length === 0 ? (
           <div className="text-sm text-muted">
-            No floor plans yet. Click "+ Create New" above to add one.
+            No floor plans yet. Click "+ Create New" above.
           </div>
         ) : (
           [...selectedOptions, ...unselectedOptions].map((opt) => {
             const selected = isSelected(opt._id);
             return (
-              <label
+              <div
                 key={opt._id}
-                className={`flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer text-sm transition ${
+                className={`group flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer text-sm transition ${
                   selected
                     ? "bg-card border-gold text-gold"
                     : "border-line text-text hover:bg-card/50"
                 }`}
+                onClick={() => toggle(opt)}
               >
                 <input
                   type="checkbox"
                   checked={selected}
                   onChange={() => toggle(opt)}
                   className="accent-yellow-500"
+                  onClick={(e) => e.stopPropagation()}
                 />
                 {opt.image && (
                   <img
@@ -1468,7 +1609,68 @@ function FloorPlansEditor({
                 <span className="text-xs text-muted">
                   {opt.bedrooms}B · {opt.bathrooms}Ba
                 </span>
-              </label>
+
+                {/* Edit button */}
+                <button
+                  type="button"
+                  onClick={(e) => openEditForm(opt, e)}
+                  className="ml-1 rounded p-1 text-muted hover:text-gold hover:bg-gold/10 transition opacity-0 group-hover:opacity-100"
+                  title="Edit"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-3 w-3"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                  </svg>
+                </button>
+
+                {/* Delete button */}
+                <button
+                  type="button"
+                  onClick={(e) => deletePlan(opt, e)}
+                  disabled={deletingId === opt._id}
+                  className="rounded p-1 text-muted hover:text-red-500 hover:bg-red-50 transition opacity-0 group-hover:opacity-100 disabled:opacity-50"
+                  title="Delete"
+                >
+                  {deletingId === opt._id ? (
+                    <svg
+                      className="h-3 w-3 animate-spin"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                    >
+                      <circle
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="3"
+                        strokeDasharray="32"
+                        strokeDashoffset="12"
+                      />
+                    </svg>
+                  ) : (
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-3 w-3"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                    >
+                      <polyline points="3 6 5 6 21 6" />
+                      <path d="M19 6l-1 14H6L5 6" />
+                      <path d="M10 11v6M14 11v6" />
+                      <path d="M9 6V4h6v2" />
+                    </svg>
+                  )}
+                </button>
+              </div>
             );
           })
         )}
@@ -1496,7 +1698,7 @@ function ImageField({
       <FieldLabel label={field.label} />
 
       {/* Two buttons */}
-      <div className="flex gap-2">
+      <div className="flex flex-col sm:flex-row gap-2">
         <button
           type="button"
           disabled={uploading}
@@ -1827,6 +2029,11 @@ export default function PropertiesPage() {
   const developerOptions = relations["content/developer-community"] || [];
   const locationOptions = relations["content/locations"] || [];
   const typeFilterOptions = relations["content/property-types"] || [];
+  const [currentPage, setCurrentPage] = useState(1);
+  const PAGE_SIZE = 12;
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, statusFilter, typeFilter, developerFilter, locationFilter]);
 
   useEffect(() => {
     setMounted(true);
@@ -1894,7 +2101,8 @@ export default function PropertiesPage() {
   }, []);
 
   const filtered = useMemo(() => {
-    return items.filter((item) => {
+    // Step 1: Filter
+    const filteredItems = items.filter((item) => {
       const searchText = [
         item.title,
         item.city,
@@ -1916,16 +2124,29 @@ export default function PropertiesPage() {
           item?.location?._id === locationFilter ||
           item?.location === locationFilter)
       );
-    })
-    .sort((a, b) => {
-  const aOrder = Number(a.sortOrder) || 0;
-  const bOrder = Number(b.sortOrder) || 0;
-  // Push zeros/unset to the end, sorted items come first
-  if (aOrder === 0 && bOrder === 0) return 0;
-  if (aOrder === 0) return 1;
-  if (bOrder === 0) return -1;
-  return aOrder - bOrder;   
-});
+    });
+
+    // Step 2: Pehle sab ko latest → oldest sort karo
+    const dateSorted = [...filteredItems].sort((a: any, b: any) => {
+      const aDate = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const bDate = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      return bDate - aDate;
+    });
+
+    // Step 3: sortOrder > 0 wale items ko unki target position pe inject karo
+    const result: any[] = [...dateSorted];
+
+    dateSorted.forEach((item: any) => {
+      const order = Number(item.sortOrder) || 0;
+      if (order > 0) {
+        const currentIdx = result.indexOf(item);
+        result.splice(currentIdx, 1);
+        const targetIdx = Math.min(order - 1, result.length);
+        result.splice(targetIdx, 0, item);
+      }
+    });
+
+    return result;
   }, [
     items,
     search,
@@ -1934,7 +2155,11 @@ export default function PropertiesPage() {
     developerFilter,
     locationFilter,
   ]);
-
+  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
+  const paginated = filtered.slice(
+    (currentPage - 1) * PAGE_SIZE,
+    currentPage * PAGE_SIZE,
+  );
   const close = () => {
     setOpen(false);
     setEditingId(null);
@@ -2016,7 +2241,11 @@ export default function PropertiesPage() {
       enquireFormImage: item.enquireFormImage || "",
       propertydoc: item.propertydoc || "",
       amenities: Array.isArray(item.amenities) ? item.amenities : [],
-      floorPlans: Array.isArray(item.floorPlans) ? item.floorPlans : [],
+      floorPlans: Array.isArray(item.floorPlans)
+        ? item.floorPlans
+            .map((fp: any) => (typeof fp === "string" ? fp : (fp?._id ?? "")))
+            .filter(Boolean)
+        : [],
       faq: Array.isArray(item.faq) ? item.faq : [],
       price: Number(item.price || 0),
       bedrooms: Number(item.bedrooms || 0),
@@ -2136,7 +2365,7 @@ export default function PropertiesPage() {
               </tr>
             </thead>
             <tbody>
-              {filtered.map((property, index) => (
+              {paginated.map((property, index) => (
                 <tr
                   key={property._id || property.title}
                   className="border-t border-line hover:bg-card/50 align-top"
@@ -2272,17 +2501,56 @@ export default function PropertiesPage() {
                     </div>
 
                     {/* Banner images strip */}
+                    {/* Banner images strip */}
                     {Array.isArray(property?.bannerImages) &&
                       property.bannerImages.length > 0 && (
-                        <div className="flex gap-0.5 mt-1">
+                        <div className="flex gap-0.5 mt-1 flex-wrap">
                           {property.bannerImages
                             .slice(0, 3)
                             .map((img: string, i: number) => (
-                              <img
-                                key={i}
-                                src={img}
-                                className="h-4 w-7 rounded object-cover border border-line"
-                              />
+                              <div key={i} className="relative group shrink-0">
+                                <img
+                                  src={img}
+                                  className="h-4 w-7 rounded object-cover border border-line"
+                                />
+                                <button
+                                  onClick={async (e) => {
+                                    e.stopPropagation();
+                                    try {
+                                      const updatedBanners =
+                                        property.bannerImages!.filter(
+                                          (_: string, idx: number) => idx !== i,
+                                        );
+                                      const type = property?.type?.map(
+                                        (t: any) => t?._id,
+                                      );
+                                      const subType = property?.subType?.map(
+                                        (t: any) => t?._id,
+                                      );
+                                      await api.patch(
+                                        `/properties/${property._id}`,
+                                        {
+                                          ...property,
+                                          developer: property?.developer?._id,
+                                          location: property?.location?._id,
+                                          type,
+                                          subType,
+                                          bannerImages: updatedBanners,
+                                        },
+                                      );
+                                      await load();
+                                    } catch (err) {
+                                      console.error(
+                                        "Remove banner failed",
+                                        err,
+                                      );
+                                    }
+                                  }}
+                                  className="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] rounded-full w-3.5 h-3.5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition"
+                                >
+                                  ×
+                                </button>
+                              </div>
                             ))}
                           {property.bannerImages.length > 3 && (
                             <span className="text-[10px] text-muted self-center ml-0.5">
@@ -2412,6 +2680,80 @@ export default function PropertiesPage() {
             </tbody>
           </table>
         </div>
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between px-4 py-3 border-t border-line mt-0">
+            <p className="text-xs text-muted">
+              Showing{" "}
+              <span className="font-medium text-text">
+                {(currentPage - 1) * PAGE_SIZE + 1}–
+                {Math.min(currentPage * PAGE_SIZE, filtered.length)}
+              </span>{" "}
+              of{" "}
+              <span className="font-medium text-text">{filtered.length}</span>{" "}
+              properties
+            </p>
+
+            <div className="flex items-center gap-1">
+              {/* Prev */}
+              <button
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage((p) => p - 1)}
+                className="flex items-center gap-1 rounded-xl border border-line bg-panel px-3 py-1.5 text-xs text-text hover:border-gold/50 hover:text-gold transition disabled:opacity-40 disabled:pointer-events-none"
+              >
+                ← Prev
+              </button>
+
+              {/* Page numbers */}
+              {Array.from({ length: totalPages }, (_, i) => i + 1)
+                .filter((page) => {
+                  // Show first, last, current ±1, and ellipsis placeholders
+                  return (
+                    page === 1 ||
+                    page === totalPages ||
+                    Math.abs(page - currentPage) <= 1
+                  );
+                })
+                .reduce<(number | "...")[]>((acc, page, i, arr) => {
+                  if (i > 0 && page - (arr[i - 1] as number) > 1)
+                    acc.push("...");
+                  acc.push(page);
+                  return acc;
+                }, [])
+                .map((page, i) =>
+                  page === "..." ? (
+                    <span
+                      key={`ellipsis-${i}`}
+                      className="px-1.5 text-xs text-muted"
+                    >
+                      …
+                    </span>
+                  ) : (
+                    <button
+                      key={page}
+                      onClick={() => setCurrentPage(page as number)}
+                      className={`min-w-[30px] rounded-xl border px-2 py-1.5 text-xs font-medium transition ${
+                        currentPage === page
+                          ? "border-gold bg-gold/10 text-gold"
+                          : "border-line bg-panel text-text hover:border-gold/40 hover:text-gold"
+                      }`}
+                    >
+                      {page}
+                    </button>
+                  ),
+                )}
+
+              {/* Next */}
+              <button
+                disabled={currentPage === totalPages}
+                onClick={() => setCurrentPage((p) => p + 1)}
+                className="flex items-center gap-1 rounded-xl border border-line bg-panel px-3 py-1.5 text-xs text-text hover:border-gold/50 hover:text-gold transition disabled:opacity-40 disabled:pointer-events-none"
+              >
+                Next →
+              </button>
+            </div>
+          </div>
+        )}
       </SectionCard>
 
       {/* ── Add / Edit Modal ── */}
@@ -2422,19 +2764,23 @@ export default function PropertiesPage() {
         subtitle="Expanded property form with SEO, geo, visibility, API relations, media, amenities, floor plans, and gallery uploads."
         size="xl"
       >
-        <div className="grid grid-cols-2 gap-5">
+        <div className="flex flex-col gap-5">
           {propertyFormSections.map((section) => (
             <div
               key={section.key}
-              className={`space-y-4 rounded-[24px] border border-line bg-panel/40 p-4 ${
-                section.custom === "amenities" ||
-                section.custom === "floorPlans" ||
-                section.custom === "faq" ||
-                section.custom === "gallery" ||
-                section.key === "descriptions"
-                  ? "col-span-2"
-                  : ""
-              }`}
+              // className={`space-y-4 rounded-[24px] border border-line bg-panel/40 p-4 ${
+              //   section.custom === "amenities" ||
+              //   section.custom === "floorPlans" ||
+              //   section.custom === "faq" ||
+              //   section.custom === "gallery" ||
+              //   section.custom === "banners" ||
+              //   section.key === "descriptions" ||
+              //   section.key === "basic" || // ← basic bhi full width chahiye
+              //   section.key === "seo"
+              //     ? "col-span-1 sm:col-span-2"
+              //     : "col-span-1"
+              // }`}
+              className="space-y-4 rounded-[24px] border border-line bg-panel/40 p-4"
             >
               <h3 className="text-sm font-semibold text-text">
                 {section.title}
@@ -2465,6 +2811,7 @@ export default function PropertiesPage() {
               ) : section.custom === "floorPlans" ? (
                 <FloorPlansEditor
                   value={Array.isArray(form.floorPlans) ? form.floorPlans : []}
+                  propertyId={editingId || ""}
                   onChange={(next) =>
                     setForm((prev) => ({ ...prev, floorPlans: next }))
                   }
@@ -2552,7 +2899,7 @@ export default function PropertiesPage() {
           {manageModal.type === "floorPlans" && (
             <FloorPlansEditor
               value={(manageModal.property.floorPlans || []).map((fp: any) =>
-                typeof fp === "string" ? fp : fp?.title,
+                typeof fp === "string" ? fp : (fp?._id ?? fp?.title),
               )}
               onChange={(next) =>
                 setManageModal((prev) =>
@@ -2564,6 +2911,7 @@ export default function PropertiesPage() {
                     : null,
                 )
               }
+              propertyId={manageModal.property._id}
             />
           )}
           {manageModal.type === "amenities" && (

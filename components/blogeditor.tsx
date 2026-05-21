@@ -895,7 +895,11 @@ export function BlogEditorPage({ config }: { config: CmsConfig }) {
     {},
   );
   const [isModalOpen, setIsModalOpen] = useState(false);
-
+const [currentPage, setCurrentPage] = useState(1);
+const PAGE_SIZE = 12;
+useEffect(() => {
+  setCurrentPage(1);
+}, [search]);
   const fields = useMemo(() => config.fields, [config]);
   const mainFields = fields.filter((f) => f?.layout === "main");
   const sidebarFields = fields.filter((f) => f?.layout === "sidebar");
@@ -903,7 +907,11 @@ export function BlogEditorPage({ config }: { config: CmsConfig }) {
   // ── check if any field is type advertisement (for always-visible sidebar section)
   const hasAdvertisementField = fields.some((f) => f.type === "advertisement");
   const advertisementField = fields.find((f) => f.type === "advertisement");
-
+const totalPages = Math.ceil(items.length / PAGE_SIZE);
+const paginated = items.slice(
+  (currentPage - 1) * PAGE_SIZE,
+  currentPage * PAGE_SIZE,
+);
   useEffect(() => {
     (async () => {
       try {
@@ -1164,7 +1172,7 @@ export function BlogEditorPage({ config }: { config: CmsConfig }) {
                   </tr>
                 </thead>
                 <tbody>
-                  {items.map((item, index) => (
+                  {paginated.map((item, index) => (
                     <tr
                       key={item._id || item.title}
                       className="border-b border-line last:border-none hover:bg-card/40 transition-colors"
@@ -1275,6 +1283,65 @@ export function BlogEditorPage({ config }: { config: CmsConfig }) {
                 </tbody>
               </table>
             </div>
+            {/* Pagination */}
+{totalPages > 1 && (
+  <div className="flex items-center justify-between px-5 py-3 border-t border-line">
+    <p className="text-xs text-muted">
+      Showing{" "}
+      <span className="font-medium text-text">
+        {(currentPage - 1) * PAGE_SIZE + 1}–
+        {Math.min(currentPage * PAGE_SIZE, items.length)}
+      </span>{" "}
+      of{" "}
+      <span className="font-medium text-text">{items.length}</span> records
+    </p>
+
+    <div className="flex items-center gap-1">
+      <button
+        disabled={currentPage === 1}
+        onClick={() => setCurrentPage((p) => p - 1)}
+        className="flex items-center gap-1 rounded-xl border border-line bg-panel px-3 py-1.5 text-xs text-text hover:border-gold/50 hover:text-gold transition disabled:opacity-40 disabled:pointer-events-none"
+      >
+        ← Prev
+      </button>
+
+      {Array.from({ length: totalPages }, (_, i) => i + 1)
+        .filter((page) =>
+          page === 1 || page === totalPages || Math.abs(page - currentPage) <= 1
+        )
+        .reduce<(number | "...")[]>((acc, page, i, arr) => {
+          if (i > 0 && page - (arr[i - 1] as number) > 1) acc.push("...");
+          acc.push(page);
+          return acc;
+        }, [])
+        .map((page, i) =>
+          page === "..." ? (
+            <span key={`ellipsis-${i}`} className="px-1.5 text-xs text-muted">…</span>
+          ) : (
+            <button
+              key={page}
+              onClick={() => setCurrentPage(page as number)}
+              className={`min-w-[30px] rounded-xl border px-2 py-1.5 text-xs font-medium transition ${
+                currentPage === page
+                  ? "border-gold bg-gold/10 text-gold"
+                  : "border-line bg-panel text-text hover:border-gold/40 hover:text-gold"
+              }`}
+            >
+              {page}
+            </button>
+          )
+        )}
+
+      <button
+        disabled={currentPage === totalPages}
+        onClick={() => setCurrentPage((p) => p + 1)}
+        className="flex items-center gap-1 rounded-xl border border-line bg-panel px-3 py-1.5 text-xs text-text hover:border-gold/50 hover:text-gold transition disabled:opacity-40 disabled:pointer-events-none"
+      >
+        Next →
+      </button>
+    </div>
+  </div>
+)}
             {!items.length && (
               <div className="p-8 text-sm text-muted">No records found.</div>
             )}

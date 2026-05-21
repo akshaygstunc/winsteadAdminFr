@@ -3,13 +3,23 @@
 import { ChangeEvent, useEffect, useRef, useState } from "react";
 import { FieldLabel } from "@/components/crud-kit";
 import { api } from "@/lib/api";
-import { Upload, Images, X, Check, Search, Loader2 } from "lucide-react";
+import {
+  Upload,
+  Images,
+  X,
+  Check,
+  Search,
+  Loader2,
+  Trash2,
+} from "lucide-react";
 
 type MediaType = "image" | "video";
 
 interface MediaAsset {
+  _id?: string;
   url: string;
   name?: string;
+  path?: string;
   type?: string;
   createdAt?: string;
 }
@@ -23,7 +33,6 @@ interface MediaPickerFieldProps {
   placeholder?: string;
 }
 
-/* ─── tiny helpers ─────────────────────────────────────────── */
 async function uploadFile(file: File): Promise<string> {
   const formData = new FormData();
   formData.append("file", file);
@@ -44,6 +53,14 @@ function isVideo(url: string) {
   return /\.(mp4|webm|ogg|mov)(\?|$)/i.test(url);
 }
 
+function extractPath(url: string): string {
+  try {
+    return new URL(url).pathname.slice(1);
+  } catch {
+    return url;
+  }
+}
+
 /* ─── Library Modal ─────────────────────────────────────────── */
 function LibraryModal({
   mediaType,
@@ -58,13 +75,12 @@ function LibraryModal({
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<string | null>(null);
+  const [deletingUrl, setDeletingUrl] = useState<string | null>(null);
 
   useEffect(() => {
     const load = async () => {
       try {
         setLoading(true);
-        // Fetch from your gallery/media endpoint
-        // REPLACE with:
         const res = await api.get<any>("/properties/assets");
         const rows: any[] = Array.isArray(res)
           ? res
@@ -72,8 +88,10 @@ function LibraryModal({
 
         const mapped: MediaAsset[] = rows
           .map((row) => ({
+            _id: row._id || row.id || "",
             url: row.url || "",
             name: row.name || "",
+            path: row.path || row.key || extractPath(row.url || ""),
             createdAt: row.uploadedAt || row.createdAt || "",
           }))
           .filter((a) => a.url);
@@ -88,6 +106,23 @@ function LibraryModal({
     load();
   }, [mediaType]);
 
+  const handleDelete = async (asset: MediaAsset, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!confirm("Delete this image permanently? This cannot be undone."))
+      return;
+    setDeletingUrl(asset.url);
+    try {
+      const path = asset.path || extractPath(asset.url);
+      await api.delete(`/media-assets/assets?path=${encodeURIComponent(path)}`);
+      setAssets((prev) => prev.filter((a) => a.url !== asset.url));
+      if (selected === asset.url) setSelected(null);
+    } catch {
+      alert("Failed to delete asset.");
+    } finally {
+      setDeletingUrl(null);
+    }
+  };
+
   const filtered = assets.filter(
     (a) =>
       !search ||
@@ -95,14 +130,13 @@ function LibraryModal({
       a.url.toLowerCase().includes(search.toLowerCase()),
   );
 
-  const confirm = () => {
+  const handleConfirm = () => {
     if (selected) {
       onSelect(selected);
       onClose();
     }
   };
 
-  // Close on backdrop click
   const backdropRef = useRef<HTMLDivElement>(null);
   const handleBackdrop = (e: React.MouseEvent) => {
     if (e.target === backdropRef.current) onClose();
@@ -122,13 +156,11 @@ function LibraryModal({
               Select from Library
             </p>
             <p className="text-xs text-muted mt-0.5">
-              {mediaType === "video" ? "Video" : "Image"} assets from your media
-              collection
+              {mediaType === "video" ? "Video" : "Image"} assets · hover to
+              delete
             </p>
           </div>
-
           <div className="flex items-center gap-3">
-            {/* Search */}
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted" />
               <input
@@ -138,7 +170,6 @@ function LibraryModal({
                 onChange={(e) => setSearch(e.target.value)}
               />
             </div>
-
             <button
               onClick={onClose}
               className="rounded-xl border border-line bg-panel p-2 text-muted hover:text-text transition"
@@ -162,17 +193,16 @@ function LibraryModal({
           ) : (
             <div className="grid grid-cols-4 gap-3 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8">
               {filtered.map((asset, i) => (
-                <button
+                <div
                   key={`${asset.url}-${i}`}
-                  type="button"
-                  onClick={() =>
-                    setSelected(selected === asset.url ? null : asset.url)
-                  }
-                  className={`relative group rounded-2xl border-2 overflow-hidden aspect-square transition-all ${
+                  className={`relative group rounded-2xl border-2 overflow-hidden aspect-square transition-all cursor-pointer ${
                     selected === asset.url
                       ? "border-gold shadow-lg shadow-gold/20"
                       : "border-line hover:border-gold/50"
                   }`}
+                  onClick={() =>
+                    setSelected(selected === asset.url ? null : asset.url)
+                  }
                 >
                   {mediaType === "video" || isVideo(asset.url) ? (
                     <video
@@ -191,22 +221,36 @@ function LibraryModal({
 
                   {/* Selected overlay */}
                   {selected === asset.url && (
-                    <div className="absolute inset-0 bg-gold/20 flex items-center justify-center">
+                    <div className="absolute inset-0 bg-gold/20 flex items-center justify-center pointer-events-none">
                       <div className="rounded-full bg-gold p-1.5">
                         <Check className="h-3.5 w-3.5 text-black" />
                       </div>
                     </div>
                   )}
 
-                  {/* Name tooltip on hover */}
+                  {/* Name tooltip */}
                   {asset.name && (
-                    <div className="absolute bottom-0 inset-x-0 bg-black/60 px-2 py-1 opacity-0 group-hover:opacity-100 transition">
+                    <div className="absolute bottom-0 inset-x-0 bg-black/60 px-2 py-1 opacity-0 group-hover:opacity-100 transition pointer-events-none">
                       <p className="text-xs text-white truncate">
                         {asset.name}
                       </p>
                     </div>
                   )}
-                </button>
+
+                  {/* Delete button — top-right on hover */}
+                  <button
+                    type="button"
+                    onClick={(e) => handleDelete(asset, e)}
+                    disabled={deletingUrl === asset.url}
+                    className="absolute top-1 right-1 rounded-lg bg-red-500 text-white w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition hover:bg-red-600 z-10 disabled:opacity-60"
+                  >
+                    {deletingUrl === asset.url ? (
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                    ) : (
+                      <Trash2 className="h-3 w-3" />
+                    )}
+                  </button>
+                </div>
               ))}
             </div>
           )}
@@ -225,7 +269,7 @@ function LibraryModal({
               Cancel
             </button>
             <button
-              onClick={confirm}
+              onClick={handleConfirm}
               disabled={!selected}
               className="rounded-2xl border border-gold/50 bg-gold/10 px-4 py-2 text-sm text-gold hover:bg-gold/20 transition disabled:opacity-40 disabled:cursor-not-allowed"
             >
@@ -267,14 +311,10 @@ export function MediaPickerField({
     }
   };
 
-  const clear = () => onChange("");
-
   return (
     <>
       <div className="space-y-3 w-full">
         <FieldLabel label={label} />
-
-        {/* Two action buttons */}
         <div className="flex gap-2">
           <button
             type="button"
@@ -289,7 +329,6 @@ export function MediaPickerField({
             )}
             {uploading ? "Uploading..." : "Upload File"}
           </button>
-
           <button
             type="button"
             onClick={() => setShowLibrary(true)}
@@ -298,8 +337,6 @@ export function MediaPickerField({
             <Images className="h-4 w-4" />
             Select from Library
           </button>
-
-          {/* Hidden file input */}
           <input
             ref={fileInputRef}
             type="file"
@@ -309,7 +346,6 @@ export function MediaPickerField({
           />
         </div>
 
-        {/* URL input (collapsed toggle) */}
         <div>
           <button
             type="button"
@@ -318,7 +354,6 @@ export function MediaPickerField({
           >
             {tab === "url" ? "Hide URL input" : "Or paste URL manually"}
           </button>
-
           {tab === "url" && (
             <input
               className="input mt-2 text-sm"
@@ -329,7 +364,6 @@ export function MediaPickerField({
           )}
         </div>
 
-        {/* Preview */}
         {value && (
           <div className="relative w-full rounded-2xl overflow-hidden border border-line bg-black">
             {mediaType === "video" || isVideo(value) ? (
@@ -345,11 +379,9 @@ export function MediaPickerField({
                 className="w-full h-[180px] object-cover"
               />
             )}
-
-            {/* Clear button */}
             <button
               type="button"
-              onClick={clear}
+              onClick={() => onChange("")}
               className="absolute top-2 right-2 rounded-xl bg-black/60 p-1.5 text-white hover:bg-red-500/80 transition"
             >
               <X className="h-3.5 w-3.5" />
@@ -360,7 +392,6 @@ export function MediaPickerField({
         {note && <p className="text-xs text-muted">{note}</p>}
       </div>
 
-      {/* Library modal */}
       {showLibrary && (
         <LibraryModal
           mediaType={mediaType}
