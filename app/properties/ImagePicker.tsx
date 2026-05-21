@@ -21,6 +21,57 @@ function normalizeApiArray(response: any): any[] {
   return [];
 }
 
+// ==============================
+// VIDEO DETECTION
+// ==============================
+function isVideo(url: string) {
+  if (!url) return false;
+
+  return (
+    /\.(mp4|webm|ogg|mov|m4v)$/i.test(url) ||
+    url.includes("/video/") ||
+    url.includes("video/upload") ||
+    url.includes("cloudinary") ||
+    url.includes(".m3u8")
+  );
+}
+
+// ==============================
+// YOUTUBE DETECTION
+// ==============================
+function isYoutubeUrl(url: string) {
+  if (!url) return false;
+
+  return (
+    url.includes("youtube.com/watch") ||
+    url.includes("youtu.be/") ||
+    url.includes("youtube.com/embed/")
+  );
+}
+
+// ==============================
+// GET EMBED URL
+// ==============================
+function getYoutubeEmbedUrl(url: string) {
+  try {
+    if (url.includes("youtu.be/")) {
+      const id = url.split("youtu.be/")[1]?.split("?")[0];
+      return `https://www.youtube.com/embed/${id}`;
+    }
+
+    if (url.includes("youtube.com/embed/")) {
+      return url;
+    }
+
+    const parsed = new URL(url);
+    const id = parsed.searchParams.get("v");
+
+    return `https://www.youtube.com/embed/${id}`;
+  } catch {
+    return "";
+  }
+}
+
 export default function ImagePickerModal({
   open,
   onClose,
@@ -29,32 +80,38 @@ export default function ImagePickerModal({
 }: Props) {
   const [tab, setTab] = useState<Tab>("upload");
 
-  // ── Upload tab state ──
+  // Upload tab
   const [images, setImages] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
   const [urlInput, setUrlInput] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
 
-  // ── Library tab state ──
+  // Library tab
   const [assets, setAssets] = useState<any[]>([]);
   const [loadingAssets, setLoadingAssets] = useState(false);
   const [selectedAssets, setSelectedAssets] = useState<string[]>([]);
   const [assetSearch, setAssetSearch] = useState("");
 
-  // Fetch assets when library tab opens
+  // ==============================
+  // FETCH ASSETS
+  // ==============================
   useEffect(() => {
     if (tab !== "library" || !open) return;
+
     (async () => {
       try {
         setLoadingAssets(true);
+
         const response = await api.get("/properties/assets");
+
         const rows = normalizeApiArray(response);
+
         setAssets(
           rows.map((row: any) => ({
             ...row,
             _id: row._id || row.id || "",
             url: row.url || row.fileUrl || "",
-            path: row.path || row.key || "", // ← add karo
+            path: row.path || row.key || "",
           })),
         );
       } catch (err) {
@@ -66,7 +123,9 @@ export default function ImagePickerModal({
     })();
   }, [tab, open]);
 
-  // Reset on close
+  // ==============================
+  // RESET
+  // ==============================
   const handleClose = () => {
     setImages([]);
     setSelectedAssets([]);
@@ -74,28 +133,44 @@ export default function ImagePickerModal({
     setErrorMessage("");
     setAssetSearch("");
     setTab("upload");
+
     onClose();
   };
 
-  // ── Upload tab handlers ──
+  // ==============================
+  // UPLOAD FILES
+  // ==============================
   const uploadFiles = async (files: FileList) => {
     setUploading(true);
     setErrorMessage("");
+
     try {
       const uploaded: string[] = [];
+
       for (const file of Array.from(files)) {
         const formData = new FormData();
         formData.append("file", file);
-        const res = await api.post("/content/upload/gallery", formData);
+
+        const res = await api.post(
+          "/content/upload/gallery",
+          formData,
+        );
+
         const url =
           res?.data?.url ||
           res?.data?.data?.url ||
           res?.data?.fileUrl ||
           res?.data?.location ||
           "";
-        if (url) uploaded.push(url);
+
+        if (url) {
+          uploaded.push(url);
+        }
       }
-      setImages((prev) => (multiple ? [...prev, ...uploaded] : uploaded));
+
+      setImages((prev) =>
+        multiple ? [...prev, ...uploaded] : uploaded,
+      );
     } catch (err: any) {
       const msg = (() => {
         try {
@@ -104,38 +179,58 @@ export default function ImagePickerModal({
           return err?.message;
         }
       })();
+
       setErrorMessage(msg || "Upload failed");
     } finally {
       setUploading(false);
     }
   };
 
+  // ==============================
+  // ADD URL
+  // ==============================
   const addUrl = () => {
-    if (!urlInput.trim()) return;
+    const value = urlInput.trim();
+
+    if (!value) return;
+
     setImages((prev) =>
-      multiple ? [...prev, urlInput.trim()] : [urlInput.trim()],
+      multiple ? [...prev, value] : [value],
     );
+
     setUrlInput("");
   };
 
+  // ==============================
+  // REMOVE
+  // ==============================
   const removeImage = (index: number) => {
     setImages(images.filter((_, i) => i !== index));
   };
 
-  // ── Library tab handlers ──
+  // ==============================
+  // TOGGLE ASSET
+  // ==============================
   const toggleAsset = (url: string) => {
     if (!multiple) {
       setSelectedAssets([url]);
       return;
     }
+
     setSelectedAssets((prev) =>
-      prev.includes(url) ? prev.filter((u) => u !== url) : [...prev, url],
+      prev.includes(url)
+        ? prev.filter((u) => u !== url)
+        : [...prev, url],
     );
   };
 
+  // ==============================
+  // FILTER ASSETS
+  // ==============================
   const filteredAssets = assets.filter((a) => {
     const url = a.url || "";
     const name = a.name || "";
+
     return (
       !assetSearch ||
       name.toLowerCase().includes(assetSearch.toLowerCase()) ||
@@ -143,23 +238,33 @@ export default function ImagePickerModal({
     );
   });
 
-  // ── Confirm ──
+  // ==============================
+  // FINAL SELECT
+  // ==============================
   const handleSelect = () => {
     if (tab === "upload") {
       onSelect(images);
     } else {
       onSelect(selectedAssets);
     }
+
     handleClose();
   };
 
   const canConfirm =
-    tab === "upload" ? images.length > 0 : selectedAssets.length > 0;
+    tab === "upload"
+      ? images.length > 0
+      : selectedAssets.length > 0;
 
   return (
-    <Modal open={open} onClose={handleClose} title="Upload / Select Images">
+    <Modal
+      open={open}
+      onClose={handleClose}
+      title="Upload / Select Media"
+    >
       <div className="space-y-4">
-        {/* Tabs */}
+
+        {/* TABS */}
         <div className="flex gap-1 rounded-2xl border border-line bg-panel p-1 w-fit">
           {(["upload", "library"] as Tab[]).map((t) => (
             <button
@@ -172,16 +277,23 @@ export default function ImagePickerModal({
                   : "text-muted hover:text-text"
               }`}
             >
-              {t === "upload" ? "Upload New" : "Select Uploaded"}
+              {t === "upload"
+                ? "Upload New"
+                : "Select Uploaded"}
             </button>
           ))}
         </div>
 
-        {/* ── Upload Tab ── */}
+        {/* ================================= */}
+        {/* UPLOAD TAB */}
+        {/* ================================= */}
         {tab === "upload" && (
           <div className="space-y-4">
+
             {errorMessage && (
-              <p className="text-sm text-red-500">{errorMessage}</p>
+              <p className="text-sm text-red-500">
+                {errorMessage}
+              </p>
             )}
 
             <input
@@ -190,37 +302,80 @@ export default function ImagePickerModal({
               className="input"
               accept="image/*,video/*"
               onChange={(e) => {
-                if (e.target.files) uploadFiles(e.target.files);
+                if (e.target.files) {
+                  uploadFiles(e.target.files);
+                }
               }}
             />
 
-            {uploading && <p className="text-sm text-muted">Uploading...</p>}
+            {uploading && (
+              <p className="text-sm text-muted">
+                Uploading...
+              </p>
+            )}
 
+            {/* URL INPUT */}
             <div className="flex gap-2">
               <input
                 className="input flex-1"
-                placeholder="Or paste image URL"
+                placeholder="Paste image / video / YouTube URL"
                 value={urlInput}
                 onChange={(e) => setUrlInput(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && addUrl()}
+                onKeyDown={(e) =>
+                  e.key === "Enter" && addUrl()
+                }
               />
-              <button onClick={addUrl} className="btn">
+
+              <button
+                onClick={addUrl}
+                className="btn"
+              >
                 Add
               </button>
             </div>
 
+            {/* PREVIEW */}
             {images.length > 0 ? (
-              <div className="grid grid-cols-3 gap-3 max-h-[300px] overflow-y-auto">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3 max-h-[400px] overflow-y-auto">
+
                 {images.map((img, i) => (
                   <div
                     key={i}
-                    className="relative rounded-xl overflow-hidden border border-line"
+                    className="relative rounded-xl overflow-hidden border border-line bg-black"
                   >
-                    <img
-                      src={img}
-                      alt="preview"
-                      className="h-24 w-full object-cover"
-                    />
+
+                    {/* YOUTUBE */}
+                    {isYoutubeUrl(img) ? (
+                      <iframe
+                        src={getYoutubeEmbedUrl(img)}
+                        className="h-40 w-full"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                      />
+                    ) : isVideo(img) ? (
+
+                      // VIDEO
+                      <video
+                        src={img}
+                        className="h-40 w-full object-cover"
+                        muted
+                        autoPlay
+                        loop
+                        playsInline
+                        controls
+                      />
+
+                    ) : (
+
+                      // IMAGE
+                      <img
+                        src={img}
+                        alt="preview"
+                        className="h-40 w-full object-cover"
+                      />
+                    )}
+
+                    {/* REMOVE */}
                     <button
                       onClick={() => removeImage(i)}
                       className="absolute top-1 right-1 bg-black/70 text-white text-xs px-2 py-0.5 rounded"
@@ -232,20 +387,25 @@ export default function ImagePickerModal({
               </div>
             ) : (
               <div className="text-sm text-muted border border-dashed border-line p-4 rounded-xl text-center">
-                No images selected
+                No media selected
               </div>
             )}
           </div>
         )}
 
-        {/* ── Library Tab ── */}
+        {/* ================================= */}
+        {/* LIBRARY TAB */}
+        {/* ================================= */}
         {tab === "library" && (
           <div className="space-y-3">
+
             <input
               className="input w-full"
               placeholder="Search by name or URL..."
               value={assetSearch}
-              onChange={(e) => setAssetSearch(e.target.value)}
+              onChange={(e) =>
+                setAssetSearch(e.target.value)
+              }
             />
 
             {loadingAssets ? (
@@ -257,11 +417,20 @@ export default function ImagePickerModal({
                 No assets found.
               </div>
             ) : (
-              <div className="grid grid-cols-4 lg:grid-cols-5  gap-3 max-h-[200px] lg:max-h-[360px] overflow-y-auto rounded-xl border border-line p-3">
+              <div className="grid grid-cols-4 lg:grid-cols-5 gap-3 max-h-[360px] overflow-y-auto rounded-xl border border-line p-3">
+
                 {filteredAssets.map((asset: any, i: number) => {
-                  const url = asset.url || asset.image || asset.fileUrl || "";
+                  const url =
+                    asset.url ||
+                    asset.image ||
+                    asset.fileUrl ||
+                    "";
+
                   if (!url) return null;
-                  const isSelected = selectedAssets.includes(url);
+
+                  const selected =
+                    selectedAssets.includes(url);
+
                   const assetPath =
                     asset.path ||
                     asset.key ||
@@ -277,45 +446,82 @@ export default function ImagePickerModal({
                     <div
                       key={asset._id || url || i}
                       className={`relative overflow-hidden rounded-xl border-2 transition group cursor-pointer ${
-                        isSelected
+                        selected
                           ? "border-gold ring-2 ring-gold/30"
                           : "border-line hover:border-gold/50"
                       }`}
                       onClick={() => toggleAsset(url)}
                     >
-                      <img
-                        src={url}
-                        alt={asset.name || ""}
-                        className="h-16 lg:h-24 w-full object-cover"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).src =
-                            "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Crect width='100' height='100' fill='%23333'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' fill='%23666' font-size='12'%3EN/A%3C/text%3E%3C/svg%3E";
-                        }}
-                      />
-                      {asset.name && (
-                        <p className="text-[10px] text-muted truncate px-1 pb-1 text-left bg-panel/80">
-                          {asset.name}
-                        </p>
+
+                      {/* YOUTUBE */}
+                      {isYoutubeUrl(url) ? (
+                        <div className="relative h-24 w-full bg-black">
+                          <iframe
+                            src={getYoutubeEmbedUrl(url)}
+                            className="h-full w-full"
+                            allowFullScreen
+                          />
+                        </div>
+                      ) : isVideo(url) ? (
+
+                        // VIDEO
+                        <div className="relative h-24 w-full bg-black">
+                          <video
+                            src={url}
+                            className="h-full w-full object-cover"
+                            muted
+                            autoPlay
+                            loop
+                            playsInline
+                          />
+
+                          <span className="absolute bottom-1 left-1 text-[10px] bg-black/60 text-white px-1 rounded">
+                            🎬 Video
+                          </span>
+                        </div>
+
+                      ) : (
+
+                        // IMAGE
+                        <img
+                          src={url}
+                          alt={asset.name || ""}
+                          className="h-24 w-full object-cover"
+                        />
                       )}
-                      {isSelected && (
+
+                      {/* SELECTED */}
+                      {selected && (
                         <div className="absolute top-1 right-1 bg-gold text-black text-[10px] font-bold px-1.5 py-0.5 rounded">
                           ✓
                         </div>
                       )}
-                      {/* Delete button */}
+
+                      {/* DELETE */}
                       <button
                         type="button"
                         onClick={async (e) => {
                           e.stopPropagation();
-                          if (!confirm("Delete this image permanently?"))
+
+                          if (
+                            !confirm(
+                              "Delete this asset permanently?",
+                            )
+                          ) {
                             return;
+                          }
+
                           try {
                             await api.delete(
                               `/media-assets/assets?path=${encodeURIComponent(assetPath)}`,
                             );
+
                             setAssets((prev) =>
-                              prev.filter((a) => a._id !== asset._id),
+                              prev.filter(
+                                (a) => a._id !== asset._id,
+                              ),
                             );
+
                             setSelectedAssets((prev) =>
                               prev.filter((u) => u !== url),
                             );
@@ -342,22 +548,32 @@ export default function ImagePickerModal({
           </div>
         )}
 
-        {/* Actions */}
+        {/* FOOTER */}
         <div className="flex justify-end gap-2 pt-2 border-t border-line">
+
           <button
             onClick={handleClose}
             className="btn-secondary border p-1 rounded-xl"
           >
             Cancel
           </button>
+
           <button
             onClick={handleSelect}
             disabled={!canConfirm}
             className="btn disabled:opacity-40 disabled:cursor-not-allowed border p-1 rounded-xl"
           >
             {tab === "upload"
-              ? `Save ${images.length > 0 ? `(${images.length})` : ""}`
-              : `Use Selected ${selectedAssets.length > 0 ? `(${selectedAssets.length})` : ""}`}
+              ? `Save ${
+                  images.length > 0
+                    ? `(${images.length})`
+                    : ""
+                }`
+              : `Use Selected ${
+                  selectedAssets.length > 0
+                    ? `(${selectedAssets.length})`
+                    : ""
+                }`}
           </button>
         </div>
       </div>

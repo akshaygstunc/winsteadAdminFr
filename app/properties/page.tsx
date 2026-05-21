@@ -389,7 +389,12 @@ const propertyFormSections: FieldSection[] = [
         type: "image",
         note: "Banner Size should be 1260x420",
       },
-      { key: "enquireFormImage", label: "Enquire Form Image", type: "image" },
+      {
+        key: "enquireFormImage",
+        label: "Enquire Form Image",
+        type: "image",
+        note: "Banner Size should be 380x300",
+      },
       { key: "author", label: "Author", type: "text" },
       {
         key: "duringconstruction",
@@ -470,18 +475,238 @@ function BannerUploader({
   value: string[];
   onChange: (next: string[]) => void;
 }) {
+  const banners = Array.isArray(value) ? value : [];
+  const [urlInput, setUrlInput] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+  // Separate video URL state
+  const [videoUrlInput, setVideoUrlInput] = useState("");
+
+  const addVideoUrl = () => {
+    const url = videoUrlInput.trim();
+    if (!url) return;
+    if (banners.includes(url)) {
+      setErrorMessage("This video URL already exists");
+      return;
+    }
+    onChange([...banners, url]);
+    setVideoUrlInput("");
+    setErrorMessage("");
+  };
+  const uploadFile = async (file: File): Promise<string> => {
+    const formData = new FormData();
+    formData.append("file", file);
+    const res = await api.post("/content/upload/gallery", formData);
+    return (
+      res?.data?.url ||
+      res?.data?.data?.url ||
+      res?.data?.fileUrl ||
+      res?.data?.location ||
+      ""
+    );
+  };
+
+  const handleFiles = async (e: ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+    setUploading(true);
+    setErrorMessage("");
+    try {
+      const next = [...banners];
+      for (const file of files) {
+        const url = await uploadFile(file);
+        if (url) next.push(url);
+      }
+      onChange(next);
+    } catch (err: any) {
+      setErrorMessage(err?.message || "Upload failed");
+    } finally {
+      setUploading(false);
+      e.target.value = "";
+    }
+  };
+
+  const addUrl = () => {
+    const url = urlInput.trim();
+    if (!url) return;
+    if (banners.includes(url)) {
+      setErrorMessage("This URL already exists");
+      return;
+    }
+    onChange([...banners, url]);
+    setUrlInput("");
+    setErrorMessage("");
+  };
+
+  const remove = (index: number) =>
+    onChange(banners.filter((_, i) => i !== index));
+
+  const isVideo = (url: string) => {
+    if (!url) return false;
+
+    // extension check
+    if (/\.(mp4|webm|ogg|mov|m4v)$/i.test(url)) return true;
+
+    // cloudinary / signed / streaming urls
+    return (
+      url.includes("/video/") ||
+      url.includes("video/upload") ||
+      url.includes("cloudinary") ||
+      url.includes(".m3u8")
+    );
+  };
+
   return (
-    <div className="space-y-3">
-      <FieldLabel label="Banner Images" />
+    <div className="space-y-4">
+      <FieldLabel label="Banner Images / Videos" />
       <div className="flex items-center gap-2 flex-wrap">
         <p className="text-xs text-muted">
-          Upload banner images for this property.
+          Upload images or videos for property banners.
         </p>
         <span className="inline-flex items-center gap-1 rounded-lg border border-amber-200 bg-amber-50 px-2 py-0.5 text-[11px] text-amber-700">
           📐 Recommended: <span className="font-semibold">1260×420px</span>
         </span>
       </div>
-      <GalleryUploader value={value} onChange={onChange} />
+
+      {/* Upload controls */}
+      <div className="rounded-[24px] border border-line bg-panel/40 p-4 space-y-3">
+        {/* URL input */}
+        <div className="flex flex-col sm:flex-row gap-2">
+          <div className="flex-1">
+            <TextInput
+              label="Add URL (image or video)"
+              value={urlInput}
+              onChange={setUrlInput}
+              placeholder="https://example.com/banner.jpg or .mp4"
+            />
+            {/* Separate video URL input */}
+          </div>
+          <div className="flex items-end">
+            <ActionButton secondary onClick={addUrl} disabled={uploading}>
+              Add URL
+            </ActionButton>
+          </div>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <div className="flex-1">
+              <TextInput
+                label="Add Video URL"
+                value={videoUrlInput}
+                onChange={setVideoUrlInput}
+                placeholder="https://example.com/banner.mp4 or .webm"
+              />
+            </div>
+            <div className="flex items-end">
+              <ActionButton
+                secondary
+                onClick={addVideoUrl}
+                disabled={uploading}
+              >
+                Add Video
+              </ActionButton>
+            </div>
+          </div>
+        </div>
+
+        {/* Upload + Picker buttons */}
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            disabled={uploading}
+            onClick={() => fileRef.current?.click()}
+            className="flex items-center gap-2 rounded-2xl border border-line bg-panel px-4 py-2.5 text-sm text-text hover:border-gold/50 transition disabled:opacity-50"
+          >
+            <Upload className="h-4 w-4 text-muted" />
+            {uploading ? "Uploading..." : "Upload File"}
+          </button>
+          <button
+            type="button"
+            onClick={() => setPickerOpen(true)}
+            className="flex items-center gap-2 rounded-2xl border border-gold/40 bg-gold/10 px-4 py-2.5 text-sm text-gold hover:bg-gold/20 transition"
+          >
+            <Upload className="h-4 w-4" />
+            Select Uploaded
+          </button>
+          <input
+            ref={fileRef}
+            type="file"
+            accept="image/*,video/*"
+            multiple
+            className="hidden"
+            onChange={handleFiles}
+          />
+        </div>
+
+        {errorMessage && (
+          <p className="text-sm text-red-500 font-medium">{errorMessage}</p>
+        )}
+      </div>
+
+      {/* Preview grid */}
+      {banners.length > 0 ? (
+        <div className="grid gap-4 md:grid-cols-2">
+          {banners.map((url, index) => (
+            <div
+              key={`${url}-${index}`}
+              className="space-y-2 rounded-[24px] border border-line bg-panel/40 p-4"
+            >
+              {/* URL editable input */}
+              <TextInput
+                label={`Banner ${index + 1} ${isVideo(url) ? "🎬 Video" : "🖼 Image"}`}
+                value={url}
+                onChange={(next) => {
+                  const n = [...banners];
+                  n[index] = next;
+                  onChange(n);
+                }}
+              />
+              {/* Preview */}
+              <div className="flex items-center justify-between">
+                {url &&
+                  (isVideo(url) ? (
+                    <video
+                      src={url}
+                      className="h-16 w-28 rounded-xl border border-line object-cover"
+                      muted
+                      autoPlay
+                      loop
+                      playsInline
+                      controls
+                    />
+                  ) : (
+                    <img
+                      src={url}
+                      alt={`Banner ${index + 1}`}
+                      className="h-16 w-28 rounded-xl border border-line object-cover"
+                    />
+                  ))}
+                <ActionButton secondary onClick={() => remove(index)}>
+                  Remove
+                </ActionButton>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="rounded-2xl border border-dashed border-line p-6 text-sm text-muted text-center">
+          No banners added yet. Upload an image/video or paste a URL.
+        </div>
+      )}
+
+      {/* Image picker modal for selecting from already-uploaded assets */}
+      <ImagePickerModal
+        open={pickerOpen}
+        onClose={() => setPickerOpen(false)}
+        onSelect={(selected) => {
+          if (selected.length)
+            onChange([
+              ...banners,
+              ...selected.filter((u) => !banners.includes(u)),
+            ]);
+          setPickerOpen(false);
+        }}
+      />
     </div>
   );
 }
@@ -1198,34 +1423,34 @@ function FloorPlansEditor({
   const fileRef = useRef<HTMLInputElement>(null);
 
   const loadOptions = async () => {
-    try {
-      setLoading(true);
-      // Agar propertyId hai toh sirf us property ke floor plans fetch karo
-      const endpoint = propertyId
-        ? `/content/floor-plans?propertyId=${propertyId}`
-        : `/content/floor-plans`;
-      const response = await api.get(endpoint);
-      const rows = normalizeApiArray(response);
-      setOptions(
-        rows.map((row: any) => ({
-          _id: String(row?._id ?? row?.id ?? ""),
-          title: String(row?.title ?? ""),
-          unitType: String(row?.data?.unitType ?? row?.unitType ?? ""),
-          bedrooms: Number(row?.data?.bedrooms ?? row?.bedrooms ?? 0),
-          bathrooms: Number(row?.data?.bathrooms ?? row?.bathrooms ?? 0),
-          size: String(row?.data?.size ?? row?.size ?? ""),
-          price: Number(row?.data?.price ?? row?.price ?? 0),
-          image: String(row?.data?.image ?? row?.image ?? ""),
-          category: String(row?.data?.category ?? row?.category ?? ""),
-          sortOrder: Number(row?.data?.sortOrder ?? row?.sortOrder ?? 0),
-        })),
-      );
-    } catch (error) {
-      console.error("Failed to load floor plans:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  try {
+    setLoading(true);
+    // Always fetch filtered by propertyId when available
+    const endpoint = propertyId
+      ? `/content/floor-plans?propertyId=${propertyId}`
+      : `/content/floor-plans`;
+    const response = await api.get(endpoint);
+    const rows = normalizeApiArray(response);
+    setOptions(
+      rows.map((row: any) => ({
+        _id: String(row?._id ?? row?.id ?? ""),
+        title: String(row?.title ?? ""),
+        unitType: String(row?.data?.unitType ?? row?.unitType ?? ""),
+        bedrooms: Number(row?.data?.bedrooms ?? row?.bedrooms ?? 0),
+        bathrooms: Number(row?.data?.bathrooms ?? row?.bathrooms ?? 0),
+        size: String(row?.data?.size ?? row?.size ?? ""),
+        price: Number(row?.data?.price ?? row?.price ?? 0),
+        image: String(row?.data?.image ?? row?.image ?? ""),
+        category: String(row?.data?.category ?? row?.category ?? ""),
+        sortOrder: Number(row?.data?.sortOrder ?? row?.sortOrder ?? 0),
+      })),
+    );
+  } catch (error) {
+    console.error("Failed to load floor plans:", error);
+  } finally {
+    setLoading(false);
+  }
+};
 
   useEffect(() => {
     loadOptions();
@@ -1294,8 +1519,7 @@ function FloorPlansEditor({
       setSaveError("");
       const payload = {
         title: planForm.title,
-        // propertyId map karo
-        propertyId: propertyId || undefined,
+        propertyId: propertyId || null,
         data: {
           unitType: planForm.unitType,
           bedrooms: Number(planForm.bedrooms),
@@ -1691,14 +1915,73 @@ function ImageField({
 }) {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
+
   const fileRef = useRef<HTMLInputElement>(null);
+
+  // ==============================
+  // VIDEO DETECTION
+  // ==============================
+  const isVideo = (url: string) => {
+    if (!url) return false;
+
+    return (
+      /\.(mp4|webm|ogg|mov|m4v)$/i.test(url) ||
+      url.includes("/video/") ||
+      url.includes("video/upload") ||
+      url.includes("cloudinary") ||
+      url.includes(".m3u8")
+    );
+  };
+
+  // ==============================
+  // YOUTUBE DETECTION
+  // ==============================
+  const isYoutubeUrl = (url: string) => {
+    if (!url) return false;
+
+    return (
+      url.includes("youtube.com/watch") ||
+      url.includes("youtu.be/") ||
+      url.includes("youtube.com/embed/")
+    );
+  };
+
+  // ==============================
+  // YOUTUBE EMBED URL
+  // ==============================
+  const getYoutubeEmbedUrl = (url: string) => {
+    try {
+      // youtu.be
+      if (url.includes("youtu.be/")) {
+        const id = url.split("youtu.be/")[1]?.split("?")[0];
+
+        return `https://www.youtube.com/embed/${id}`;
+      }
+
+      // already embed
+      if (url.includes("youtube.com/embed/")) {
+        return url;
+      }
+
+      // youtube.com/watch?v=
+      const parsed = new URL(url);
+
+      const id = parsed.searchParams.get("v");
+
+      return `https://www.youtube.com/embed/${id}`;
+    } catch {
+      return "";
+    }
+  };
 
   return (
     <div className="space-y-3">
       <FieldLabel label={field.label} />
 
-      {/* Two buttons */}
+      {/* BUTTONS */}
       <div className="flex flex-col sm:flex-row gap-2">
+
+        {/* Upload */}
         <button
           type="button"
           disabled={uploading}
@@ -1706,18 +1989,22 @@ function ImageField({
           className="flex items-center gap-2 rounded-2xl border border-line bg-panel px-4 py-2.5 text-sm text-text hover:border-gold/50 transition disabled:opacity-50"
         >
           <Upload className="h-4 w-4 text-muted" />
+
           {uploading ? "Uploading..." : "Upload"}
         </button>
 
+        {/* Select uploaded */}
         <button
           type="button"
           onClick={() => setPickerOpen(true)}
           className="flex items-center gap-2 rounded-2xl border border-gold/40 bg-gold/10 px-4 py-2.5 text-sm text-gold hover:bg-gold/20 transition"
         >
           <Upload className="h-4 w-4" />
+
           Select Uploaded
         </button>
 
+        {/* Hidden file input */}
         <input
           ref={fileRef}
           type="file"
@@ -1725,49 +2012,90 @@ function ImageField({
           className="hidden"
           onChange={async (e) => {
             const file = e.target.files?.[0];
+
             if (!file) return;
-            setUploading(true);
-            const url = await uploadFile(file);
-            onChange(url);
-            setUploading(false);
-            e.target.value = "";
+
+            try {
+              setUploading(true);
+
+              const url = await uploadFile(file);
+
+              if (url) {
+                onChange(url);
+              }
+            } catch (err) {
+              console.error("Upload failed", err);
+            } finally {
+              setUploading(false);
+
+              e.target.value = "";
+            }
           }}
         />
       </div>
 
-      {/* Preview + clear */}
+      {/* PREVIEW */}
       {value && (
         <div className="relative w-fit">
-          {value.match(/\.(mp4|webm|ogg)$/i) ? (
+
+          {/* YOUTUBE */}
+          {isYoutubeUrl(value) ? (
+            <iframe
+              src={getYoutubeEmbedUrl(value)}
+              className="h-40 w-64 rounded-2xl border border-line bg-black"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            />
+          ) : isVideo(value) ? (
+
+            // VIDEO
             <video
               src={value}
-              className="h-20 w-20 rounded-2xl border object-cover"
+              className="h-40 w-64 rounded-2xl border border-line object-cover bg-black"
+              muted
+              autoPlay
+              loop
+              playsInline
               controls
             />
+
           ) : (
+
+            // IMAGE
             <img
               src={value}
-              className="h-20 w-20 rounded-2xl border object-cover"
+              alt={field.label}
+              className="h-40 w-64 rounded-2xl border border-line object-cover"
             />
           )}
+
+          {/* REMOVE BUTTON */}
           <button
             type="button"
             onClick={() => onChange("")}
-            className="absolute -top-1.5 -right-1.5 rounded-full bg-red-500 text-white w-5 h-5 flex items-center justify-center text-xs hover:bg-red-600"
+            className="absolute -top-2 -right-2 rounded-full bg-red-500 text-white w-6 h-6 flex items-center justify-center text-sm hover:bg-red-600 shadow-lg"
           >
             ×
           </button>
         </div>
       )}
 
-      {field.note && <p className="text-gold text-xs">Note: {field.note}</p>}
+      {/* NOTE */}
+      {field.note && (
+        <p className="text-gold text-xs">
+          Note: {field.note}
+        </p>
+      )}
 
-      {/* Reuse the existing ImagePickerModal — picks ONE image */}
+      {/* PICKER MODAL */}
       <ImagePickerModal
         open={pickerOpen}
         onClose={() => setPickerOpen(false)}
         onSelect={(images) => {
-          if (images[0]) onChange(images[0]);
+          if (images[0]) {
+            onChange(images[0]);
+          }
+
           setPickerOpen(false);
         }}
       />
@@ -2173,6 +2501,7 @@ export default function PropertiesPage() {
       const payload = {
         ...form,
         slug,
+        bannerImages: form.bannerImages || [],
         sortOrder: Number(form.sortOrder || 0),
         isStandalone: form.isStandalone || false,
         communities: form.isStandalone ? "NA" : form.communities || "",
@@ -2397,10 +2726,12 @@ export default function PropertiesPage() {
                       {Array.isArray(property?.gallery) &&
                       property.gallery.length > 0 ? (
                         <>
-                          <div className="flex items-center gap-0.5 overflow-hidden max-w-[120px]">
-                            {property.gallery
-                              .slice(0, 5)
-                              .map((media: string, i: number) => {
+                          <div
+                            className="flex items-center gap-1 overflow-x-auto max-w-[180px] p-2"
+                            style={{ scrollbarWidth: "thin" }}
+                          >
+                            {property.gallery.map(
+                              (media: string, i: number) => {
                                 const isVideo = /\.(mp4|webm|ogg)$/i.test(
                                   media,
                                 );
@@ -2458,13 +2789,14 @@ export default function PropertiesPage() {
                                           );
                                         }
                                       }}
-                                      className="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] rounded-full w-3.5 h-3.5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition"
+                                      className="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] rounded-full w-3.5 h-3.5 flex items-center justify-center transition"
                                     >
                                       ×
                                     </button>
                                   </div>
                                 );
-                              })}
+                              },
+                            )}
                             {property.gallery.length > 5 && (
                               <span className="text-[10px] text-muted ml-0.5">
                                 +{property.gallery.length - 5}
@@ -2501,13 +2833,14 @@ export default function PropertiesPage() {
                     </div>
 
                     {/* Banner images strip */}
-                    {/* Banner images strip */}
                     {Array.isArray(property?.bannerImages) &&
                       property.bannerImages.length > 0 && (
-                        <div className="flex gap-0.5 mt-1 flex-wrap">
-                          {property.bannerImages
-                            .slice(0, 3)
-                            .map((img: string, i: number) => (
+                        <div
+                          className="flex gap-1 mt-1 overflow-x-auto max-w-[180px] pt-2"
+                          style={{ scrollbarWidth: "thin" }}
+                        >
+                          {property.bannerImages.map(
+                            (img: string, i: number) => (
                               <div key={i} className="relative group shrink-0">
                                 <img
                                   src={img}
@@ -2546,12 +2879,13 @@ export default function PropertiesPage() {
                                       );
                                     }
                                   }}
-                                  className="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] rounded-full w-3.5 h-3.5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition"
+                                  className="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] rounded-full w-3.5 h-3.5 flex items-center justify-center transition"
                                 >
                                   ×
                                 </button>
                               </div>
-                            ))}
+                            ),
+                          )}
                           {property.bannerImages.length > 3 && (
                             <span className="text-[10px] text-muted self-center ml-0.5">
                               +{property.bannerImages.length - 3}
