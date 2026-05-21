@@ -1510,53 +1510,101 @@ function FloorPlansEditor({
   };
 
   const savePlan = async () => {
-    if (!planForm.title.trim()) {
-      setSaveError("Title is required.");
-      return;
-    }
-    try {
-      setSaving(true);
-      setSaveError("");
-      const payload = {
-        title: planForm.title,
-        propertyId: propertyId || null,
-        data: {
-          unitType: planForm.unitType,
-          bedrooms: Number(planForm.bedrooms),
-          bathrooms: Number(planForm.bathrooms),
-          size: planForm.size,
-          price: Number(planForm.price),
-          image: planForm.image,
-          category: planForm.category,
-          sortOrder: Number(planForm.sortOrder),
-        },
-      };
+  if (!planForm.title.trim()) {
+    setSaveError("Title is required.");
+    return;
+  }
 
-      if (editingPlan) {
-        // Edit existing
-        await api.patch(`/content/floor-plans/${editingPlan._id}`, payload);
-        await loadOptions();
-      } else {
-        // Create new
-        const res = await api.post("/content/floor-plans", payload);
-        const createdId =
-          res?.data?._id || res?.data?.id || res?._id || res?.id || "";
-        await loadOptions();
-        if (createdId) onChange([...items, String(createdId)]);
-      }
+  // IMPORTANT
+  // Property must exist before adding floor plans
+  if (!propertyId) {
+    setSaveError(
+      "Please save property first before creating floor plans.",
+    );
+    return;
+  }
 
-      setShowForm(false);
-      setEditingPlan(null);
-    } catch (err: any) {
-      setSaveError(
-        err?.response?.data?.message ||
-          err?.message ||
-          "Failed to save floor plan.",
+  try {
+    setSaving(true);
+    setSaveError("");
+
+    // ==============================
+    // PAYLOAD
+    // ==============================
+    const payload = {
+      title: planForm.title,
+
+      // ✅ IMPORTANT
+      propertyId: String(propertyId),
+
+      data: {
+        unitType: planForm.unitType,
+        bedrooms: Number(planForm.bedrooms),
+        bathrooms: Number(planForm.bathrooms),
+        size: planForm.size,
+        price: Number(planForm.price),
+        image: planForm.image,
+        category: planForm.category,
+        sortOrder: Number(planForm.sortOrder),
+      },
+    };
+
+    // ==============================
+    // UPDATE
+    // ==============================
+    if (editingPlan?._id) {
+      await api.patch(
+        `/content/floor-plans/${editingPlan._id}`,
+        payload,
       );
-    } finally {
-      setSaving(false);
+
+      await loadOptions();
+
+    } else {
+
+      // ==============================
+      // CREATE
+      // ==============================
+      const res = await api.post(
+        "/content/floor-plans",
+        payload,
+      );
+
+      const createdId =
+        res?.data?._id ||
+        res?.data?.id ||
+        res?._id ||
+        res?.id ||
+        "";
+
+      await loadOptions();
+
+      // auto select created floorplan
+      if (createdId) {
+        onChange([
+          ...items,
+          String(createdId),
+        ]);
+      }
     }
-  };
+
+    // ==============================
+    // RESET
+    // ==============================
+    setShowForm(false);
+
+    setEditingPlan(null);
+
+  } catch (err: any) {
+    setSaveError(
+      err?.response?.data?.message ||
+      err?.message ||
+      "Failed to save floor plan.",
+    );
+  } finally {
+    setSaving(false);
+  }
+};
 
   const deletePlan = async (opt: any, e: React.MouseEvent) => {
     e.stopPropagation();
