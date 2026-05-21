@@ -318,12 +318,12 @@ const propertyFormSections: FieldSection[] = [
       {
         key: "location",
         label: "Location",
-        type: "relation-select",
-        relation: {
-          entity: "content/locations",
-          labelKey: "name",
-          valueKey: "_id",
-        },
+        type: "select",
+        options: [
+          { label: "Dubai", value: "Dubai" },
+          // future:
+          // { label: "Abu Dhabi", value: "abu-dhabi" },
+        ],
       },
       {
         key: "sublocation",
@@ -1295,7 +1295,7 @@ function FloorPlansEditor({
       const payload = {
         title: planForm.title,
         // propertyId map karo
-        ...(propertyId ? { propertyId } : {}),
+        propertyId: propertyId || undefined,
         data: {
           unitType: planForm.unitType,
           bedrooms: Number(planForm.bedrooms),
@@ -2029,11 +2029,11 @@ export default function PropertiesPage() {
   const developerOptions = relations["content/developer-community"] || [];
   const locationOptions = relations["content/locations"] || [];
   const typeFilterOptions = relations["content/property-types"] || [];
-const [currentPage, setCurrentPage] = useState(1);
-const PAGE_SIZE = 12;
-useEffect(() => {
-  setCurrentPage(1);
-}, [search, statusFilter, typeFilter, developerFilter, locationFilter]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const PAGE_SIZE = 12;
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, statusFilter, typeFilter, developerFilter, locationFilter]);
 
   useEffect(() => {
     setMounted(true);
@@ -2155,11 +2155,11 @@ useEffect(() => {
     developerFilter,
     locationFilter,
   ]);
-const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
-const paginated = filtered.slice(
-  (currentPage - 1) * PAGE_SIZE,
-  currentPage * PAGE_SIZE,
-);
+  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
+  const paginated = filtered.slice(
+    (currentPage - 1) * PAGE_SIZE,
+    currentPage * PAGE_SIZE,
+  );
   const close = () => {
     setOpen(false);
     setEditingId(null);
@@ -2241,7 +2241,11 @@ const paginated = filtered.slice(
       enquireFormImage: item.enquireFormImage || "",
       propertydoc: item.propertydoc || "",
       amenities: Array.isArray(item.amenities) ? item.amenities : [],
-      floorPlans: Array.isArray(item.floorPlans) ? item.floorPlans : [],
+      floorPlans: Array.isArray(item.floorPlans)
+        ? item.floorPlans
+            .map((fp: any) => (typeof fp === "string" ? fp : (fp?._id ?? "")))
+            .filter(Boolean)
+        : [],
       faq: Array.isArray(item.faq) ? item.faq : [],
       price: Number(item.price || 0),
       bedrooms: Number(item.bedrooms || 0),
@@ -2677,74 +2681,79 @@ const paginated = filtered.slice(
           </table>
         </div>
         {/* Pagination */}
-{totalPages > 1 && (
-  <div className="flex items-center justify-between px-4 py-3 border-t border-line mt-0">
-    <p className="text-xs text-muted">
-      Showing{" "}
-      <span className="font-medium text-text">
-        {(currentPage - 1) * PAGE_SIZE + 1}–
-        {Math.min(currentPage * PAGE_SIZE, filtered.length)}
-      </span>{" "}
-      of{" "}
-      <span className="font-medium text-text">{filtered.length}</span> properties
-    </p>
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between px-4 py-3 border-t border-line mt-0">
+            <p className="text-xs text-muted">
+              Showing{" "}
+              <span className="font-medium text-text">
+                {(currentPage - 1) * PAGE_SIZE + 1}–
+                {Math.min(currentPage * PAGE_SIZE, filtered.length)}
+              </span>{" "}
+              of{" "}
+              <span className="font-medium text-text">{filtered.length}</span>{" "}
+              properties
+            </p>
 
-    <div className="flex items-center gap-1">
-      {/* Prev */}
-      <button
-        disabled={currentPage === 1}
-        onClick={() => setCurrentPage((p) => p - 1)}
-        className="flex items-center gap-1 rounded-xl border border-line bg-panel px-3 py-1.5 text-xs text-text hover:border-gold/50 hover:text-gold transition disabled:opacity-40 disabled:pointer-events-none"
-      >
-        ← Prev
-      </button>
+            <div className="flex items-center gap-1">
+              {/* Prev */}
+              <button
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage((p) => p - 1)}
+                className="flex items-center gap-1 rounded-xl border border-line bg-panel px-3 py-1.5 text-xs text-text hover:border-gold/50 hover:text-gold transition disabled:opacity-40 disabled:pointer-events-none"
+              >
+                ← Prev
+              </button>
 
-      {/* Page numbers */}
-      {Array.from({ length: totalPages }, (_, i) => i + 1)
-        .filter((page) => {
-          // Show first, last, current ±1, and ellipsis placeholders
-          return (
-            page === 1 ||
-            page === totalPages ||
-            Math.abs(page - currentPage) <= 1
-          );
-        })
-        .reduce<(number | "...")[]>((acc, page, i, arr) => {
-          if (i > 0 && page - (arr[i - 1] as number) > 1) acc.push("...");
-          acc.push(page);
-          return acc;
-        }, [])
-        .map((page, i) =>
-          page === "..." ? (
-            <span key={`ellipsis-${i}`} className="px-1.5 text-xs text-muted">
-              …
-            </span>
-          ) : (
-            <button
-              key={page}
-              onClick={() => setCurrentPage(page as number)}
-              className={`min-w-[30px] rounded-xl border px-2 py-1.5 text-xs font-medium transition ${
-                currentPage === page
-                  ? "border-gold bg-gold/10 text-gold"
-                  : "border-line bg-panel text-text hover:border-gold/40 hover:text-gold"
-              }`}
-            >
-              {page}
-            </button>
-          ),
+              {/* Page numbers */}
+              {Array.from({ length: totalPages }, (_, i) => i + 1)
+                .filter((page) => {
+                  // Show first, last, current ±1, and ellipsis placeholders
+                  return (
+                    page === 1 ||
+                    page === totalPages ||
+                    Math.abs(page - currentPage) <= 1
+                  );
+                })
+                .reduce<(number | "...")[]>((acc, page, i, arr) => {
+                  if (i > 0 && page - (arr[i - 1] as number) > 1)
+                    acc.push("...");
+                  acc.push(page);
+                  return acc;
+                }, [])
+                .map((page, i) =>
+                  page === "..." ? (
+                    <span
+                      key={`ellipsis-${i}`}
+                      className="px-1.5 text-xs text-muted"
+                    >
+                      …
+                    </span>
+                  ) : (
+                    <button
+                      key={page}
+                      onClick={() => setCurrentPage(page as number)}
+                      className={`min-w-[30px] rounded-xl border px-2 py-1.5 text-xs font-medium transition ${
+                        currentPage === page
+                          ? "border-gold bg-gold/10 text-gold"
+                          : "border-line bg-panel text-text hover:border-gold/40 hover:text-gold"
+                      }`}
+                    >
+                      {page}
+                    </button>
+                  ),
+                )}
+
+              {/* Next */}
+              <button
+                disabled={currentPage === totalPages}
+                onClick={() => setCurrentPage((p) => p + 1)}
+                className="flex items-center gap-1 rounded-xl border border-line bg-panel px-3 py-1.5 text-xs text-text hover:border-gold/50 hover:text-gold transition disabled:opacity-40 disabled:pointer-events-none"
+              >
+                Next →
+              </button>
+            </div>
+          </div>
         )}
-
-      {/* Next */}
-      <button
-        disabled={currentPage === totalPages}
-        onClick={() => setCurrentPage((p) => p + 1)}
-        className="flex items-center gap-1 rounded-xl border border-line bg-panel px-3 py-1.5 text-xs text-text hover:border-gold/50 hover:text-gold transition disabled:opacity-40 disabled:pointer-events-none"
-      >
-        Next →
-      </button>
-    </div>
-  </div>
-)}
       </SectionCard>
 
       {/* ── Add / Edit Modal ── */}
@@ -2802,6 +2811,7 @@ const paginated = filtered.slice(
               ) : section.custom === "floorPlans" ? (
                 <FloorPlansEditor
                   value={Array.isArray(form.floorPlans) ? form.floorPlans : []}
+                  propertyId={editingId || ""}
                   onChange={(next) =>
                     setForm((prev) => ({ ...prev, floorPlans: next }))
                   }
@@ -2889,7 +2899,7 @@ const paginated = filtered.slice(
           {manageModal.type === "floorPlans" && (
             <FloorPlansEditor
               value={(manageModal.property.floorPlans || []).map((fp: any) =>
-                typeof fp === "string" ? fp : fp?.title,
+                typeof fp === "string" ? fp : (fp?._id ?? fp?.title),
               )}
               onChange={(next) =>
                 setManageModal((prev) =>
@@ -2901,6 +2911,7 @@ const paginated = filtered.slice(
                     : null,
                 )
               }
+              propertyId={manageModal.property._id}
             />
           )}
           {manageModal.type === "amenities" && (
