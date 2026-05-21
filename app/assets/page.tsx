@@ -14,6 +14,7 @@ type Asset = {
   url: string;
   name: string;
   size?: number;
+  path?: string;
   uploadedAt?: string;
   usedIn?: string[];
 };
@@ -47,11 +48,10 @@ function findDuplicates(assets: Asset[]): Set<string> {
   );
 }
 
-// ─── Image Card ──────────────────────────────────────────────────────────────
+// ─── Asset Grid Card ──────────────────────────────────────────────────────────
 
-function AssetCard({
+function AssetGridCard({
   asset,
-  index,
   isDuplicate,
   onView,
   onDelete,
@@ -59,7 +59,6 @@ function AssetCard({
   onSelect,
 }: {
   asset: Asset;
-  index: number;
   isDuplicate: boolean;
   onView: (asset: Asset) => void;
   onDelete: (asset: Asset) => void;
@@ -69,100 +68,113 @@ function AssetCard({
   const [imgError, setImgError] = useState(false);
 
   return (
-    <tr
-      className={`border-b border-line last:border-none transition-colors hover:bg-card/40 ${
-        selected ? "bg-gold/5" : isDuplicate ? "bg-red-500/5" : ""
-      }`}
+    <div
+      className={`relative rounded-2xl border overflow-hidden transition-all duration-200
+        ${
+          selected
+            ? "border-gold ring-2 ring-gold/30"
+            : isDuplicate
+              ? "border-red-500/40"
+              : "border-line bg-panel/70"
+        }`}
     >
-      {/* SNO */}
-      <td className="px-4 py-4 text-sm text-muted w-12">{index + 1}</td>
+      {/* ── Image area: click toggles selection ── */}
+      <div
+        className="relative h-36 w-full bg-card/80 overflow-hidden cursor-pointer select-none"
+        onClick={() => onSelect(asset._id)}
+      >
+        {!imgError ? (
+          <img
+            src={asset.url}
+            alt={asset.name}
+            className="h-full w-full object-cover pointer-events-none"
+            onError={() => setImgError(true)}
+          />
+        ) : (
+          <div className="h-full w-full flex flex-col items-center justify-center gap-1.5 text-muted pointer-events-none">
+            <svg
+              className="w-7 h-7 opacity-30"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+            >
+              <rect x="3" y="3" width="18" height="18" rx="3" />
+              <circle cx="8.5" cy="8.5" r="1.5" />
+              <path d="M21 15l-5-5L5 21" />
+            </svg>
+            <span className="text-[10px] opacity-40">No preview</span>
+          </div>
+        )}
 
-      {/* Image */}
-      <td className="px-4 py-4 w-20">
-        <div className="h-11 w-11 overflow-hidden rounded-xl border border-line bg-card shrink-0">
-          {!imgError ? (
-            <img
-              src={asset.url}
-              alt={asset.name}
-              className="h-full w-full object-cover"
-              onError={() => setImgError(true)}
-            />
-          ) : (
-            <div className="h-full w-full flex items-center justify-center text-muted text-[9px]">
-              N/A
-            </div>
+        {/* Always-visible checkbox */}
+        <div
+          className={`absolute top-2 left-2 h-5 w-5 rounded-md border-2 flex items-center justify-center pointer-events-none transition-all
+            ${selected ? "border-gold bg-gold" : "border-white bg-black/50"}`}
+        >
+          {selected && (
+            <svg className="w-3 h-3 text-black" viewBox="0 0 12 12" fill="none">
+              <path
+                d="M2 6l3 3 5-5"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
           )}
         </div>
-      </td>
 
-      {/* Name */}
-      <td className="px-4 py-4">
+        {/* Duplicate badge */}
+        {isDuplicate && (
+          <div className="absolute top-2 right-2 pointer-events-none">
+            <span className="inline-flex items-center rounded-full bg-red-500/80 px-1.5 py-0.5 text-[9px] font-semibold text-white">
+              Dup
+            </span>
+          </div>
+        )}
+      </div>
+
+      {/* Info + actions */}
+      <div className="px-2.5 pt-2 pb-2.5 space-y-1.5">
         <p
-          className="text-sm font-medium text-text truncate max-w-[320px]"
+          className="text-xs font-medium text-text truncate leading-snug"
           title={asset.name}
         >
           {asset.name || "Unnamed"}
         </p>
-      </td>
 
-      {/* Size */}
-      <td className="px-4 py-4 text-sm text-muted whitespace-nowrap">
-        {formatBytes(asset.size)}
-      </td>
-
-      {/* Uploaded At */}
-      <td className="px-4 py-4 min-w-[150px]">
-        <p className="text-sm text-muted">
-          {asset.uploadedAt
-            ? new Date(asset.uploadedAt).toLocaleDateString("en-GB", {
-                day: "2-digit",
-                month: "2-digit",
-                year: "2-digit",
-              })
-            : "-"}
-        </p>
-        <p className="text-xs text-muted/60 mt-0.5">
-          {asset.uploadedAt
-            ? new Date(asset.uploadedAt).toLocaleTimeString("en-GB", {
-                hour: "2-digit",
-                minute: "2-digit",
-                hour12: true,
-              })
-            : ""}
-        </p>
-      </td>
-
-      {/* Status */}
-      <td className="px-4 py-4">
-        {isDuplicate ? (
-          <span className="inline-flex items-center rounded-full bg-red-500/15 px-3 py-1 text-xs font-semibold text-red-400 border border-red-500/30">
-            Duplicate
+        <div className="flex items-center justify-between text-[10px] text-muted">
+          <span>{formatBytes(asset.size)}</span>
+          <span>
+            {asset.uploadedAt
+              ? new Date(asset.uploadedAt).toLocaleDateString("en-GB", {
+                  day: "2-digit",
+                  month: "2-digit",
+                  year: "2-digit",
+                })
+              : "—"}
           </span>
-        ) : (
-          <span className="inline-flex items-center rounded-full bg-green-500/15 px-3 py-1 text-xs font-semibold text-green-400 border border-green-500/30">
-            Active
-          </span>
-        )}
-      </td>
+        </div>
 
-      {/* Actions */}
-      <td className="px-4 py-4 text-right">
-        <div className="flex items-center justify-end gap-2">
+        <div className="flex items-center gap-1.5 pt-0.5">
           <button
+            type="button"
             onClick={() => onView(asset)}
-            className="rounded-xl border border-line bg-card/60 px-3 py-1.5 text-xs text-text hover:border-gold/50 hover:text-gold transition"
+            className="flex-1 rounded-lg border border-line bg-card/60 py-1 text-[10px] text-text hover:border-gold/50 hover:text-gold transition"
           >
             View
           </button>
           <button
+            type="button"
             onClick={() => onDelete(asset)}
-            className="rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-1.5 text-xs text-red-400 hover:bg-red-500/20 transition"
+            className="flex-1 rounded-lg border border-red-500/30 bg-red-500/10 py-1 text-[10px] text-red-400 hover:bg-red-500/20 transition"
           >
             Delete
           </button>
         </div>
-      </td>
-    </tr>
+      </div>
+    </div>
   );
 }
 
@@ -182,17 +194,17 @@ function ViewModal({
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
-      onClick={onClose}
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
     >
-      <div
-        className="relative w-full max-w-2xl rounded-[28px] border border-line bg-panel p-5 space-y-4"
-        onClick={(e) => e.stopPropagation()}
-      >
+      <div className="relative w-full max-w-2xl rounded-[28px] border border-line bg-panel p-5 space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-base font-semibold text-text truncate max-w-[80%]">
             {asset.name || "Asset Preview"}
           </h2>
           <button
+            type="button"
             onClick={onClose}
             className="text-muted hover:text-text text-xl leading-none"
           >
@@ -237,12 +249,14 @@ function ViewModal({
 
         <div className="flex justify-end gap-3">
           <button
+            type="button"
             onClick={onClose}
             className="rounded-2xl border border-line px-5 py-2.5 text-sm text-muted hover:text-text transition"
           >
             Close
           </button>
           <button
+            type="button"
             onClick={() => {
               onDelete(asset);
               onClose();
@@ -275,12 +289,11 @@ function DeleteModal({
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
-      onClick={onClose}
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
     >
-      <div
-        className="w-full max-w-md rounded-[28px] border border-line bg-panel p-6 space-y-5"
-        onClick={(e) => e.stopPropagation()}
-      >
+      <div className="w-full max-w-md rounded-[28px] border border-line bg-panel p-6 space-y-5">
         <div>
           <h2 className="text-base font-semibold text-text">Delete Asset</h2>
           <p className="mt-2 text-sm text-muted">
@@ -302,20 +315,85 @@ function DeleteModal({
 
         <div className="flex gap-3 justify-end">
           <button
+            type="button"
             onClick={onClose}
-            disabled={loading}
             className="rounded-2xl border border-line px-5 py-2.5 text-sm text-muted hover:text-text transition"
           >
             Cancel
           </button>
           <button
+            type="button"
             onClick={onConfirm}
             disabled={loading}
             className="rounded-2xl bg-red-500/80 hover:bg-red-500 px-5 py-2.5 text-sm text-white transition disabled:opacity-50"
           >
             {loading ? "Deleting..." : "Yes, Delete"}
           </button>
-          
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Bulk Delete Confirm Modal ───────────────────────────────────────────────
+
+function BulkDeleteModal({
+  count,
+  onClose,
+  onConfirm,
+  loading,
+}: {
+  count: number;
+  onClose: () => void;
+  onConfirm: () => void;
+  loading: boolean;
+}) {
+  // ← if (!asset) return null; HATAO — yahan se
+  if (count === 0) return null;
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
+      style={{ display: count === 0 ? "none" : "flex" }} // ← count 0 ho toh hide karo
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div className="w-full max-w-md rounded-[28px] border border-line bg-panel p-6 space-y-5">
+        <div>
+          <h2 className="text-base font-semibold text-text">
+            Delete {count} Asset{count !== 1 ? "s" : ""}
+          </h2>
+          <p className="mt-2 text-sm text-muted">
+            You are about to permanently delete{" "}
+            <span className="text-text font-medium">
+              {count} selected asset{count !== 1 ? "s" : ""}
+            </span>
+            . This action cannot be undone.
+          </p>
+        </div>
+
+        <div className="rounded-2xl border border-red-500/20 bg-red-500/5 px-4 py-3 text-sm text-red-400">
+          ⚠️ All selected files will be removed from your storage bucket.
+        </div>
+
+        <div className="flex gap-3 justify-end">
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-2xl border border-line px-5 py-2.5 text-sm text-muted hover:text-text transition"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={onConfirm}
+            disabled={loading}
+            className="rounded-2xl bg-red-500/80 hover:bg-red-500 px-5 py-2.5 text-sm text-white transition disabled:opacity-50"
+          >
+            {loading
+              ? "Deleting..."
+              : `Delete ${count} Asset${count !== 1 ? "s" : ""}`}
+          </button>
         </div>
       </div>
     </div>
@@ -335,11 +413,13 @@ export default function AssetsPage() {
     "latest" | "oldest" | "name-asc" | "name-desc" | "size-asc" | "size-desc"
   >("latest");
   const [currentPage, setCurrentPage] = useState(1);
-const [pageSize, setPageSize] = useState(10);
+  const [pageSize, setPageSize] = useState(24);
   const [viewAsset, setViewAsset] = useState<Asset | null>(null);
   const [deleteAsset, setDeleteAsset] = useState<Asset | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [bulkDeleteLoading, setBulkDeleteLoading] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [showBulkDeleteModal, setShowBulkDeleteModal] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -347,10 +427,32 @@ const [pageSize, setPageSize] = useState(10);
     try {
       const res = await api.get<any>("/properties/assets");
       const rows = normalizeApiArray(res);
-      setAssets(rows);
+      const mapped = rows.map((row: any, index: number) => ({
+        ...row,
+         _id:
+        row._id ||
+        row.id ||
+        row.path ||
+        row.url ||
+        `asset-${index}`, // ← fallback to url
+        url: row.url || row.fileUrl || "",
+        name: row.name || row.url?.split("/").pop() || "Unnamed",
+        path:
+          row.path ||
+          row.key ||
+          (() => {
+            try {
+              return new URL(row.url || "").pathname.slice(1);
+            } catch {
+              return row.url || "";
+            }
+          })(),
+        size: row.size || row.fileSize || undefined,
+        uploadedAt: row.uploadedAt || row.createdAt || undefined,
+      }));
+      setAssets(mapped);
     } catch {
       setError("Failed to load assets. API may not be ready yet.");
-      // placeholder data for UI preview
       setAssets([]);
     } finally {
       setLoading(false);
@@ -369,9 +471,7 @@ const [pageSize, setPageSize] = useState(10);
         !search ||
         asset.name?.toLowerCase().includes(search.toLowerCase()) ||
         asset.url?.toLowerCase().includes(search.toLowerCase());
-
       const matchesDuplicate = filter === "all" || duplicateUrls.has(asset.url);
-
       return matchesSearch && matchesDuplicate;
     })
     .sort((a, b) => {
@@ -381,51 +481,69 @@ const [pageSize, setPageSize] = useState(10);
             new Date(b.uploadedAt || 0).getTime() -
             new Date(a.uploadedAt || 0).getTime()
           );
-
         case "oldest":
           return (
             new Date(a.uploadedAt || 0).getTime() -
             new Date(b.uploadedAt || 0).getTime()
           );
-
         case "name-asc":
           return (a.name || "").localeCompare(b.name || "");
-
         case "name-desc":
           return (b.name || "").localeCompare(a.name || "");
-
         case "size-asc":
           return (a.size || 0) - (b.size || 0);
-
         case "size-desc":
           return (b.size || 0) - (a.size || 0);
-
         default:
           return 0;
       }
     });
 
+  const totalPages = Math.ceil(filtered.length / pageSize);
+
+  const paginatedAssets = filtered.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize,
+  );
+
+  useEffect(() => {
+    if (currentPage > totalPages && totalPages > 0) setCurrentPage(1);
+  }, [filtered.length, totalPages, currentPage]);
+
   const toggleSelect = (id: string) => {
     setSelected((prev) => {
       const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
       return next;
     });
   };
-const totalPages = Math.ceil(filtered.length / pageSize);
 
-const paginatedAssets = filtered.slice(
-  (currentPage - 1) * pageSize,
-  currentPage * pageSize
-);
+  const isPageAllSelected =
+    paginatedAssets.length > 0 &&
+    paginatedAssets.every((a) => selected.has(a._id));
 
-useEffect(() => {
-  if (currentPage > totalPages) {
-    setCurrentPage(1);
-  }
-}, [filtered.length, totalPages, currentPage]);
+  const toggleSelectPage = () => {
+    if (isPageAllSelected) {
+      setSelected((prev) => {
+        const next = new Set(prev);
+        paginatedAssets.forEach((a) => next.delete(a._id));
+        return next;
+      });
+    } else {
+      setSelected((prev) => {
+        const next = new Set(prev);
+        paginatedAssets.forEach((a) => next.add(a._id));
+        return next;
+      });
+    }
+  };
+
   const selectAll = () => {
-    if (selected.size === filtered.length) {
+    if (selected.size === filtered.length && filtered.length > 0) {
       setSelected(new Set());
     } else {
       setSelected(new Set(filtered.map((a) => a._id)));
@@ -436,12 +554,13 @@ useEffect(() => {
     if (!deleteAsset) return;
     setDeleteLoading(true);
     try {
-      await api.delete(`/media-assets/assets?path=${deleteAsset.path}`);
+      const path = (deleteAsset as any).path || deleteAsset.url;
+      await api.delete(`/media-assets/assets?path=${encodeURIComponent(path)}`);
       setMessage("Asset deleted successfully.");
-      setAssets((prev) => prev.filter((a) => a.path !== deleteAsset.path));
+      setAssets((prev) => prev.filter((a) => a._id !== deleteAsset._id));
       setSelected((prev) => {
         const next = new Set(prev);
-        next.delete(deleteAsset.path);
+        next.delete(deleteAsset._id);
         return next;
       });
     } catch {
@@ -454,18 +573,25 @@ useEffect(() => {
 
   const handleBulkDelete = async () => {
     if (!selected.size) return;
-    setLoading(true);
+    setBulkDeleteLoading(true);
     try {
+      const selectedAssets = assets.filter((a) => selected.has(a._id));
       await Promise.all(
-        Array.from(selected).map((id) => api.delete(`/content/assets/${id}`)),
+        selectedAssets.map((asset) => {
+          const path = (asset as any).path || asset.url;
+          return api.delete(
+            `/media-assets/assets?path=${encodeURIComponent(path)}`,
+          );
+        }),
       );
       setMessage(`${selected.size} asset(s) deleted.`);
       setAssets((prev) => prev.filter((a) => !selected.has(a._id)));
       setSelected(new Set());
+      setShowBulkDeleteModal(false);
     } catch {
       setError("Failed to delete some assets.");
     } finally {
-      setLoading(false);
+      setBulkDeleteLoading(false);
     }
   };
 
@@ -475,7 +601,7 @@ useEffect(() => {
     <DashboardShell>
       <Header
         title="Assets"
-        subtitle="View and manage all uploaded images. Duplicate assets are highlighted in red."
+        subtitle="View and manage all uploaded images. Use the checkbox on each card to select, or use the toolbar below."
       />
 
       <div className="space-y-6">
@@ -499,7 +625,9 @@ useEffect(() => {
             >
               <p className="text-xs text-muted">{stat.label}</p>
               <p
-                className={`mt-1 text-2xl font-semibold ${stat.highlight ? "text-red-400" : "text-text"}`}
+                className={`mt-1 text-2xl font-semibold ${
+                  stat.highlight ? "text-red-400" : "text-text"
+                }`}
               >
                 {stat.value}
               </p>
@@ -511,15 +639,15 @@ useEffect(() => {
           title="All Assets"
           subtitle="Images stored in your cloud storage bucket."
           action={
-            <div className="flex gap-3">
+            <div className="flex flex-wrap gap-3">
               <input
-                className="input min-w-36"
+                className="input max-w-36"
                 placeholder="Search by name or URL"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
               <select
-                className="input min-w-40"
+                className="input max-w-40"
                 value={filter}
                 onChange={(e) => setFilter(e.target.value as any)}
               >
@@ -527,7 +655,7 @@ useEffect(() => {
                 <option value="duplicates">Duplicates Only</option>
               </select>
               <select
-                className="input min-w-44"
+                className="input max-w-44"
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as any)}
               >
@@ -538,40 +666,88 @@ useEffect(() => {
                 <option value="size-asc">Size Low → High</option>
                 <option value="size-desc">Size High → Low</option>
               </select>
-              <ActionButton secondary onClick={selectAll}>
-                {selected.size === filtered.length && filtered.length > 0
-                  ? "Deselect All"
-                  : "Select All"}
-              </ActionButton>
-              {selected.size > 0 && (
-                <button
-                  onClick={handleBulkDelete}
-                  className="rounded-2xl border border-red-500/40 bg-red-500/10 px-4 py-2 text-sm text-red-400 hover:bg-red-500/20 transition"
-                >
-                  Delete Selected ({selected.size})
-                </button>
-              )}
+              <select
+                className="input max-w-28"
+                value={pageSize}
+                onChange={(e) => {
+                  setPageSize(Number(e.target.value));
+                  setCurrentPage(1);
+                }}
+              >
+                <option value={12}>12 / page</option>
+                <option value={24}>24 / page</option>
+                <option value={48}>48 / page</option>
+                <option value={96}>96 / page</option>
+              </select>
               <ActionButton secondary onClick={load}>
                 Refresh
               </ActionButton>
-              <select
-  className="input min-w-28"
-  value={pageSize}
-  onChange={(e) => {
-    setPageSize(Number(e.target.value));
-    setCurrentPage(1);
-  }}
->
-  <option value={10}>10 / page</option>
-  <option value={25}>25 / page</option>
-  <option value={50}>50 / page</option>
-  <option value={100}>100 / page</option>
-</select>
             </div>
           }
         >
+          {/* Bulk action toolbar */}
+          <div className="flex items-center justify-between mb-4 min-h-[36px]">
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={toggleSelectPage}
+                className="flex items-center gap-2 rounded-xl border border-line bg-card/60 px-3 py-1.5 text-xs text-text hover:border-gold/50 hover:text-gold transition"
+              >
+                <span
+                  className={`h-4 w-4 rounded border-2 flex items-center justify-center shrink-0 transition
+                    ${
+                      isPageAllSelected ? "border-gold bg-gold" : "border-muted"
+                    }`}
+                >
+                  {isPageAllSelected && (
+                    <svg
+                      className="w-2.5 h-2.5 text-black"
+                      viewBox="0 0 12 12"
+                      fill="none"
+                    >
+                      <path
+                        d="M2 6l3 3 5-5"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  )}
+                </span>
+                {isPageAllSelected ? "Deselect Page" : "Select Page"}
+              </button>
+
+              <button
+                type="button"
+                onClick={selectAll}
+                className="rounded-xl border border-line bg-card/60 px-3 py-1.5 text-xs text-text hover:border-gold/50 hover:text-gold transition"
+              >
+                {selected.size === filtered.length && filtered.length > 0
+                  ? "Deselect All"
+                  : "Select All"}
+              </button>
+
+              {selected.size > 0 && (
+                <span className="text-xs text-muted">
+                  {selected.size} selected
+                </span>
+              )}
+            </div>
+
+            {selected.size > 0 && (
+              <button
+                type="button"
+                onClick={() => setShowBulkDeleteModal(true)}
+                className="rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-1.5 text-xs text-red-400 hover:bg-red-500/20 transition font-medium"
+              >
+                Delete Selected ({selected.size})
+              </button>
+            )}
+          </div>
+
           {loading ? (
-            <div className="py-16 text-center text-sm text-muted">
+            <div className="py-24 text-center text-sm text-muted">
               Loading assets...
             </div>
           ) : !filtered.length ? (
@@ -581,101 +757,75 @@ useEffect(() => {
                 : "No assets found."}
             </div>
           ) : (
-            <div className="overflow-hidden rounded-[28px] border border-line bg-panel/70">
-              <p className="px-5 pt-4 pb-2 text-xs text-muted">
+            <>
+              <p className="text-xs text-muted mb-3">
                 Showing {(currentPage - 1) * pageSize + 1}–
-{Math.min(currentPage * pageSize, filtered.length)} of{" "}
-{filtered.length} entries
+                {Math.min(currentPage * pageSize, filtered.length)} of{" "}
+                {filtered.length} entries
               </p>
-              <div className="overflow-x-auto">
-                <table className="w-full text-left">
-                  <thead className="border-b border-line bg-card/50">
-                    <tr>
-                      <th className="px-4 py-3 text-xs font-medium text-muted uppercase tracking-wider w-12">
-                        SNO.
-                      </th>
-                      <th className="px-4 py-3 text-xs font-medium text-muted uppercase tracking-wider w-20">
-                        Image
-                      </th>
-                      <th className="px-4 py-3 text-xs font-medium text-muted uppercase tracking-wider">
-                        Name
-                      </th>
-                      <th className="px-4 py-3 text-xs font-medium text-muted uppercase tracking-wider">
-                        Size
-                      </th>
-                      <th className="px-4 py-3 text-xs font-medium text-muted uppercase tracking-wider">
-                        Uploaded At
-                      </th>
-                      <th className="px-4 py-3 text-xs font-medium text-muted uppercase tracking-wider">
-                        Status
-                      </th>
-                      <th className="px-4 py-3 text-xs font-medium text-muted uppercase tracking-wider text-right">
-                        Actions
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {paginatedAssets.map((asset, index) => (
-                      <AssetCard
-                        key={asset._id}
-                        index={(currentPage - 1) * pageSize + index}
-                        asset={asset}
-                        isDuplicate={duplicateUrls.has(asset.url)}
-                        onView={setViewAsset}
-                        onDelete={setDeleteAsset}
-                        selected={selected.has(asset._id)}
-                        onSelect={toggleSelect}
-                      />
-                    ))}
-                  </tbody>
-                </table>
+
+              {/* Grid */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3">
+                {paginatedAssets.map((asset) => (
+                  <AssetGridCard
+                    key={asset._id}
+                    asset={asset}
+                    isDuplicate={duplicateUrls.has(asset.url)}
+                    onView={setViewAsset}
+                    onDelete={setDeleteAsset}
+                    selected={selected.has(asset._id)}
+                    onSelect={toggleSelect}
+                  />
+                ))}
               </div>
-              {!filtered.length && (
-                <div className="p-8 text-sm text-muted">No assets found.</div>
-              )}
-              <div className="flex items-center justify-between px-5 py-4 border-t border-line">
-  <p className="text-sm text-muted">
-    Page {currentPage} of {totalPages || 1}
-  </p>
 
-  <div className="flex items-center gap-2">
-    <button
-      disabled={currentPage === 1}
-      onClick={() => setCurrentPage((p) => p - 1)}
-      className="rounded-xl border border-line px-4 py-2 text-sm disabled:opacity-40"
-    >
-      Previous
-    </button>
+              {/* Pagination */}
+              <div className="flex items-center justify-between mt-6 pt-4 border-t border-line">
+                <p className="text-sm text-muted">
+                  Page {currentPage} of {totalPages || 1}
+                </p>
 
-    {Array.from({ length: totalPages }, (_, i) => i + 1)
-      .slice(
-        Math.max(currentPage - 3, 0),
-        Math.max(currentPage - 3, 0) + 5
-      )
-      .map((page) => (
-        <button
-          key={page}
-          onClick={() => setCurrentPage(page)}
-          className={`h-10 min-w-[40px] rounded-xl border text-sm transition ${
-            currentPage === page
-              ? "border-gold bg-gold/10 text-gold"
-              : "border-line hover:bg-card"
-          }`}
-        >
-          {page}
-        </button>
-      ))}
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    disabled={currentPage === 1}
+                    onClick={() => setCurrentPage((p) => p - 1)}
+                    className="rounded-xl border border-line px-4 py-2 text-sm disabled:opacity-40"
+                  >
+                    Previous
+                  </button>
 
-    <button
-      disabled={currentPage === totalPages}
-      onClick={() => setCurrentPage((p) => p + 1)}
-      className="rounded-xl border border-line px-4 py-2 text-sm disabled:opacity-40"
-    >
-      Next
-    </button>
-  </div>
-</div>
-            </div>
+                  {Array.from({ length: totalPages }, (_, i) => i + 1)
+                    .slice(
+                      Math.max(currentPage - 3, 0),
+                      Math.max(currentPage - 3, 0) + 5,
+                    )
+                    .map((page) => (
+                      <button
+                        key={page}
+                        type="button"
+                        onClick={() => setCurrentPage(page)}
+                        className={`h-10 min-w-[40px] rounded-xl border text-sm transition ${
+                          currentPage === page
+                            ? "border-gold bg-gold/10 text-gold"
+                            : "border-line hover:bg-card"
+                        }`}
+                      >
+                        {page}
+                      </button>
+                    ))}
+
+                  <button
+                    type="button"
+                    disabled={currentPage === totalPages || totalPages === 0}
+                    onClick={() => setCurrentPage((p) => p + 1)}
+                    className="rounded-xl border border-line px-4 py-2 text-sm disabled:opacity-40"
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
+            </>
           )}
         </SectionCard>
       </div>
@@ -695,6 +845,15 @@ useEffect(() => {
         onConfirm={handleDelete}
         loading={deleteLoading}
       />
+
+      {showBulkDeleteModal && (
+        <BulkDeleteModal
+          count={selected.size}
+          onClose={() => setShowBulkDeleteModal(false)}
+          onConfirm={handleBulkDelete}
+          loading={bulkDeleteLoading}
+        />
+      )}
     </DashboardShell>
   );
 }

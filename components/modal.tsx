@@ -34,9 +34,10 @@ export function Modal({
   if (!open) return null;
 
   const widths = {
-    md: 'max-w-2xl',
-    lg: 'max-w-4xl',
-    xl: 'max-w-6xl',
+    sm: "w-full max-w-md",
+    md: 'w-full max-w-2xl',
+    lg: 'w-full max-w-4xl',
+    xl: 'w-full max-w-6xl',
   };
 
   return (
