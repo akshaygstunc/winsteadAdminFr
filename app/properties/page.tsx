@@ -1431,8 +1431,18 @@ function FloorPlansEditor({
       : `/content/floor-plans`;
     const response = await api.get(endpoint);
     const rows = normalizeApiArray(response);
+
+// IMPORTANT
+// Extra frontend filtering safety
+const filteredRows = propertyId
+  ? rows.filter(
+      (row: any) =>
+        String(row?.propertyId || row?.data?.propertyId || "") ===
+        String(propertyId),
+    )
+  : rows;
     setOptions(
-      rows.map((row: any) => ({
+      filteredRows.map((row: any) => ({
         _id: String(row?._id ?? row?.id ?? ""),
         title: String(row?.title ?? ""),
         unitType: String(row?.data?.unitType ?? row?.unitType ?? ""),
@@ -1535,12 +1545,13 @@ function FloorPlansEditor({
       title: planForm.title,
 
       // ✅ IMPORTANT
-      propertyId: String(propertyId),
+     
 
       data: {
         unitType: planForm.unitType,
         bedrooms: Number(planForm.bedrooms),
         bathrooms: Number(planForm.bathrooms),
+         propertyId: String(propertyId),
         size: planForm.size,
         price: Number(planForm.price),
         image: planForm.image,
