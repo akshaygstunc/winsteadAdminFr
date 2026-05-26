@@ -263,7 +263,7 @@ export default function PropertyImportModal({
       formData.append("file", file);
       const res = await api.post("/properties/import", formData);
       setResult(
-        res?.data?.message ||
+        res?.data?.message || "Properties imported successfully."
           
       );
       fetchProperty();
