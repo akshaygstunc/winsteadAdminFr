@@ -318,12 +318,12 @@ const propertyFormSections: FieldSection[] = [
       {
         key: "location",
         label: "Location",
-        type: "select",
-        options: [
-          { label: "Dubai", value: "Dubai" },
-          // future:
-          // { label: "Abu Dhabi", value: "abu-dhabi" },
-        ],
+        type: "relation-select",
+        relation: {
+          entity: "content/locations",
+          labelKey: "name",
+          valueKey: "_id"
+        }
       },
       {
         key: "sublocation",
@@ -1473,7 +1473,7 @@ const filteredRows = propertyId
     onChange(
       isSelected(option._id)
         ? items.filter((id) => id !== option._id)
-        : [...items, option._id],
+      : [...items, option._id],
     );
   };
 
