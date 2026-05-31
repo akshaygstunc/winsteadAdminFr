@@ -36,7 +36,7 @@ export default function PropertyImportModal({
 
       setResult(res.data);
       onImported?.();
-      // load();
+      load();
       onClose();
     } catch (error: any) {
       setResult({
