@@ -3244,7 +3244,8 @@ export default function PropertiesPage() {
       <PropertyImportModal
         open={open2}
         onClose={() => setOpen2(false)}
-        fetchProperty={load}
+        // fetchProperty={load}
+        load={load}
       />
 
       {/* ── Image Picker ── */}
