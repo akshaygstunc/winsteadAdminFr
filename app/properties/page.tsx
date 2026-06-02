@@ -322,8 +322,8 @@ const propertyFormSections: FieldSection[] = [
         relation: {
           entity: "content/locations",
           labelKey: "name",
-          valueKey: "_id"
-        }
+          valueKey: "_id",
+        },
       },
       {
         key: "sublocation",
@@ -1423,44 +1423,44 @@ function FloorPlansEditor({
   const fileRef = useRef<HTMLInputElement>(null);
 
   const loadOptions = async () => {
-  try {
-    setLoading(true);
-    // Always fetch filtered by propertyId when available
-    const endpoint = propertyId
-      ? `/content/floor-plans?propertyId=${propertyId}`
-      : `/content/floor-plans`;
-    const response = await api.get(endpoint);
-    const rows = normalizeApiArray(response);
+    try {
+      setLoading(true);
+      // Always fetch filtered by propertyId when available
+      const endpoint = propertyId
+        ? `/content/floor-plans?propertyId=${propertyId}`
+        : `/content/floor-plans`;
+      const response = await api.get(endpoint);
+      const rows = normalizeApiArray(response);
 
-// IMPORTANT
-// Extra frontend filtering safety
-const filteredRows = propertyId
-  ? rows.filter(
-      (row: any) =>
-        String(row?.propertyId || row?.data?.propertyId || "") ===
-        String(propertyId),
-    )
-  : rows;
-    setOptions(
-      filteredRows.map((row: any) => ({
-        _id: String(row?._id ?? row?.id ?? ""),
-        title: String(row?.title ?? ""),
-        unitType: String(row?.data?.unitType ?? row?.unitType ?? ""),
-        bedrooms: Number(row?.data?.bedrooms ?? row?.bedrooms ?? 0),
-        bathrooms: Number(row?.data?.bathrooms ?? row?.bathrooms ?? 0),
-        size: String(row?.data?.size ?? row?.size ?? ""),
-        price: Number(row?.data?.price ?? row?.price ?? 0),
-        image: String(row?.data?.image ?? row?.image ?? ""),
-        category: String(row?.data?.category ?? row?.category ?? ""),
-        sortOrder: Number(row?.data?.sortOrder ?? row?.sortOrder ?? 0),
-      })),
-    );
-  } catch (error) {
-    console.error("Failed to load floor plans:", error);
-  } finally {
-    setLoading(false);
-  }
-};
+      // IMPORTANT
+      // Extra frontend filtering safety
+      const filteredRows = propertyId
+        ? rows.filter(
+            (row: any) =>
+              String(row?.propertyId || row?.data?.propertyId || "") ===
+              String(propertyId),
+          )
+        : rows;
+      setOptions(
+        filteredRows.map((row: any) => ({
+          _id: String(row?._id ?? row?.id ?? ""),
+          title: String(row?.title ?? ""),
+          unitType: String(row?.data?.unitType ?? row?.unitType ?? ""),
+          bedrooms: Number(row?.data?.bedrooms ?? row?.bedrooms ?? 0),
+          bathrooms: Number(row?.data?.bathrooms ?? row?.bathrooms ?? 0),
+          size: String(row?.data?.size ?? row?.size ?? ""),
+          price: Number(row?.data?.price ?? row?.price ?? 0),
+          image: String(row?.data?.image ?? row?.image ?? ""),
+          category: String(row?.data?.category ?? row?.category ?? ""),
+          sortOrder: Number(row?.data?.sortOrder ?? row?.sortOrder ?? 0),
+        })),
+      );
+    } catch (error) {
+      console.error("Failed to load floor plans:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     loadOptions();
@@ -1473,7 +1473,7 @@ const filteredRows = propertyId
     onChange(
       isSelected(option._id)
         ? items.filter((id) => id !== option._id)
-      : [...items, option._id],
+        : [...items, option._id],
     );
   };
 
@@ -1520,102 +1520,83 @@ const filteredRows = propertyId
   };
 
   const savePlan = async () => {
-  if (!planForm.title.trim()) {
-    setSaveError("Title is required.");
-    return;
-  }
-
-  // IMPORTANT
-  // Property must exist before adding floor plans
-  if (!propertyId) {
-    setSaveError(
-      "Please save property first before creating floor plans.",
-    );
-    return;
-  }
-
-  try {
-    setSaving(true);
-    setSaveError("");
-
-    // ==============================
-    // PAYLOAD
-    // ==============================
-    const payload = {
-      title: planForm.title,
-
-      // ✅ IMPORTANT
-     
-
-      data: {
-        unitType: planForm.unitType,
-        bedrooms: Number(planForm.bedrooms),
-        bathrooms: Number(planForm.bathrooms),
-         propertyId: String(propertyId),
-        size: planForm.size,
-        price: Number(planForm.price),
-        image: planForm.image,
-        category: planForm.category,
-        sortOrder: Number(planForm.sortOrder),
-      },
-    };
-
-    // ==============================
-    // UPDATE
-    // ==============================
-    if (editingPlan?._id) {
-      await api.patch(
-        `/content/floor-plans/${editingPlan._id}`,
-        payload,
-      );
-
-      await loadOptions();
-
-    } else {
-
-      // ==============================
-      // CREATE
-      // ==============================
-      const res = await api.post(
-        "/content/floor-plans",
-        payload,
-      );
-
-      const createdId =
-        res?.data?._id ||
-        res?.data?.id ||
-        res?._id ||
-        res?.id ||
-        "";
-
-      await loadOptions();
-
-      // auto select created floorplan
-      if (createdId) {
-        onChange([
-          ...items,
-          String(createdId),
-        ]);
-      }
+    if (!planForm.title.trim()) {
+      setSaveError("Title is required.");
+      return;
     }
 
-    // ==============================
-    // RESET
-    // ==============================
-    setShowForm(false);
+    // IMPORTANT
+    // Property must exist before adding floor plans
+    if (!propertyId) {
+      setSaveError("Please save property first before creating floor plans.");
+      return;
+    }
 
-    setEditingPlan(null);
+    try {
+      setSaving(true);
+      setSaveError("");
 
-  } catch (err: any) {
-    setSaveError(
-      err?.response?.data?.message ||
-      err?.message ||
-      "Failed to save floor plan.",
-    );
-  } finally {
-    setSaving(false);
-  }
-};
+      // ==============================
+      // PAYLOAD
+      // ==============================
+      const payload = {
+        title: planForm.title,
+
+        // ✅ IMPORTANT
+
+        data: {
+          unitType: planForm.unitType,
+          bedrooms: Number(planForm.bedrooms),
+          bathrooms: Number(planForm.bathrooms),
+          propertyId: String(propertyId),
+          size: planForm.size,
+          price: Number(planForm.price),
+          image: planForm.image,
+          category: planForm.category,
+          sortOrder: Number(planForm.sortOrder),
+        },
+      };
+
+      // ==============================
+      // UPDATE
+      // ==============================
+      if (editingPlan?._id) {
+        await api.patch(`/content/floor-plans/${editingPlan._id}`, payload);
+
+        await loadOptions();
+      } else {
+        // ==============================
+        // CREATE
+        // ==============================
+        const res = await api.post("/content/floor-plans", payload);
+
+        const createdId =
+          res?.data?._id || res?.data?.id || res?._id || res?.id || "";
+
+        await loadOptions();
+
+        // auto select created floorplan
+        if (createdId) {
+          onChange([...items, String(createdId)]);
+        }
+      }
+
+      // ==============================
+      // RESET
+      // ==============================
+      setShowForm(false);
+
+      setEditingPlan(null);
+    } catch (err: any) {
+      setSaveError(
+        err?.response?.data?.message ||
+          err?.message ||
+          "Failed to save floor plan.",
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const deletePlan = async (opt: any, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -2039,7 +2020,6 @@ function ImageField({
 
       {/* BUTTONS */}
       <div className="flex flex-col sm:flex-row gap-2">
-
         {/* Upload */}
         <button
           type="button"
@@ -2059,7 +2039,6 @@ function ImageField({
           className="flex items-center gap-2 rounded-2xl border border-gold/40 bg-gold/10 px-4 py-2.5 text-sm text-gold hover:bg-gold/20 transition"
         >
           <Upload className="h-4 w-4" />
-
           Select Uploaded
         </button>
 
@@ -2096,7 +2075,6 @@ function ImageField({
       {/* PREVIEW */}
       {value && (
         <div className="relative w-fit">
-
           {/* YOUTUBE */}
           {isYoutubeUrl(value) ? (
             <iframe
@@ -2106,7 +2084,6 @@ function ImageField({
               allowFullScreen
             />
           ) : isVideo(value) ? (
-
             // VIDEO
             <video
               src={value}
@@ -2117,9 +2094,7 @@ function ImageField({
               playsInline
               controls
             />
-
           ) : (
-
             // IMAGE
             <img
               src={value}
@@ -2140,11 +2115,7 @@ function ImageField({
       )}
 
       {/* NOTE */}
-      {field.note && (
-        <p className="text-gold text-xs">
-          Note: {field.note}
-        </p>
-      )}
+      {field.note && <p className="text-gold text-xs">Note: {field.note}</p>}
 
       {/* PICKER MODAL */}
       <ImagePickerModal
@@ -2892,84 +2863,66 @@ export default function PropertiesPage() {
                     </div>
 
                     {/* Banner images strip */}
-                    {(() => {
-  const banners = Array.isArray(property?.bannerImages) && property.bannerImages.length > 0
-    ? property.bannerImages
-    : Array.isArray(property?.gallery) && property.gallery.length > 0
-    ? [property.gallery[0]]  // fallback: gallery ki first image
-    : [];
-
-  return (
-    <div className="flex items-center gap-1.5 mt-1">
-      {banners.length > 0 && (
-        <div
-          className="flex gap-1 overflow-x-auto max-w-[140px] pt-2"
-          style={{ scrollbarWidth: "thin" }}
-        >
-          {banners.map((img: string, i: number) => (
-            <div key={i} className="relative group shrink-0">
-              <img
-                src={img}
-                className="h-4 w-7 rounded object-cover border border-line"
-              />
-              {/* Remove button sirf real banners pe, fallback pe nahi */}
-              {Array.isArray(property?.bannerImages) && property.bannerImages.length > 0 && (
-                <button
-                  onClick={async (e) => {
-                    e.stopPropagation();
-                    try {
-                      const updatedBanners = property.bannerImages!.filter(
-                        (_: string, idx: number) => idx !== i,
-                      );
-                      const type = property?.type?.map((t: any) => t?._id);
-                      const subType = property?.subType?.map((t: any) => t?._id);
-                      await api.patch(`/properties/${property._id}`, {
-                        ...property,
-                        developer: property?.developer?._id,
-                        location: property?.location?._id,
-                        type,
-                        subType,
-                        bannerImages: updatedBanners,
-                      });
-                      await load();
-                    } catch (err) {
-                      console.error("Remove banner failed", err);
-                    }
-                  }}
-                  className="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] rounded-full w-3.5 h-3.5 flex items-center justify-center transition"
-                >
-                  ×
-                </button>
-              )}
-              {/* Fallback indicator */}
-              {!(Array.isArray(property?.bannerImages) && property.bannerImages.length > 0) && (
-                <div className="absolute -top-1 -right-1 bg-amber-400 text-white text-[8px] rounded-full w-3.5 h-3.5 flex items-center justify-center"
-                  title="Gallery se fallback image"
-                >
-                  G
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Upload button */}
-      <button
-        className="h-6 w-6 rounded flex items-center justify-center border border-line hover:bg-card shrink-0"
-        onClick={() =>
-          setImagePicker({
-            open: true,
-            type: "banner",
-            propertyId: property._id,
-          })
-        }
-      >
-        <Upload size={11} className="text-gold" />
-      </button>
-    </div>
-  );
-})()}
+                    {Array.isArray(property?.bannerImages) &&
+                      property.bannerImages.length > 0 && (
+                        <div
+                          className="flex gap-1 mt-1 overflow-x-auto max-w-[180px] pt-2"
+                          style={{ scrollbarWidth: "thin" }}
+                        >
+                          {property.bannerImages.map(
+                            (img: string, i: number) => (
+                              <div key={i} className="relative group shrink-0">
+                                <img
+                                  src={img}
+                                  className="h-4 w-7 rounded object-cover border border-line"
+                                />
+                                <button
+                                  onClick={async (e) => {
+                                    e.stopPropagation();
+                                    try {
+                                      const updatedBanners =
+                                        property.bannerImages!.filter(
+                                          (_: string, idx: number) => idx !== i,
+                                        );
+                                      const type = property?.type?.map(
+                                        (t: any) => t?._id,
+                                      );
+                                      const subType = property?.subType?.map(
+                                        (t: any) => t?._id,
+                                      );
+                                      await api.patch(
+                                        `/properties/${property._id}`,
+                                        {
+                                          ...property,
+                                          developer: property?.developer?._id,
+                                          location: property?.location?._id,
+                                          type,
+                                          subType,
+                                          bannerImages: updatedBanners,
+                                        },
+                                      );
+                                      await load();
+                                    } catch (err) {
+                                      console.error(
+                                        "Remove banner failed",
+                                        err,
+                                      );
+                                    }
+                                  }}
+                                  className="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] rounded-full w-3.5 h-3.5 flex items-center justify-center transition"
+                                >
+                                  ×
+                                </button>
+                              </div>
+                            ),
+                          )}
+                          {property.bannerImages.length > 3 && (
+                            <span className="text-[10px] text-muted self-center ml-0.5">
+                              +{property.bannerImages.length - 3}
+                            </span>
+                          )}
+                        </div>
+                      )}
                   </td>
 
                   {/* Type — formatted */}
