@@ -2874,7 +2874,7 @@ export default function PropertiesPage() {
     <div className="flex items-center gap-1.5 mt-1">
       {banners.length > 0 && (
         <div
-          className="flex gap-1 overflow-x-auto max-w-[140px] pt-2"
+          className="flex gap-1 overflow-x-auto max-w-[200px] pt-2 pr-1"
           style={{ scrollbarWidth: "thin" }}
         >
           {banners.map((img: string, i: number) => (
