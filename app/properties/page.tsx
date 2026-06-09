@@ -3190,15 +3190,17 @@ export default function PropertiesPage() {
                     setForm((prev) => ({ ...prev, amenities: next }))
                   }
                 />
-              ) : section.custom === "floorPlans" ? (
-                <FloorPlansEditor
-                  value={Array.isArray(form.floorPlans) ? form.floorPlans : []}
-                  propertyId={editingId || ""}
-                  onChange={(next) =>
-                    setForm((prev) => ({ ...prev, floorPlans: next }))
-                  }
-                />
-              ) : section.custom === "file" ? (
+              ) 
+              // : section.custom === "floorPlans" ? (
+              //   <FloorPlansEditor
+              //     value={Array.isArray(form.floorPlans) ? form.floorPlans : []}
+              //     propertyId={editingId || ""}
+              //     onChange={(next) =>
+              //       setForm((prev) => ({ ...prev, floorPlans: next }))
+              //     }
+              //   />
+              // )
+               : section.custom === "file" ? (
                 <PdfUploader
                   value={form.propertydoc || ""}
                   onChange={(url) =>
