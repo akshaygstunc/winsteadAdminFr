@@ -245,7 +245,7 @@ export function TiptapEditor({
             </div>
 
             {note ? <p className="text-xs text-muted">{note}</p> : null}
-
+   
             {/* ImagePickerModal — single select, inserts into editor */}
             <ImagePickerModal
                 open={pickerOpen}
